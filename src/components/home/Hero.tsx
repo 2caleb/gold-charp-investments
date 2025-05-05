@@ -21,7 +21,7 @@ const Hero = () => {
             Find Your Dream Home & Secure Your Future
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-gray-100">
-            PropelWealth offers the best properties and financial solutions, all in one place.
+            Gold Charp Investments Limited offers the best properties and financial solutions, all in one place.
             Discover how we can help you achieve your real estate and financial goals.
           </p>
           <div className="flex flex-wrap gap-4">

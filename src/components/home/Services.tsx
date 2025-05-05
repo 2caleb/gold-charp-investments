@@ -39,7 +39,7 @@ const Services = () => {
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Our Services</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            PropelWealth offers comprehensive real estate and financial services to meet all your property needs.
+            Gold Charp Investments Limited offers comprehensive real estate and financial services to meet all your property needs.
           </p>
         </div>
 
