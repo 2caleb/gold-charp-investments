@@ -77,7 +77,7 @@ const ContactForm = () => {
               <Input
                 id="name"
                 name="name"
-                placeholder="John Smith"
+                placeholder="John Mukasa"
                 required
                 value={formData.name}
                 onChange={handleChange}
@@ -103,7 +103,7 @@ const ContactForm = () => {
               <Input
                 id="phone"
                 name="phone"
-                placeholder="(555) 123-4567"
+                placeholder="+256 700 123456"
                 value={formData.phone}
                 onChange={handleChange}
               />

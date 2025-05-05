@@ -51,6 +51,9 @@ const Footer = () => {
               <li>
                 <Link to="/about" className="text-gray-300 hover:text-white transition-colors">About Us</Link>
               </li>
+              <li>
+                <Link to="/contact" className="text-gray-300 hover:text-white transition-colors">Contact Us</Link>
+              </li>
             </ul>
           </div>
 
@@ -80,10 +83,10 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-lg mb-4">Contact Us</h4>
             <address className="not-italic">
-              <p className="mb-2 text-gray-300">123 Financial District</p>
-              <p className="mb-2 text-gray-300">Lagos, Nigeria</p>
+              <p className="mb-2 text-gray-300">123 Main Street</p>
+              <p className="mb-2 text-gray-300">Nasana-Wakiso, Uganda</p>
               <p className="mb-2 text-gray-300">
-                <span className="block">Phone: +234 123-4567</span>
+                <span className="block">Phone: +256 123-4567</span>
                 <span className="block">Email: info@goldcharpinvestments.com</span>
               </p>
             </address>

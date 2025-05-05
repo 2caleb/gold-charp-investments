@@ -13,8 +13,8 @@ const residentialProperties = [
   {
     id: 1,
     title: "Modern Downtown Apartment",
-    address: "123 Financial District, Lagos",
-    price: 450000,
+    address: "123 Financial District, Nasana-Wakiso",
+    price: 180000000,
     bedrooms: 2,
     bathrooms: 2,
     sqft: 1200,
@@ -24,8 +24,8 @@ const residentialProperties = [
   {
     id: 2,
     title: "Luxury Family Home",
-    address: "456 Suburban Ave, Lekki",
-    price: 875000,
+    address: "456 Suburban Ave, Entebbe",
+    price: 350000000,
     bedrooms: 4,
     bathrooms: 3,
     sqft: 2800,
@@ -35,8 +35,8 @@ const residentialProperties = [
   {
     id: 3,
     title: "Urban Loft Space",
-    address: "789 Downtown Blvd, Victoria Island",
-    price: 525000,
+    address: "789 Downtown Blvd, Kampala",
+    price: 210000000,
     bedrooms: 1,
     bathrooms: 2,
     sqft: 1500,
@@ -46,8 +46,8 @@ const residentialProperties = [
   {
     id: 4,
     title: "Waterfront Villa",
-    address: "321 Beach View, Ikoyi",
-    price: 1250000,
+    address: "321 Beach View, Jinja",
+    price: 500000000,
     bedrooms: 5,
     bathrooms: 4,
     sqft: 3500,
@@ -60,8 +60,8 @@ const commercialProperties = [
   {
     id: 5,
     title: "Prime Office Space",
-    address: "100 Business Park, Lagos",
-    price: 780000,
+    address: "100 Business Park, Kampala",
+    price: 312000000,
     sqft: 3200,
     type: "Office",
     features: ["Open floor plan", "Conference rooms", "Reception area"],
@@ -70,8 +70,8 @@ const commercialProperties = [
   {
     id: 6,
     title: "Retail Storefront",
-    address: "250 Shopping District, Victoria Island",
-    price: 625000,
+    address: "250 Shopping District, Nasana-Wakiso",
+    price: 250000000,
     sqft: 1800,
     type: "Retail",
     features: ["High foot traffic", "Display windows", "Storage room"],
@@ -80,8 +80,8 @@ const commercialProperties = [
   {
     id: 7,
     title: "Industrial Warehouse",
-    address: "500 Industrial Zone, Apapa",
-    price: 950000,
+    address: "500 Industrial Zone, Kampala",
+    price: 380000000,
     sqft: 8500,
     type: "Warehouse",
     features: ["Loading docks", "High ceilings", "Security system"],
@@ -91,9 +91,9 @@ const commercialProperties = [
 
 const Properties = () => {
   const formatPrice = (price: number) => {
-    return price.toLocaleString('en-US', {
+    return price.toLocaleString('en-UG', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'UGX',
       maximumFractionDigits: 0,
     });
   };
