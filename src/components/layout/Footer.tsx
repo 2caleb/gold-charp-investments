@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-xl font-serif font-bold mb-4">PropelWealth</h3>
+            <h3 className="text-xl font-serif font-bold mb-4">Gold Charp Investments Limited</h3>
             <p className="text-gray-300 mb-4">
               Your trusted partner for real estate and lending solutions. Find your dream home and secure the financing you need.
             </p>
@@ -81,17 +81,17 @@ const Footer = () => {
             <h4 className="font-bold text-lg mb-4">Contact Us</h4>
             <address className="not-italic">
               <p className="mb-2 text-gray-300">123 Financial District</p>
-              <p className="mb-2 text-gray-300">New York, NY 10004</p>
+              <p className="mb-2 text-gray-300">Lagos, Nigeria</p>
               <p className="mb-2 text-gray-300">
-                <span className="block">Phone: (555) 123-4567</span>
-                <span className="block">Email: info@propelwealth.com</span>
+                <span className="block">Phone: +234 123-4567</span>
+                <span className="block">Email: info@goldcharpinvestments.com</span>
               </p>
             </address>
           </div>
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-          <p>&copy; {new Date().getFullYear()} PropelWealth. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Gold Charp Investments Limited. All rights reserved.</p>
         </div>
       </div>
     </footer>
