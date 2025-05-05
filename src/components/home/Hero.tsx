@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
-    <div className="relative bg-blue-900 text-white">
+    <div className="relative bg-purple-900 text-white">
       {/* Background overlay with opacity */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat" 
@@ -26,12 +26,12 @@ const Hero = () => {
           </p>
           <div className="flex flex-wrap gap-4">
             <Link to="/properties">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8">
+              <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-8">
                 Browse Properties
               </Button>
             </Link>
             <Link to="/loans">
-              <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-blue-900 font-medium px-8">
+              <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-purple-900 font-medium px-8">
                 Explore Loans
               </Button>
             </Link>

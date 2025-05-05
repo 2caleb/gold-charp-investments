@@ -1,11 +1,16 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Menu, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu, X, Home, Building, Calculator, Info } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  
+  const isActive = (path: string) => {
+    return location.pathname === path ? "text-purple-700" : "text-gray-700 hover:text-purple-700";
+  };
 
   return (
     <header className="w-full bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -16,14 +21,31 @@ const Navbar = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
-          <Link to="/" className="text-gray-700 hover:text-purple-700 font-medium transition-colors">Home</Link>
-          <Link to="/properties" className="text-gray-700 hover:text-purple-700 font-medium transition-colors">Properties</Link>
-          <Link to="/loans" className="text-gray-700 hover:text-purple-700 font-medium transition-colors">Loans</Link>
-          <Link to="/calculator" className="text-gray-700 hover:text-purple-700 font-medium transition-colors">Calculator</Link>
-          <Link to="/about" className="text-gray-700 hover:text-purple-700 font-medium transition-colors">About Us</Link>
-          <Button variant="default" size="sm" className="bg-purple-700 hover:bg-purple-800">
-            Contact Us
-          </Button>
+          <Link to="/" className={`${isActive('/')} font-medium transition-colors flex items-center gap-1`}>
+            <Home size={18} />
+            <span>Home</span>
+          </Link>
+          <Link to="/properties" className={`${isActive('/properties')} font-medium transition-colors flex items-center gap-1`}>
+            <Building size={18} />
+            <span>Properties</span>
+          </Link>
+          <Link to="/loans" className={`${isActive('/loans')} font-medium transition-colors flex items-center gap-1`}>
+            <Building size={18} />
+            <span>Loans</span>
+          </Link>
+          <Link to="/calculator" className={`${isActive('/calculator')} font-medium transition-colors flex items-center gap-1`}>
+            <Calculator size={18} />
+            <span>Calculator</span>
+          </Link>
+          <Link to="/about" className={`${isActive('/about')} font-medium transition-colors flex items-center gap-1`}>
+            <Info size={18} />
+            <span>About Us</span>
+          </Link>
+          <Link to="/contact">
+            <Button variant="default" size="sm" className="bg-purple-700 hover:bg-purple-800">
+              Contact Us
+            </Button>
+          </Link>
         </nav>
 
         {/* Mobile menu button */}
@@ -44,42 +66,49 @@ const Navbar = () => {
           <div className="flex flex-col space-y-4">
             <Link 
               to="/" 
-              className="text-gray-700 hover:text-purple-700 font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className={`${isActive('/')} font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2`}
               onClick={() => setIsOpen(false)}
             >
-              Home
+              <Home size={18} />
+              <span>Home</span>
             </Link>
             <Link 
               to="/properties" 
-              className="text-gray-700 hover:text-purple-700 font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className={`${isActive('/properties')} font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2`}
               onClick={() => setIsOpen(false)}
             >
-              Properties
+              <Building size={18} />
+              <span>Properties</span>
             </Link>
             <Link 
               to="/loans" 
-              className="text-gray-700 hover:text-purple-700 font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className={`${isActive('/loans')} font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2`}
               onClick={() => setIsOpen(false)}
             >
-              Loans
+              <Building size={18} />
+              <span>Loans</span>
             </Link>
             <Link 
               to="/calculator" 
-              className="text-gray-700 hover:text-purple-700 font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className={`${isActive('/calculator')} font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2`}
               onClick={() => setIsOpen(false)}
             >
-              Calculator
+              <Calculator size={18} />
+              <span>Calculator</span>
             </Link>
             <Link 
               to="/about" 
-              className="text-gray-700 hover:text-purple-700 font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+              className={`${isActive('/about')} font-medium px-4 py-2 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-2`}
               onClick={() => setIsOpen(false)}
             >
-              About Us
+              <Info size={18} />
+              <span>About Us</span>
             </Link>
-            <Button variant="default" className="bg-purple-700 hover:bg-purple-800 w-full">
-              Contact Us
-            </Button>
+            <Link to="/contact" className="w-full" onClick={() => setIsOpen(false)}>
+              <Button variant="default" className="bg-purple-700 hover:bg-purple-800 w-full">
+                Contact Us
+              </Button>
+            </Link>
           </div>
         </div>
       )}

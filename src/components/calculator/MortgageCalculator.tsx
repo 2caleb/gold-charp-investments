@@ -108,13 +108,13 @@ const MortgageCalculator = () => {
   return (
     <div className="max-w-3xl mx-auto">
       <Card>
-        <CardHeader>
+        <CardHeader className="bg-purple-700 text-white rounded-t-lg">
           <CardTitle>Mortgage Calculator</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-purple-100">
             Calculate your estimated monthly mortgage payment and see a breakdown of costs.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6 pt-6">
           {/* Home Price Input */}
           <div className="space-y-2">
             <Label htmlFor="homePrice">Home Price</Label>
@@ -177,7 +177,7 @@ const MortgageCalculator = () => {
                   key={term}
                   variant={loanTerm === term ? "default" : "outline"}
                   onClick={() => handleLoanTermChange(term)}
-                  className="w-full"
+                  className={`w-full ${loanTerm === term ? 'bg-purple-700 hover:bg-purple-800' : ''}`}
                 >
                   {term} Years
                 </Button>
@@ -207,7 +207,7 @@ const MortgageCalculator = () => {
           </div>
 
           {/* Results */}
-          <Card className="bg-gray-50">
+          <Card className="bg-gray-50 border-purple-100">
             <CardHeader className="py-4">
               <CardTitle className="text-lg">Results</CardTitle>
             </CardHeader>
@@ -215,15 +215,15 @@ const MortgageCalculator = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center">
                   <div className="text-sm text-gray-500">Monthly Payment</div>
-                  <div className="text-2xl font-bold text-blue-700">{formatCurrency(monthlyPayment)}</div>
+                  <div className="text-2xl font-bold text-purple-700">{formatCurrency(monthlyPayment)}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-gray-500">Principal + Interest</div>
-                  <div className="text-2xl font-bold text-blue-700">{formatCurrency(totalPayment)}</div>
+                  <div className="text-2xl font-bold text-purple-700">{formatCurrency(totalPayment)}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-sm text-gray-500">Total Interest</div>
-                  <div className="text-2xl font-bold text-blue-700">{formatCurrency(totalInterest)}</div>
+                  <div className="text-2xl font-bold text-purple-700">{formatCurrency(totalInterest)}</div>
                 </div>
               </div>
             </CardContent>
@@ -235,7 +235,7 @@ const MortgageCalculator = () => {
         </CardContent>
         <CardFooter className="flex justify-between">
           <Button variant="outline" onClick={() => calculateMortgage()}>Recalculate</Button>
-          <Button onClick={() => {
+          <Button className="bg-purple-700 hover:bg-purple-800" onClick={() => {
             toast({
               title: "Results Saved",
               description: "Your mortgage calculation results have been saved.",
