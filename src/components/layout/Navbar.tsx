@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Home, Building, Calculator, Info } from 'lucide-react';
+import { Menu, X, Home, Building, Calculator, Info, LogIn } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
@@ -20,7 +20,7 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-8">
+        <nav className="hidden md:flex items-center space-x-6">
           <Link to="/" className={`${isActive('/')} font-medium transition-colors flex items-center gap-1`}>
             <Home size={18} />
             <span>Home</span>
@@ -46,6 +46,10 @@ const Navbar = () => {
               Contact Us
             </Button>
           </Link>
+          <Button variant="outline" size="sm" className="border-purple-700 text-purple-700 hover:bg-purple-50 flex items-center gap-1">
+            <LogIn size={16} />
+            <span>Login</span>
+          </Button>
         </nav>
 
         {/* Mobile menu button */}
@@ -109,6 +113,10 @@ const Navbar = () => {
                 Contact Us
               </Button>
             </Link>
+            <Button variant="outline" className="border-purple-700 text-purple-700 hover:bg-purple-50 w-full flex items-center justify-center gap-2" onClick={() => setIsOpen(false)}>
+              <LogIn size={16} />
+              <span>Login</span>
+            </Button>
           </div>
         </div>
       )}

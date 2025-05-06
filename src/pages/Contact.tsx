@@ -22,7 +22,7 @@ const Contact = () => {
             </div>
             <h3 className="text-xl font-bold mb-2">Call Us</h3>
             <p className="text-gray-600 mb-3">Our team is available Monday-Friday, 9am-5pm</p>
-            <a href="tel:+256-123-4567" className="text-purple-700 font-medium">+256 123-4567</a>
+            <a href="tel:+256-700-123456" className="text-purple-700 font-medium">+256 700 123456</a>
           </div>
           
           <div className="flex flex-col items-center text-center p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
@@ -39,8 +39,8 @@ const Contact = () => {
               <MapPin className="h-6 w-6 text-purple-700" />
             </div>
             <h3 className="text-xl font-bold mb-2">Visit Us</h3>
-            <p className="text-gray-600 mb-3">Our office is centrally located in Nasana-Wakiso</p>
-            <address className="not-italic text-purple-700 font-medium">123 Main Street, Nasana-Wakiso, Uganda</address>
+            <p className="text-gray-600 mb-3">Our office is located at Nansana Heights Building</p>
+            <address className="not-italic text-purple-700 font-medium">Nansana Heights, Nansana-Yesu Amala, Wakiso, Uganda</address>
           </div>
         </div>
         

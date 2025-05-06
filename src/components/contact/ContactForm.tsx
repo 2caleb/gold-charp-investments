@@ -120,7 +120,7 @@ const ContactForm = () => {
                 <option value="buying">Buying a Property</option>
                 <option value="selling">Selling a Property</option>
                 <option value="mortgage">Getting a Mortgage</option>
-                <option value="refinance">Refinancing</option>
+                <option value="land">Land Purchase</option>
                 <option value="investment">Investment Opportunities</option>
                 <option value="other">Other</option>
               </select>
