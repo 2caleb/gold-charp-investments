@@ -39,15 +39,15 @@ const Login = () => {
   return (
     <Layout>
       <div className="container max-w-md mx-auto px-4 py-16">
-        <Card>
+        <Card className="dark:border-gray-800">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4">
               <div className="flex justify-center items-center">
-                <span className="text-3xl font-serif font-bold text-purple-700">Gold<span className="text-amber-500">Charp</span></span>
+                <span className="text-3xl font-serif font-bold text-purple-700 dark:text-purple-400">Gold<span className="text-amber-500">Charp</span></span>
               </div>
             </div>
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
-            <CardDescription>
+            <CardDescription className="dark:text-gray-400">
               Sign in to your Gold Charp Investments account
             </CardDescription>
           </CardHeader>
@@ -63,12 +63,13 @@ const Login = () => {
                   placeholder="your.email@example.com"
                   value={formData.email}
                   onChange={handleChange}
+                  className="dark:bg-gray-800 dark:border-gray-700"
                 />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="password">Password</Label>
-                  <Link to="/forgot-password" className="text-xs text-purple-700 hover:underline">
+                  <Link to="/forgot-password" className="text-xs text-purple-700 dark:text-purple-400 hover:underline">
                     Forgot password?
                   </Link>
                 </div>
@@ -79,16 +80,21 @@ const Login = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
+                  className="dark:bg-gray-800 dark:border-gray-700"
                 />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button 
+                type="submit" 
+                className="w-full bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700" 
+                disabled={isLoading}
+              >
                 {isLoading ? "Signing In..." : "Sign In"}
               </Button>
-              <p className="text-sm text-center text-gray-600">
+              <p className="text-sm text-center text-gray-600 dark:text-gray-400">
                 Don't have an account?{" "}
-                <Link to="/register" className="text-purple-700 hover:underline">
+                <Link to="/register" className="text-purple-700 dark:text-purple-400 hover:underline">
                   Create account
                 </Link>
               </p>
