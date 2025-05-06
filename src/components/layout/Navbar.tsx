@@ -46,10 +46,12 @@ const Navbar = () => {
               Contact Us
             </Button>
           </Link>
-          <Button variant="outline" size="sm" className="border-purple-700 text-purple-700 hover:bg-purple-50 flex items-center gap-1">
-            <LogIn size={16} />
-            <span>Login</span>
-          </Button>
+          <Link to="/login">
+            <Button variant="outline" size="sm" className="border-purple-700 text-purple-700 hover:bg-purple-50 flex items-center gap-1">
+              <LogIn size={16} />
+              <span>Login</span>
+            </Button>
+          </Link>
         </nav>
 
         {/* Mobile menu button */}
@@ -113,10 +115,12 @@ const Navbar = () => {
                 Contact Us
               </Button>
             </Link>
-            <Button variant="outline" className="border-purple-700 text-purple-700 hover:bg-purple-50 w-full flex items-center justify-center gap-2" onClick={() => setIsOpen(false)}>
-              <LogIn size={16} />
-              <span>Login</span>
-            </Button>
+            <Link to="/login" className="w-full" onClick={() => setIsOpen(false)}>
+              <Button variant="outline" className="border-purple-700 text-purple-700 hover:bg-purple-50 w-full flex items-center justify-center gap-2">
+                <LogIn size={16} />
+                <span>Login</span>
+              </Button>
+            </Link>
           </div>
         </div>
       )}
