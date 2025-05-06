@@ -41,8 +41,10 @@ const Login = () => {
       <div className="container max-w-md mx-auto px-4 py-16">
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center">
-              <LogIn className="h-6 w-6 text-purple-700" />
+            <div className="mx-auto mb-4">
+              <div className="flex justify-center items-center">
+                <span className="text-3xl font-serif font-bold text-purple-700">Gold<span className="text-amber-500">Charp</span></span>
+              </div>
             </div>
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
             <CardDescription>

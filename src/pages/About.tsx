@@ -28,7 +28,7 @@ const About = () => {
             <div>
               <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6">Our Story</h2>
               <p className="text-lg mb-6 text-gray-600">
-                Founded in 2010 in Kampala, Gold Charp Investments Limited began with a simple mission: to make property ownership and financial freedom accessible to more Ugandans.
+                Founded in 2025 in Kampala, Gold Charp Investments Limited began with a simple mission: to make property ownership and financial freedom accessible to more Ugandans.
               </p>
               <p className="text-lg mb-6 text-gray-600">
                 What started as a small team of passionate real estate and finance professionals has grown into one of Uganda's most trusted investment companies, helping thousands of clients achieve their dreams of property ownership and financial security.
@@ -126,10 +126,10 @@ const About = () => {
                   className="w-40 h-40 rounded-full mx-auto object-cover" 
                 />
               </div>
-              <h3 className="text-xl font-bold">Daniel Mukasa</h3>
+              <h3 className="text-xl font-bold">Chris Mubiru</h3>
               <p className="text-purple-700 font-medium mb-2">Chief Executive Officer</p>
               <p className="text-gray-600 max-w-xs mx-auto">
-                With 20+ years of experience in real estate and finance, Daniel leads our company with vision and integrity.
+                With 20+ years of experience in real estate and finance, Chris leads our company with vision and integrity.
               </p>
             </div>
 
@@ -141,10 +141,10 @@ const About = () => {
                   className="w-40 h-40 rounded-full mx-auto object-cover" 
                 />
               </div>
-              <h3 className="text-xl font-bold">Gloria Nakato</h3>
+              <h3 className="text-xl font-bold">Geofrey Mubiru</h3>
               <p className="text-purple-700 font-medium mb-2">Chief Operations Officer</p>
               <p className="text-gray-600 max-w-xs mx-auto">
-                Gloria oversees our day-to-day operations, ensuring excellent service delivery and operational efficiency.
+                Geofrey oversees our day-to-day operations, ensuring excellent service delivery and operational efficiency.
               </p>
             </div>
 
@@ -156,10 +156,10 @@ const About = () => {
                   className="w-40 h-40 rounded-full mx-auto object-cover" 
                 />
               </div>
-              <h3 className="text-xl font-bold">Joseph Kiggundu</h3>
+              <h3 className="text-xl font-bold">Paul Mubiru</h3>
               <p className="text-purple-700 font-medium mb-2">Chief Financial Officer</p>
               <p className="text-gray-600 max-w-xs mx-auto">
-                Joseph brings his financial expertise to help our clients make sound investment decisions.
+                Paul brings his financial expertise to help our clients make sound investment decisions.
               </p>
             </div>
           </div>
