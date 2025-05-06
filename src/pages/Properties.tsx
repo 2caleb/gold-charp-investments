@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -98,51 +97,53 @@ const Properties = () => {
     });
   };
 
-  const PropertyCard = ({ property, isResidential = true }: { property: any, isResidential?: boolean }) => (
-    <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="relative h-64">
-        <img
-          src={property.image}
-          alt={property.title}
-          className="w-full h-full object-cover"
-        />
-        <Badge className="absolute top-4 right-4 bg-purple-700">{property.type}</Badge>
-      </div>
-      <CardHeader>
-        <h3 className="text-xl font-semibold">{property.title}</h3>
-        <div className="flex items-center text-gray-500">
-          <MapPin size={16} className="mr-1" />
-          <span className="text-sm">{property.address}</span>
+  function PropertyCard({ property, isResidential = true }: { property: any, isResidential?: boolean }) {
+    return (
+      <Card key={property.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+        <div className="relative h-64">
+          <img
+            src={property.image}
+            alt={property.title}
+            className="w-full h-full object-cover"
+          />
+          <Badge className="absolute top-4 right-4 bg-purple-700">{property.type}</Badge>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-between mb-4">
-          <div className="text-2xl font-bold text-purple-700">{formatPrice(property.price)}</div>
-        </div>
-        {isResidential ? (
-          <div className="flex justify-between text-sm">
-            <span>{property.bedrooms} Beds</span>
-            <span>{property.bathrooms} Baths</span>
-            <span>{property.sqft.toLocaleString()} sq ft</span>
+        <CardHeader>
+          <h3 className="text-xl font-semibold">{property.title}</h3>
+          <div className="flex items-center text-gray-500">
+            <MapPin size={16} className="mr-1" />
+            <span className="text-sm">{property.address}</span>
           </div>
-        ) : (
-          <div className="space-y-2">
-            <div className="text-sm">{property.sqft.toLocaleString()} sq ft</div>
-            <ul className="text-sm list-disc list-inside text-gray-600">
-              {property.features.map((feature: string, index: number) => (
-                <li key={index}>{feature}</li>
-              ))}
-            </ul>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between mb-4">
+            <div className="text-2xl font-bold text-purple-700">{formatPrice(property.price)}</div>
           </div>
-        )}
-      </CardContent>
-      <CardFooter>
-        <Link to={`/properties/${property.id}`} className="w-full">
-          <Button className="w-full bg-purple-700 hover:bg-purple-800">View Details</Button>
-        </Link>
-      </CardFooter>
-    </Card>
-  );
+          {isResidential ? (
+            <div className="flex justify-between text-sm">
+              <span>{property.bedrooms} Beds</span>
+              <span>{property.bathrooms} Baths</span>
+              <span>{property.sqft.toLocaleString()} sq ft</span>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <div className="text-sm">{property.sqft.toLocaleString()} sq ft</div>
+              <ul className="text-sm list-disc list-inside text-gray-600">
+                {property.features.map((feature: string, index: number) => (
+                  <li key={index}>{feature}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter>
+          <Link to={`/properties/${property.id}`} className="w-full">
+            <Button className="w-full bg-purple-700 hover:bg-purple-800">View Details</Button>
+          </Link>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   return (
     <Layout>

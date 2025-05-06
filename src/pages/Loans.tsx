@@ -218,7 +218,7 @@ const Loans = () => {
                   <h2 className="text-2xl font-bold mb-6 text-purple-700">Business Loan Options</h2>
                   <p className="text-gray-600 mb-8">
                     Fuel your business growth with our flexible financing solutions designed specifically for 
-                    Nigerian entrepreneurs and business owners.
+                    Ugandan entrepreneurs and business owners.
                   </p>
                   
                   <div className="grid md:grid-cols-2 gap-6">
@@ -267,7 +267,7 @@ const Loans = () => {
                         <ul className="space-y-2">
                           <li className="flex items-start">
                             <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-                            <span>Loan amounts from ₦5 million to ₦500 million</span>
+                            <span>Loan amounts from UGX 15 million to UGX 1.5 billion</span>
                           </li>
                           <li className="flex items-start">
                             <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />

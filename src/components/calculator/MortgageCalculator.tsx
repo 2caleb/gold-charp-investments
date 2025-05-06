@@ -17,8 +17,8 @@ import {
 
 const MortgageCalculator = () => {
   const { toast } = useToast();
-  const [homePrice, setHomePrice] = useState(350000);
-  const [downPayment, setDownPayment] = useState(70000);
+  const [homePrice, setHomePrice] = useState(350000000);
+  const [downPayment, setDownPayment] = useState(70000000);
   const [downPaymentPercent, setDownPaymentPercent] = useState(20);
   const [loanTerm, setLoanTerm] = useState(30);
   const [interestRate, setInterestRate] = useState(3.5);
@@ -28,9 +28,9 @@ const MortgageCalculator = () => {
 
   // Helper function to format currency
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-UG', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'UGX',
       maximumFractionDigits: 0,
     }).format(value);
   };
@@ -127,16 +127,16 @@ const MortgageCalculator = () => {
             />
             <Slider
               defaultValue={[homePrice]}
-              min={100000}
-              max={2000000}
-              step={5000}
+              min={100000000}
+              max={2000000000}
+              step={5000000}
               value={[homePrice]}
               onValueChange={(values) => setHomePrice(values[0])}
               className="mt-2"
             />
             <div className="flex justify-between text-xs text-gray-500">
-              <span>$100,000</span>
-              <span>$2,000,000</span>
+              <span>UGX 100,000,000</span>
+              <span>UGX 2,000,000,000</span>
             </div>
           </div>
 

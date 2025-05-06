@@ -11,8 +11,8 @@ const properties = [
   {
     id: 1,
     title: "Modern Downtown Apartment",
-    address: "123 Financial District, New York",
-    price: 450000,
+    address: "123 Financial District, Kampala",
+    price: 350000000,
     bedrooms: 2,
     bathrooms: 2,
     sqft: 1200,
@@ -22,8 +22,8 @@ const properties = [
   {
     id: 2,
     title: "Luxury Family Home",
-    address: "456 Suburban Ave, Los Angeles",
-    price: 875000,
+    address: "456 Suburban Ave, Entebbe",
+    price: 675000000,
     bedrooms: 4,
     bathrooms: 3,
     sqft: 2800,
@@ -33,8 +33,8 @@ const properties = [
   {
     id: 3,
     title: "Urban Loft Space",
-    address: "789 Downtown Blvd, Chicago",
-    price: 525000,
+    address: "789 Downtown Blvd, Nansana-Wakiso",
+    price: 225000000,
     bedrooms: 1,
     bathrooms: 2,
     sqft: 1500,
@@ -45,9 +45,9 @@ const properties = [
 
 const FeaturedProperties = () => {
   const formatPrice = (price: number) => {
-    return price.toLocaleString('en-US', {
+    return price.toLocaleString('en-UG', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'UGX',
       maximumFractionDigits: 0,
     });
   };
@@ -76,7 +76,7 @@ const FeaturedProperties = () => {
                   alt={property.title}
                   className="w-full h-full object-cover"
                 />
-                <Badge className="absolute top-4 right-4 bg-blue-700">Featured</Badge>
+                <Badge className="absolute top-4 right-4 bg-purple-700">Featured</Badge>
               </div>
               <CardHeader>
                 <h3 className="text-xl font-semibold">{property.title}</h3>
@@ -87,7 +87,7 @@ const FeaturedProperties = () => {
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between mb-4">
-                  <div className="text-2xl font-bold text-blue-700">{formatPrice(property.price)}</div>
+                  <div className="text-2xl font-bold text-purple-700">{formatPrice(property.price)}</div>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>{property.bedrooms} Beds</span>
@@ -97,7 +97,7 @@ const FeaturedProperties = () => {
               </CardContent>
               <CardFooter>
                 <Link to={`/properties/${property.id}`} className="w-full">
-                  <Button className="w-full">View Details</Button>
+                  <Button className="w-full bg-purple-700 hover:bg-purple-800">View Details</Button>
                 </Link>
               </CardFooter>
             </Card>

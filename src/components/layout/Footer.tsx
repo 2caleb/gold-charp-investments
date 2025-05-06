@@ -83,10 +83,10 @@ const Footer = () => {
           <div>
             <h4 className="font-bold text-lg mb-4">Contact Us</h4>
             <address className="not-italic">
-              <p className="mb-2 text-gray-300">123 Main Street</p>
-              <p className="mb-2 text-gray-300">Nasana-Wakiso, Uganda</p>
+              <p className="mb-2 text-gray-300">Nansana Heights Building</p>
+              <p className="mb-2 text-gray-300">Nansana-Yesu Amala, Wakiso, Uganda</p>
               <p className="mb-2 text-gray-300">
-                <span className="block">Phone: +256 123-4567</span>
+                <span className="block">Phone: +256 7123 45678</span>
                 <span className="block">Email: info@goldcharpinvestments.com</span>
               </p>
             </address>

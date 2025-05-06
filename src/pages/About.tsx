@@ -15,7 +15,7 @@ const About = () => {
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6">About Gold Charp Investments Limited</h1>
             <p className="text-xl mb-8">
-              We're dedicated to helping Nigerians achieve their real estate and financial goals through innovative solutions and exceptional service.
+              We're dedicated to helping Ugandans achieve their real estate and financial goals through innovative solutions and exceptional service.
             </p>
           </div>
         </div>
@@ -28,10 +28,10 @@ const About = () => {
             <div>
               <h2 className="text-3xl md:text-4xl font-serif font-bold mb-6">Our Story</h2>
               <p className="text-lg mb-6 text-gray-600">
-                Founded in 2010 in Lagos, Gold Charp Investments Limited began with a simple mission: to make property ownership and financial freedom accessible to more Nigerians.
+                Founded in 2010 in Kampala, Gold Charp Investments Limited began with a simple mission: to make property ownership and financial freedom accessible to more Ugandans.
               </p>
               <p className="text-lg mb-6 text-gray-600">
-                What started as a small team of passionate real estate and finance professionals has grown into one of Nigeria's most trusted investment companies, helping thousands of clients achieve their dreams of property ownership and financial security.
+                What started as a small team of passionate real estate and finance professionals has grown into one of Uganda's most trusted investment companies, helping thousands of clients achieve their dreams of property ownership and financial security.
               </p>
               <p className="text-lg text-gray-600">
                 Today, we continue to innovate and expand our services, always guided by our core values of integrity, excellence, and client satisfaction.
@@ -126,10 +126,10 @@ const About = () => {
                   className="w-40 h-40 rounded-full mx-auto object-cover" 
                 />
               </div>
-              <h3 className="text-xl font-bold">Samuel Okonkwo</h3>
+              <h3 className="text-xl font-bold">Daniel Mukasa</h3>
               <p className="text-purple-700 font-medium mb-2">Chief Executive Officer</p>
               <p className="text-gray-600 max-w-xs mx-auto">
-                With 20+ years of experience in real estate and finance, Samuel leads our company with vision and integrity.
+                With 20+ years of experience in real estate and finance, Daniel leads our company with vision and integrity.
               </p>
             </div>
 
@@ -141,10 +141,10 @@ const About = () => {
                   className="w-40 h-40 rounded-full mx-auto object-cover" 
                 />
               </div>
-              <h3 className="text-xl font-bold">Amara Eze</h3>
+              <h3 className="text-xl font-bold">Gloria Nakato</h3>
               <p className="text-purple-700 font-medium mb-2">Chief Operations Officer</p>
               <p className="text-gray-600 max-w-xs mx-auto">
-                Amara oversees our day-to-day operations, ensuring excellent service delivery and operational efficiency.
+                Gloria oversees our day-to-day operations, ensuring excellent service delivery and operational efficiency.
               </p>
             </div>
 
@@ -156,10 +156,10 @@ const About = () => {
                   className="w-40 h-40 rounded-full mx-auto object-cover" 
                 />
               </div>
-              <h3 className="text-xl font-bold">David Adeyemi</h3>
+              <h3 className="text-xl font-bold">Joseph Kiggundu</h3>
               <p className="text-purple-700 font-medium mb-2">Chief Financial Officer</p>
               <p className="text-gray-600 max-w-xs mx-auto">
-                David brings his financial expertise to help our clients make sound investment decisions.
+                Joseph brings his financial expertise to help our clients make sound investment decisions.
               </p>
             </div>
           </div>
@@ -172,7 +172,7 @@ const About = () => {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Why Choose Gold Charp Investments</h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              We offer unique advantages that set us apart in the Nigerian real estate and finance industry.
+              We offer unique advantages that set us apart in the Ugandan real estate and finance industry.
             </p>
           </div>
 
@@ -196,7 +196,7 @@ const About = () => {
               <div>
                 <h3 className="text-xl font-bold mb-2">Local Expertise</h3>
                 <p className="text-gray-600">
-                  Our deep understanding of the Nigerian market allows us to provide relevant and effective solutions.
+                  Our deep understanding of the Ugandan market allows us to provide relevant and effective solutions.
                 </p>
               </div>
             </div>
@@ -240,7 +240,7 @@ const About = () => {
                     <MapPin className="h-6 w-6 mr-4 flex-shrink-0 mt-0.5" />
                     <div>
                       <h3 className="font-bold mb-1">Headquarters</h3>
-                      <p>123 Victoria Island Boulevard<br />Victoria Island, Lagos<br />Nigeria</p>
+                      <p>Nansana Heights Building<br />Nansana-Yesu Amala<br />Wakiso, Uganda</p>
                     </div>
                   </div>
                   
@@ -256,7 +256,7 @@ const About = () => {
                     <Phone className="h-6 w-6 mr-4 flex-shrink-0 mt-0.5" />
                     <div>
                       <h3 className="font-bold mb-1">Phone</h3>
-                      <p>+234 1234 5678</p>
+                      <p>+256 7123 45678</p>
                     </div>
                   </div>
                 </div>
