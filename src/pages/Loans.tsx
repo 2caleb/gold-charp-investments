@@ -7,17 +7,23 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from 'react-router-dom';
 import { CheckCircle, Landmark, BadgeDollarSign, ScrollText } from 'lucide-react';
+import DataCollectionButton from '@/components/loans/DataCollectionButton';
 
 const Loans = () => {
   return (
     <Layout>
-      <section className="bg-gray-50 py-16">
+      <section className="bg-gray-50 py-16 dark:bg-gray-900">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Loan Options</h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Gold Charp Investments Limited offers flexible financing solutions to help you achieve your property goals.
-            </p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-12">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4">Loan Options</h1>
+              <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
+                Gold Charp Investments Limited offers flexible financing solutions to help you achieve your property goals.
+              </p>
+            </div>
+            <div className="mt-6 md:mt-0">
+              <DataCollectionButton />
+            </div>
           </div>
 
           <Tabs defaultValue="mortgage" className="max-w-5xl mx-auto">

@@ -13,7 +13,7 @@ const Login = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
+    email: 'mwesigwacaleb001@gmail.com',
     password: '',
   });
 
@@ -50,6 +50,9 @@ const Login = () => {
             <CardDescription className="dark:text-gray-400">
               Sign in to your Gold Charp Investments account
             </CardDescription>
+            <div className="text-xs text-center mt-2 text-gray-500 dark:text-gray-400">
+              Our story started in 2025
+            </div>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
