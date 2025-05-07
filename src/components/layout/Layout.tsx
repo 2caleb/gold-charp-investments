@@ -11,7 +11,9 @@ const Layout = ({ children }: LayoutProps) => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       <Navbar />
-      <main className="flex-grow">{children}</main>
+      <main className="flex-grow relative">
+        {children}
+      </main>
       <Footer />
     </div>
   );
