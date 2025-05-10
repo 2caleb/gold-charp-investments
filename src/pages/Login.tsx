@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
+import DataCollectionButton from '@/components/loans/DataCollectionButton';
 
 const Login = () => {
   const { toast } = useToast();
@@ -38,8 +39,8 @@ const Login = () => {
 
   return (
     <Layout>
-      <div className="container max-w-md mx-auto px-4 py-16">
-        <Card className="dark:border-gray-800">
+      <div className="container max-w-md mx-auto px-4 py-10">
+        <Card className="dark:border-gray-800 mb-6">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4">
               <div className="flex justify-center items-center">
@@ -104,6 +105,14 @@ const Login = () => {
             </CardFooter>
           </form>
         </Card>
+        
+        {/* Data Collection Section */}
+        <div className="my-8">
+          <h2 className="text-xl font-bold mb-4 text-center">Field Staff Tools</h2>
+          <div className="flex justify-center">
+            <DataCollectionButton />
+          </div>
+        </div>
       </div>
     </Layout>
   );
