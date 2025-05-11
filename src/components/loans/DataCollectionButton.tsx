@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -351,11 +350,11 @@ const DataCollectionButton = () => {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
             <Tabs defaultValue="client" className="w-full">
               <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="client">Client Details</TabsTrigger>
-                <TabsTrigger value="guarantor1">First Guarantor</TabsTrigger>
-                <TabsTrigger value="guarantor2">Second Guarantor</TabsTrigger>
-                <TabsTrigger value="media">Media Capture</TabsTrigger>
-                <TabsTrigger value="review">Review & Submit</TabsTrigger>
+                <TabsTrigger value="client">1. Client Details</TabsTrigger>
+                <TabsTrigger value="guarantor1">2. First Guarantor</TabsTrigger>
+                <TabsTrigger value="guarantor2">3. Second Guarantor</TabsTrigger>
+                <TabsTrigger value="media">4. Documentation</TabsTrigger>
+                <TabsTrigger value="review">5. Review & Submit</TabsTrigger>
               </TabsList>
               
               {/* Client Details Tab */}
