@@ -1,354 +1,284 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { ClipboardList, Camera, Video, Upload, Scan, Check, X, ChevronDown, ChevronUp, Shield, Users, ShieldCheck, ShieldAlert } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useToast } from "@/components/ui/use-toast";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Progress } from "@/components/ui/progress";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/components/ui/use-toast";
 
+// Form schema definition
 const formSchema = z.object({
   // Client details
-  clientName: z.string().min(3, { message: "Client name must be at least 3 characters" }),
-  nationalId: z.string().min(5, { message: "Valid National ID required" }),
-  phoneNumber: z.string().min(10, { message: "Valid phone number required" }),
-  loanPurpose: z.string().min(10, { message: "Loan purpose must be detailed" }),
-  loanAmount: z.string().min(1, { message: "Loan amount required" }),
-  income: z.string().min(1, { message: "Monthly income required" }),
-  address: z.string().min(5, { message: "Address required" }),
-  notes: z.string().optional(),
+  fullName: z.string().min(2, {
+    message: "Full name must be at least 2 characters.",
+  }),
+  nationalId: z.string().min(5, {
+    message: "National ID must be valid.",
+  }),
+  dateOfBirth: z.string(),
+  gender: z.string(),
+  maritalStatus: z.string(),
+  phoneNumber: z.string().min(10, {
+    message: "Phone number must be valid.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }).optional(),
+  physicalAddress: z.string().min(5, {
+    message: "Physical address must be provided.",
+  }),
+  occupation: z.string().min(2, {
+    message: "Occupation must be provided.",
+  }),
+  incomeSource: z.string().min(2, {
+    message: "Income source must be provided.",
+  }),
   
   // First guarantor
-  guarantor1Name: z.string().min(3, { message: "Guarantor name required" }),
-  guarantor1NationalId: z.string().min(5, { message: "Valid National ID required" }),
-  guarantor1Phone: z.string().min(10, { message: "Valid phone number required" }),
-  guarantor1Relation: z.string().min(2, { message: "Relationship required" }),
-  guarantor1Address: z.string().min(5, { message: "Address required" }),
-  guarantor1Commitment: z.string().min(5, { message: "Commitment details required" }),
+  guarantor1FullName: z.string().min(2, {
+    message: "Guarantor name must be at least 2 characters.",
+  }),
+  guarantor1NationalId: z.string().min(5, {
+    message: "Guarantor National ID must be valid.",
+  }),
+  guarantor1Relationship: z.string().min(2, {
+    message: "Relationship must be provided.",
+  }),
+  guarantor1PhoneNumber: z.string().min(10, {
+    message: "Guarantor phone number must be valid.",
+  }),
+  guarantor1Address: z.string().min(5, {
+    message: "Guarantor address must be provided.",
+  }),
   
   // Second guarantor
-  guarantor2Name: z.string().min(3, { message: "Guarantor name required" }),
-  guarantor2NationalId: z.string().min(5, { message: "Valid National ID required" }),
-  guarantor2Phone: z.string().min(10, { message: "Valid phone number required" }),
-  guarantor2Relation: z.string().min(2, { message: "Relationship required" }),
-  guarantor2Address: z.string().min(5, { message: "Address required" }),
-  guarantor2Commitment: z.string().min(5, { message: "Commitment details required" }),
-
-  // Fields for approval and documentation
-  applicationStatus: z.enum(["pending", "approved", "disapproved"]),
-  applicationRating: z.enum(["complete", "incomplete"]),
-  fieldNotes: z.string().optional(),
-  managerFeedback: z.string().optional(),
+  guarantor2FullName: z.string().min(2, {
+    message: "Guarantor name must be at least 2 characters.",
+  }),
+  guarantor2NationalId: z.string().min(5, {
+    message: "Guarantor National ID must be valid.",
+  }),
+  guarantor2Relationship: z.string().min(2, {
+    message: "Relationship must be provided.",
+  }),
+  guarantor2PhoneNumber: z.string().min(10, {
+    message: "Guarantor phone number must be valid.",
+  }),
+  guarantor2Address: z.string().min(5, {
+    message: "Guarantor address must be provided.",
+  }),
   
-  // New authorization level field
-  authorizationLevel: z.enum(["field_officer", "manager", "director", "ceo"]).default("field_officer"),
+  // Loan details
+  loanPurpose: z.string().min(5, {
+    message: "Loan purpose must be provided.",
+  }),
+  loanAmount: z.string().min(1, {
+    message: "Loan amount must be provided.",
+  }),
+  loanTerm: z.string(),
+  
+  // Required documents
+  hasNationalId: z.boolean().default(false),
+  hasProofOfResidence: z.boolean().default(false),
+  hasProofOfIncome: z.boolean().default(false),
+  hasBankStatements: z.boolean().default(false),
+  hasBusinessPlan: z.boolean().default(false),
+  hasCollateralDocuments: z.boolean().default(false),
+  hasGuarantorDetails: z.boolean().default(false),
+
+  // Disbursement method
+  disbursementMethod: z.enum(["mobileMoney", "bankTransfer"]),
+  mobileMoney: z.object({
+    provider: z.string().optional(),
+    number: z.string().optional(),
+    name: z.string().optional(),
+  }).optional(),
+  bankTransfer: z.object({
+    bankName: z.string().optional(),
+    accountNumber: z.string().optional(),
+    accountName: z.string().optional(),
+    branchCode: z.string().optional(),
+  }).optional(),
 });
 
-type AuthLevel = {
-  name: string;
-  value: z.infer<typeof formSchema>["authorizationLevel"];
-  icon: React.ReactNode;
-  description: string;
-  canEdit: string[];
-  canApprove: boolean;
-  canDisapprove: boolean;
-  canSendToHigherLevel: boolean;
-  color: string;
-};
-
-const authorizationLevels: AuthLevel[] = [
-  {
-    name: "Field Officer",
-    value: "field_officer",
-    icon: <Users size={16} />,
-    description: "Can collect data and submit for review",
-    canEdit: ["clientName", "nationalId", "phoneNumber", "loanPurpose", "loanAmount", "income", "address", "notes", 
-              "guarantor1Name", "guarantor1NationalId", "guarantor1Phone", "guarantor1Relation", "guarantor1Address", "guarantor1Commitment", 
-              "guarantor2Name", "guarantor2NationalId", "guarantor2Phone", "guarantor2Relation", "guarantor2Address", "guarantor2Commitment",
-              "fieldNotes", "applicationRating"],
-    canApprove: false,
-    canDisapprove: false,
-    canSendToHigherLevel: true,
-    color: "text-blue-600 bg-blue-100"
-  },
-  {
-    name: "Manager",
-    value: "manager",
-    icon: <Shield size={16} />,
-    description: "Can review and provide initial approval",
-    canEdit: ["applicationStatus", "managerFeedback", "applicationRating"],
-    canApprove: true,
-    canDisapprove: true,
-    canSendToHigherLevel: true,
-    color: "text-green-600 bg-green-100"
-  },
-  {
-    name: "Director",
-    value: "director",
-    icon: <ShieldCheck size={16} />,
-    description: "Can review manager approvals and make final decisions",
-    canEdit: ["applicationStatus", "managerFeedback"],
-    canApprove: true,
-    canDisapprove: true,
-    canSendToHigherLevel: true,
-    color: "text-purple-600 bg-purple-100"
-  },
-  {
-    name: "CEO",
-    value: "ceo",
-    icon: <ShieldAlert size={16} />,
-    description: "Final authority on all decisions",
-    canEdit: ["applicationStatus", "managerFeedback"],
-    canApprove: true,
-    canDisapprove: true,
-    canSendToHigherLevel: false,
-    color: "text-red-600 bg-red-100"
-  }
-];
-
 const DataCollectionButton = () => {
+  const [open, setOpen] = useState(false);
+  const [currentTab, setCurrentTab] = useState("client");
+  const [applicationStatus, setApplicationStatus] = useState(20); // Initial status percentage
   const { toast } = useToast();
-  const [photos, setPhotos] = useState<File[]>([]);
-  const [videos, setVideos] = useState<File[]>([]);
-  const [documents, setDocuments] = useState<File[]>([]);
-  const [managerApiUrl, setManagerApiUrl] = useState<string>("");
-  const [currentAuthLevel, setCurrentAuthLevel] = useState<AuthLevel>(authorizationLevels[0]);
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
-    clientDetails: false,
-    guarantor1: true,
-    guarantor2: true,
-    documentation: true
-  });
   
+  // Define the application statuses
+  const applicationStatuses = [
+    { name: "Submitted", completed: true },
+    { name: "Under Review", completed: false },
+    { name: "Pending Approval", completed: false },
+    { name: "Approved", completed: false },
+    { name: "Disbursed", completed: false },
+  ];
+  
+  // Form definition
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      clientName: "",
+      // Default values for the form
+      fullName: "",
       nationalId: "",
+      dateOfBirth: "",
+      gender: "male",
+      maritalStatus: "single",
       phoneNumber: "",
+      email: "",
+      physicalAddress: "",
+      occupation: "",
+      incomeSource: "",
+      
+      guarantor1FullName: "",
+      guarantor1NationalId: "",
+      guarantor1Relationship: "",
+      guarantor1PhoneNumber: "",
+      guarantor1Address: "",
+      
+      guarantor2FullName: "",
+      guarantor2NationalId: "",
+      guarantor2Relationship: "",
+      guarantor2PhoneNumber: "",
+      guarantor2Address: "",
+      
       loanPurpose: "",
       loanAmount: "",
-      income: "",
-      address: "",
-      notes: "",
-      guarantor1Name: "",
-      guarantor1NationalId: "",
-      guarantor1Phone: "",
-      guarantor1Relation: "",
-      guarantor1Address: "",
-      guarantor1Commitment: "",
-      guarantor2Name: "",
-      guarantor2NationalId: "",
-      guarantor2Phone: "",
-      guarantor2Relation: "",
-      guarantor2Address: "",
-      guarantor2Commitment: "",
-      applicationStatus: "pending",
-      applicationRating: "incomplete",
-      fieldNotes: "",
-      managerFeedback: "",
-      authorizationLevel: "field_officer",
+      loanTerm: "12",
+      
+      hasNationalId: false,
+      hasProofOfResidence: false,
+      hasProofOfIncome: false,
+      hasBankStatements: false,
+      hasBusinessPlan: false,
+      hasCollateralDocuments: false,
+      hasGuarantorDetails: false,
+
+      disbursementMethod: "mobileMoney",
     },
   });
 
-  const toggleSection = (section: string) => {
-    setCollapsedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'photos' | 'videos' | 'documents') => {
-    if (e.target.files && e.target.files.length > 0) {
-      const filesArray = Array.from(e.target.files);
-      
-      switch (type) {
-        case 'photos':
-          setPhotos(prev => [...prev, ...filesArray]);
-          break;
-        case 'videos':
-          setVideos(prev => [...prev, ...filesArray]);
-          break;
-        case 'documents':
-          setDocuments(prev => [...prev, ...filesArray]);
-          break;
-      }
-      
-      toast({
-        title: `${type.charAt(0).toUpperCase() + type.slice(1)} uploaded`,
-        description: `${filesArray.length} ${type} have been added to the application.`,
-      });
-    }
-  };
-  
-  const captureMedia = async (type: 'photo' | 'video') => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: type === 'video'
-      });
-      
-      toast({
-        title: `${type.charAt(0).toUpperCase() + type.slice(1)} captured`,
-        description: `A ${type} has been captured and added to the application.`,
-      });
-      
-      if (type === 'photo') {
-        setPhotos(prev => [...prev, new File([""], `captured_photo_${Date.now()}.jpg`, { type: "image/jpeg" })]);
-      } else {
-        setVideos(prev => [...prev, new File([""], `captured_video_${Date.now()}.mp4`, { type: "video/mp4" })]);
-      }
-      
-      stream.getTracks().forEach(track => track.stop());
-      
-    } catch (error) {
-      toast({
-        title: "Capture failed",
-        description: `Unable to access camera: ${error instanceof Error ? error.message : String(error)}`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  const sendToManager = async () => {
-    if (!managerApiUrl) {
-      toast({
-        title: "API URL Required",
-        description: "Please enter the manager's API endpoint URL",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    toast({
-      title: "Sending to manager...",
-      description: "Application data is being sent to the manager for review.",
-    });
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Sent to manager",
-        description: "Application has been successfully sent to the manager.",
-      });
-      form.setValue('managerFeedback', "Received application. Under review. - Manager");
-    }, 2000);
-  };
-
-  const removeFile = (index: number, type: 'photos' | 'videos' | 'documents') => {
-    switch (type) {
-      case 'photos':
-        setPhotos(photos.filter((_, i) => i !== index));
-        break;
-      case 'videos':
-        setVideos(videos.filter((_, i) => i !== index));
-        break;
-      case 'documents':
-        setDocuments(documents.filter((_, i) => i !== index));
-        break;
-    }
-    
-    toast({
-      title: "File removed",
-      description: `The ${type.slice(0, -1)} has been removed from the application.`,
-    });
-  };
-
-  const canEditField = (fieldName: string) => {
-    return currentAuthLevel.canEdit.includes(fieldName);
-  };
-
-  const changeAuthLevel = (level: string) => {
-    const newAuthLevel = authorizationLevels.find(auth => auth.value === level);
-    if (newAuthLevel) {
-      setCurrentAuthLevel(newAuthLevel);
-      form.setValue("authorizationLevel", newAuthLevel.value);
-      
-      toast({
-        title: "Authorization Level Changed",
-        description: `You are now operating as a ${newAuthLevel.name}.`,
-      });
-    }
-  };
-
+  // Submit handler
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log(values);
     toast({
-      title: "Client data collected",
-      description: `The client information, guarantor details, and ${photos.length + videos.length + documents.length} media files have been saved.`,
+      title: "Client information collected",
+      description: "The information has been submitted successfully.",
     });
+    setOpen(false);
+  };
+
+  // Required documents list with descriptions
+  const requiredDocuments = [
+    {
+      id: "hasNationalId",
+      label: "National ID",
+      description: "Valid government-issued ID such as National ID, Passport, or Driver's License"
+    },
+    {
+      id: "hasProofOfResidence",
+      label: "Proof of Residence",
+      description: "Utility bill, rental agreement, or local council letter not older than 3 months"
+    },
+    {
+      id: "hasProofOfIncome",
+      label: "Proof of Income",
+      description: "Recent pay slips, tax returns, or bank statements showing income for the past 3 months"
+    },
+    {
+      id: "hasBankStatements",
+      label: "Bank Statements",
+      description: "Last 6 months of bank statements showing transaction history"
+    },
+    {
+      id: "hasBusinessPlan",
+      label: "Business Plan/Proposal",
+      description: "Detailed plan for business loans explaining how funds will be used and repayment strategy"
+    },
+    {
+      id: "hasCollateralDocuments",
+      label: "Collateral Documents",
+      description: "Property deeds, vehicle titles, or other assets being used as collateral"
+    },
+    {
+      id: "hasGuarantorDetails",
+      label: "Guarantor Documents",
+      description: "IDs and proof of income for guarantors"
+    }
+  ];
+
+  // Handle tab change
+  const handleTabChange = (tab: string) => {
+    setCurrentTab(tab);
     
-    console.log({
-      formValues: values,
-      photoCount: photos.length,
-      videoCount: videos.length,
-      documentCount: documents.length,
-      authorizationLevel: currentAuthLevel.name
-    });
-    
-    // Reset form and state
-    form.reset();
-    setPhotos([]);
-    setVideos([]);
-    setDocuments([]);
+    // Update progress based on tab
+    switch(tab) {
+      case "client":
+        setApplicationStatus(20);
+        break;
+      case "guarantor1":
+        setApplicationStatus(40);
+        break;
+      case "guarantor2":
+        setApplicationStatus(60);
+        break;
+      case "media":
+        setApplicationStatus(80);
+        break;
+      case "review":
+        setApplicationStatus(100);
+        break;
+    }
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-purple-700 hover:bg-purple-800 flex gap-2">
-          <ClipboardList size={18} />
+        <Button variant="outline" className="border-purple-600 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-all duration-300 hover:scale-105">
           Collect Client Data
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <div className="flex justify-between items-center">
-            <DialogTitle>Client Onboarding Form</DialogTitle>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className={`flex gap-2 ${currentAuthLevel.color} border-2`}>
-                  {currentAuthLevel.icon}
-                  {currentAuthLevel.name}
-                  <ChevronDown size={16} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Authorization Levels</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {authorizationLevels.map((level) => (
-                  <DropdownMenuItem 
-                    key={level.value} 
-                    onClick={() => changeAuthLevel(level.value)}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <span className="mr-2">{level.icon}</span>
-                    <span>{level.name}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          <DialogTitle className="text-2xl font-bold">Client Data Collection</DialogTitle>
           <DialogDescription>
-            Collect client information, guarantor details, and media documentation for loan applications and due diligence process.
-            <div className="mt-2">
-              <Badge className={currentAuthLevel.color}>{currentAuthLevel.description}</Badge>
-            </div>
+            Collect all necessary client information for loan application processing.
           </DialogDescription>
         </DialogHeader>
         
-        <Form {...form}>
+        {/* Application Status */}
+        <div className="mb-4 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+          <div className="mb-2 flex justify-between items-center">
+            <h3 className="text-sm font-medium">Application Progress</h3>
+            <span className="text-xs text-gray-500">{applicationStatus}% Complete</span>
+          </div>
+          <Progress value={applicationStatus} className="h-2" />
+          
+          <div className="mt-4 grid grid-cols-5 gap-1">
+            {applicationStatuses.map((status, index) => (
+              <div key={index} className={`text-xs text-center p-1 rounded ${index === 0 ? 'bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400'}`}>
+                {status.name}
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <ScrollArea className="flex-grow pr-4">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-            <Tabs defaultValue="client" className="w-full">
+            <Tabs defaultValue="client" className="w-full" onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="client">1. Client Details</TabsTrigger>
                 <TabsTrigger value="guarantor1">2. First Guarantor</TabsTrigger>
@@ -358,775 +288,589 @@ const DataCollectionButton = () => {
               </TabsList>
               
               {/* Client Details Tab */}
-              <TabsContent value="client" className="space-y-4 pt-4">
-                <div className="flex justify-between items-center border-b pb-2">
-                  <h3 className="text-lg font-medium">Client Personal Information</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleSection('clientDetails')}
-                    className="p-0 h-8 w-8 rounded-full"
-                  >
-                    {collapsedSections.clientDetails ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-                  </Button>
-                </div>
-                
-                {!collapsedSections.clientDetails && (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="clientName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Client Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John Doe" {...field} disabled={!canEditField('clientName')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="nationalId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>National ID Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="NIN12345678" {...field} disabled={!canEditField('nationalId')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="phoneNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="+256 700 000 000" {...field} disabled={!canEditField('phoneNumber')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="loanAmount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Loan Amount (UGX)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="5,000,000" {...field} disabled={!canEditField('loanAmount')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="income"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Monthly Income (UGX)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="1,500,000" {...field} disabled={!canEditField('income')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Residential Address</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Plot 123, Example Road, Kampala" {...field} disabled={!canEditField('address')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="loanPurpose"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Loan Purpose</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Briefly describe how the loan will be used" 
-                              className="h-20"
-                              {...field}
-                              disabled={!canEditField('loanPurpose')}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="notes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Additional Notes</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Any additional information about the client or application" 
-                              className="h-20"
-                              {...field}
-                              disabled={!canEditField('notes')}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Add any relevant information for the due diligence process
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
+              <TabsContent value="client" className="space-y-4">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="personal-info">
+                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Personal Information</AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="fullName">Full Name</Label>
+                          <Input 
+                            id="fullName" 
+                            {...form.register("fullName")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                          />
+                          {form.formState.errors.fullName && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.fullName.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="nationalId">National ID</Label>
+                          <Input 
+                            id="nationalId" 
+                            {...form.register("nationalId")}
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                          />
+                          {form.formState.errors.nationalId && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.nationalId.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                          <Input 
+                            id="dateOfBirth" 
+                            type="date" 
+                            {...form.register("dateOfBirth")}
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="gender">Gender</Label>
+                          <Select 
+                            onValueChange={(value) => form.setValue("gender", value)}
+                            defaultValue={form.getValues("gender")}
+                          >
+                            <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
+                              <SelectValue placeholder="Select Gender" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="male">Male</SelectItem>
+                              <SelectItem value="female">Female</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="maritalStatus">Marital Status</Label>
+                          <Select 
+                            onValueChange={(value) => form.setValue("maritalStatus", value)}
+                            defaultValue={form.getValues("maritalStatus")}
+                          >
+                            <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
+                              <SelectValue placeholder="Select Marital Status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="single">Single</SelectItem>
+                              <SelectItem value="married">Married</SelectItem>
+                              <SelectItem value="divorced">Divorced</SelectItem>
+                              <SelectItem value="widowed">Widowed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  <AccordionItem value="contact-info">
+                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Contact Information</AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="phoneNumber">Phone Number</Label>
+                          <Input 
+                            id="phoneNumber" 
+                            {...form.register("phoneNumber")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                          />
+                          {form.formState.errors.phoneNumber && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.phoneNumber.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email Address</Label>
+                          <Input 
+                            id="email" 
+                            type="email" 
+                            {...form.register("email")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                          />
+                          {form.formState.errors.email && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.email.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="physicalAddress">Physical Address</Label>
+                          <Textarea 
+                            id="physicalAddress" 
+                            {...form.register("physicalAddress")}
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                          />
+                          {form.formState.errors.physicalAddress && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.physicalAddress.message}</p>
+                          )}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  <AccordionItem value="financial-info">
+                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Financial Information</AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="occupation">Occupation</Label>
+                          <Input 
+                            id="occupation" 
+                            {...form.register("occupation")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                          />
+                          {form.formState.errors.occupation && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.occupation.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="incomeSource">Income Source</Label>
+                          <Input 
+                            id="incomeSource" 
+                            {...form.register("incomeSource")}
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                          />
+                          {form.formState.errors.incomeSource && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.incomeSource.message}</p>
+                          )}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  <AccordionItem value="loan-details">
+                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Loan Details</AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="loanPurpose">Loan Purpose</Label>
+                          <Textarea 
+                            id="loanPurpose" 
+                            {...form.register("loanPurpose")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                            placeholder="Please describe what the loan will be used for"
+                          />
+                          {form.formState.errors.loanPurpose && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.loanPurpose.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="loanAmount">Loan Amount (UGX)</Label>
+                          <Input 
+                            id="loanAmount" 
+                            type="number" 
+                            {...form.register("loanAmount")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                          />
+                          {form.formState.errors.loanAmount && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.loanAmount.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="loanTerm">Loan Term (Months)</Label>
+                          <Select 
+                            onValueChange={(value) => form.setValue("loanTerm", value)}
+                            defaultValue={form.getValues("loanTerm")}
+                          >
+                            <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
+                              <SelectValue placeholder="Select Loan Term" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="3">3 Months</SelectItem>
+                              <SelectItem value="6">6 Months</SelectItem>
+                              <SelectItem value="12">12 Months</SelectItem>
+                              <SelectItem value="24">24 Months</SelectItem>
+                              <SelectItem value="36">36 Months</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </TabsContent>
               
               {/* First Guarantor Tab */}
-              <TabsContent value="guarantor1" className="space-y-4 pt-4">
-                <div className="flex justify-between items-center border-b pb-2">
-                  <h3 className="text-lg font-medium">First Guarantor Details</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleSection('guarantor1')}
-                    className="p-0 h-8 w-8 rounded-full"
-                  >
-                    {collapsedSections.guarantor1 ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-                  </Button>
-                </div>
-                
-                {!collapsedSections.guarantor1 && (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="guarantor1Name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Guarantor Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Jane Doe" {...field} disabled={!canEditField('guarantor1Name')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor1NationalId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>National ID Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="NIN12345678" {...field} disabled={!canEditField('guarantor1NationalId')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="guarantor1Phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="+256 700 000 000" {...field} disabled={!canEditField('guarantor1Phone')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor1Relation"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Relationship to Client</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Family member, colleague, etc." {...field} disabled={!canEditField('guarantor1Relation')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="guarantor1Address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Residential Address</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Plot 123, Example Road, Kampala" {...field} disabled={!canEditField('guarantor1Address')} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="guarantor1Commitment"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Commitment Details</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Detail the guarantor's commitment and obligations" 
-                              className="h-20"
-                              {...field}
-                              disabled={!canEditField('guarantor1Commitment')}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Specify what the guarantor is committing to in relation to this loan
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
+              <TabsContent value="guarantor1" className="space-y-4">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="guarantor-personal">
+                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Guarantor Information</AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="guarantor1FullName">Full Name</Label>
+                          <Input 
+                            id="guarantor1FullName" 
+                            {...form.register("guarantor1FullName")}
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                          />
+                          {form.formState.errors.guarantor1FullName && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor1FullName.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="guarantor1NationalId">National ID</Label>
+                          <Input 
+                            id="guarantor1NationalId" 
+                            {...form.register("guarantor1NationalId")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                          />
+                          {form.formState.errors.guarantor1NationalId && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor1NationalId.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="guarantor1Relationship">Relationship to Applicant</Label>
+                          <Input 
+                            id="guarantor1Relationship" 
+                            {...form.register("guarantor1Relationship")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                          />
+                          {form.formState.errors.guarantor1Relationship && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor1Relationship.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="guarantor1PhoneNumber">Phone Number</Label>
+                          <Input 
+                            id="guarantor1PhoneNumber" 
+                            {...form.register("guarantor1PhoneNumber")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                          />
+                          {form.formState.errors.guarantor1PhoneNumber && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor1PhoneNumber.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="guarantor1Address">Physical Address</Label>
+                          <Input 
+                            id="guarantor1Address" 
+                            {...form.register("guarantor1Address")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                          />
+                          {form.formState.errors.guarantor1Address && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor1Address.message}</p>
+                          )}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </TabsContent>
               
               {/* Second Guarantor Tab */}
-              <TabsContent value="guarantor2" className="space-y-4 pt-4">
-                <div className="flex justify-between items-center border-b pb-2">
-                  <h3 className="text-lg font-medium">Second Guarantor Details</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleSection('guarantor2')}
-                    className="p-0 h-8 w-8 rounded-full"
-                  >
-                    {collapsedSections.guarantor2 ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-                  </Button>
-                </div>
-                
-                {!collapsedSections.guarantor2 && (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="guarantor2Name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Guarantor Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John Smith" {...field} disabled={!canEditField('guarantor2Name')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor2NationalId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>National ID Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="NIN12345678" {...field} disabled={!canEditField('guarantor2NationalId')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="guarantor2Phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="+256 700 000 000" {...field} disabled={!canEditField('guarantor2Phone')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor2Relation"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Relationship to Client</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Family member, colleague, etc." {...field} disabled={!canEditField('guarantor2Relation')} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="guarantor2Address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Residential Address</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Plot 123, Example Road, Kampala" {...field} disabled={!canEditField('guarantor2Address')} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="guarantor2Commitment"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Commitment Details</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Detail the guarantor's commitment and obligations" 
-                              className="h-20"
-                              {...field}
-                              disabled={!canEditField('guarantor2Commitment')}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Specify what the guarantor is committing to in relation to this loan
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </>
-                )}
+              <TabsContent value="guarantor2" className="space-y-4">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="guarantor-personal">
+                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Guarantor Information</AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="guarantor2FullName">Full Name</Label>
+                          <Input 
+                            id="guarantor2FullName" 
+                            {...form.register("guarantor2FullName")}
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                          />
+                          {form.formState.errors.guarantor2FullName && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor2FullName.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="guarantor2NationalId">National ID</Label>
+                          <Input 
+                            id="guarantor2NationalId" 
+                            {...form.register("guarantor2NationalId")}
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                          />
+                          {form.formState.errors.guarantor2NationalId && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor2NationalId.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="guarantor2Relationship">Relationship to Applicant</Label>
+                          <Input 
+                            id="guarantor2Relationship" 
+                            {...form.register("guarantor2Relationship")} 
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                          />
+                          {form.formState.errors.guarantor2Relationship && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor2Relationship.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="guarantor2PhoneNumber">Phone Number</Label>
+                          <Input 
+                            id="guarantor2PhoneNumber" 
+                            {...form.register("guarantor2PhoneNumber")}
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                          />
+                          {form.formState.errors.guarantor2PhoneNumber && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor2PhoneNumber.message}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="guarantor2Address">Physical Address</Label>
+                          <Input 
+                            id="guarantor2Address" 
+                            {...form.register("guarantor2Address")}
+                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                          />
+                          {form.formState.errors.guarantor2Address && (
+                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor2Address.message}</p>
+                          )}
+                        </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </TabsContent>
               
-              {/* Media Capture Tab */}
-              <TabsContent value="media" className="space-y-6 pt-4">
-                <div className="flex justify-between items-center border-b pb-2">
-                  <h3 className="text-lg font-medium">Documentation & Media</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleSection('documentation')}
-                    className="p-0 h-8 w-8 rounded-full"
-                  >
-                    {collapsedSections.documentation ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-                  </Button>
-                </div>
-                
-                {!collapsedSections.documentation && (
-                  <>
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">Photo & Video Documentation</h3>
-                      <p className="text-sm text-gray-500 mb-4">Capture images of the client, property, and relevant documents.</p>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="flex gap-2 items-center"
-                          onClick={() => captureMedia('photo')}
-                          disabled={!canEditField('fieldNotes')}
-                        >
-                          <Camera size={18} />
-                          Take Photo
-                        </Button>
-                        
-                        <Button 
-                          type="button" 
-                          variant="outline"
-                          className="flex gap-2 items-center"
-                          onClick={() => captureMedia('video')}
-                          disabled={!canEditField('fieldNotes')}
-                        >
-                          <Video size={18} />
-                          Record Video
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-3">Upload Media Files</h3>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div>
-                          <Label htmlFor="photoUpload" className="block mb-2">Upload Photos</Label>
-                          <div className="flex items-center justify-center w-full">
-                            <label
-                              htmlFor="photoUpload"
-                              className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 ${!canEditField('fieldNotes') ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                <Camera className="w-8 h-8 mb-2 text-gray-500 dark:text-gray-400" />
-                                <p className="mb-1 text-sm text-gray-500 dark:text-gray-400">Upload client photos</p>
-                              </div>
-                              <input
-                                id="photoUpload"
-                                type="file"
-                                className="hidden"
-                                accept="image/*"
-                                multiple
-                                onChange={(e) => handleFileChange(e, 'photos')}
-                                disabled={!canEditField('fieldNotes')}
-                              />
-                            </label>
-                          </div>
-                          {photos.length > 0 && (
-                            <p className="text-sm mt-1 text-gray-500">
-                              {photos.length} photo{photos.length > 1 ? 's' : ''} selected
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="videoUpload" className="block mb-2">Upload Videos</Label>
-                          <div className="flex items-center justify-center w-full">
-                            <label
-                              htmlFor="videoUpload"
-                              className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 ${!canEditField('fieldNotes') ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                <Video className="w-8 h-8 mb-2 text-gray-500 dark:text-gray-400" />
-                                <p className="mb-1 text-sm text-gray-500 dark:text-gray-400">Upload video files</p>
-                              </div>
-                              <input
-                                id="videoUpload"
-                                type="file"
-                                className="hidden"
-                                accept="video/*"
-                                multiple
-                                onChange={(e) => handleFileChange(e, 'videos')}
-                                disabled={!canEditField('fieldNotes')}
-                              />
-                            </label>
-                          </div>
-                          {videos.length > 0 && (
-                            <p className="text-sm mt-1 text-gray-500">
-                              {videos.length} video{videos.length > 1 ? 's' : ''} selected
-                            </p>
-                          )}
-                        </div>
-                        
-                        <div>
-                          <Label htmlFor="documentUpload" className="block mb-2">Scan Documents</Label>
-                          <div className="flex items-center justify-center w-full">
-                            <label
-                              htmlFor="documentUpload"
-                              className={`flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-gray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 ${!canEditField('fieldNotes') ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                <Scan className="w-8 h-8 mb-2 text-gray-500 dark:text-gray-400" />
-                                <p className="mb-1 text-sm text-gray-500 dark:text-gray-400">Scan & upload documents</p>
-                              </div>
-                              <input
-                                id="documentUpload"
-                                type="file"
-                                className="hidden"
-                                accept=".pdf,.doc,.docx,.jpg,.png"
-                                multiple
-                                onChange={(e) => handleFileChange(e, 'documents')}
-                                disabled={!canEditField('fieldNotes')}
-                              />
-                            </label>
-                          </div>
-                          {documents.length > 0 && (
-                            <p className="text-sm mt-1 text-gray-500">
-                              {documents.length} document{documents.length > 1 ? 's' : ''} selected
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="fieldNotes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Field Worker Notes</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Enter any additional observations or notes from your field visit"
-                              className="h-24"
-                              {...field}
-                              disabled={!canEditField('fieldNotes')}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Document any relevant observations about the client, property, or circumstances
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="border p-4 rounded-md">
-                      <h4 className="font-medium mb-2">Manager Communication</h4>
+              {/* Documentation Tab */}
+              <TabsContent value="media" className="space-y-4">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="required-documents">
+                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Required Documents</AccordionTrigger>
+                    <AccordionContent className="space-y-4">
                       <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="managerApiUrl">Manager API Endpoint URL</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              id="managerApiUrl"
-                              placeholder="https://api.example.com/manager/feedback"
-                              className="flex-grow"
-                              value={managerApiUrl}
-                              onChange={(e) => setManagerApiUrl(e.target.value)}
-                              disabled={!currentAuthLevel.canSendToHigherLevel}
-                            />
-                            <Button 
-                              type="button" 
-                              onClick={sendToManager}
-                              disabled={!managerApiUrl || !currentAuthLevel.canSendToHigherLevel}
-                            >
-                              Send
-                            </Button>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Enter the API URL to send the current application data to the manager
-                          </p>
-                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          The following documents are required for loan application processing:
+                        </p>
                         
-                        <div>
-                          <Label htmlFor="managerFeedback">Manager Feedback</Label>
-                          <Textarea
-                            id="managerFeedback"
-                            disabled
-                            placeholder="No feedback received yet"
-                            value={form.watch("managerFeedback") || ""}
-                            className="h-16 bg-gray-50"
-                          />
+                        <div className="grid grid-cols-1 gap-4">
+                          <Form {...form}>
+                            {requiredDocuments.map((doc) => (
+                              <FormField
+                                key={doc.id}
+                                control={form.control}
+                                name={doc.id as any}
+                                render={({ field }) => (
+                                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200">
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        className="data-[state=checked]:bg-purple-600"
+                                      />
+                                    </FormControl>
+                                    <div className="space-y-1 leading-none">
+                                      <FormLabel className="font-medium">{doc.label}</FormLabel>
+                                      <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
+                                        {doc.description}
+                                      </FormDescription>
+                                    </div>
+                                  </FormItem>
+                                )}
+                              />
+                            ))}
+                          </Form>
                         </div>
                       </div>
-                    </div>
-                  </>
-                )}
+                    </AccordionContent>
+                  </AccordionItem>
+                  
+                  <AccordionItem value="disbursement-info">
+                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Disbursement Method</AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      <div className="space-y-4">
+                        <Form {...form}>
+                          <FormField
+                            control={form.control}
+                            name="disbursementMethod"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Select Disbursement Method</FormLabel>
+                                <Select
+                                  onValueChange={field.onChange}
+                                  defaultValue={field.value}
+                                >
+                                  <SelectTrigger className="w-full transition-all duration-300 focus:ring-2 focus:ring-purple-500">
+                                    <SelectValue placeholder="Select method" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="mobileMoney">Mobile Money</SelectItem>
+                                    <SelectItem value="bankTransfer">Bank Transfer</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                        </Form>
+                        
+                        {form.watch("disbursementMethod") === "mobileMoney" && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800/50">
+                            <div className="space-y-2">
+                              <Label htmlFor="mobileMoneyProvider">Mobile Money Provider</Label>
+                              <Select 
+                                onValueChange={(value) => form.setValue("mobileMoney.provider", value)}
+                              >
+                                <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
+                                  <SelectValue placeholder="Select Provider" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="mtn">MTN Mobile Money</SelectItem>
+                                  <SelectItem value="airtel">Airtel Money</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="mobileMoneyNumber">Mobile Money Number</Label>
+                              <Input 
+                                id="mobileMoneyNumber" 
+                                onChange={(e) => form.setValue("mobileMoney.number", e.target.value)}
+                                className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2 md:col-span-2">
+                              <Label htmlFor="mobileMoneyName">Account Holder Name</Label>
+                              <Input 
+                                id="mobileMoneyName" 
+                                onChange={(e) => form.setValue("mobileMoney.name", e.target.value)}
+                                className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        
+                        {form.watch("disbursementMethod") === "bankTransfer" && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800/50">
+                            <div className="space-y-2">
+                              <Label htmlFor="bankName">Bank Name</Label>
+                              <Select 
+                                onValueChange={(value) => form.setValue("bankTransfer.bankName", value)}
+                              >
+                                <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
+                                  <SelectValue placeholder="Select Bank" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="stanbic">Stanbic Bank</SelectItem>
+                                  <SelectItem value="centenary">Centenary Bank</SelectItem>
+                                  <SelectItem value="dfcu">DFCU Bank</SelectItem>
+                                  <SelectItem value="equity">Equity Bank</SelectItem>
+                                  <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="accountNumber">Account Number</Label>
+                              <Input 
+                                id="accountNumber" 
+                                onChange={(e) => form.setValue("bankTransfer.accountNumber", e.target.value)}
+                                className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="accountName">Account Holder Name</Label>
+                              <Input 
+                                id="accountName" 
+                                onChange={(e) => form.setValue("bankTransfer.accountName", e.target.value)}
+                                className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="branchCode">Branch Code (Optional)</Label>
+                              <Input 
+                                id="branchCode" 
+                                onChange={(e) => form.setValue("bankTransfer.branchCode", e.target.value)}
+                                className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </TabsContent>
               
               {/* Review & Submit Tab */}
-              <TabsContent value="review" className="space-y-6 pt-4">
-                <div className="border-b pb-4">
-                  <h3 className="text-xl font-medium mb-4">Application Rating</h3>
-                  
-                  <FormField
-                    control={form.control}
-                    name="applicationRating"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>Documentation Completeness</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="flex flex-col space-y-1"
-                            disabled={!canEditField('applicationRating')}
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="complete" id="complete" />
-                              <Label htmlFor="complete" className="flex items-center">
-                                <Check className="w-4 h-4 text-green-500 mr-2" />
-                                Complete - All required documentation provided
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="incomplete" id="incomplete" />
-                              <Label htmlFor="incomplete" className="flex items-center">
-                                <X className="w-4 h-4 text-red-500 mr-2" />
-                                Incomplete - Missing required documentation
-                              </Label>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="applicationStatus"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3 mt-6">
-                        <FormLabel>Application Status</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="flex flex-col space-y-1"
-                            disabled={!canEditField('applicationStatus') || (!currentAuthLevel.canApprove && !currentAuthLevel.canDisapprove)}
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="approved" id="approved" disabled={!currentAuthLevel.canApprove} />
-                              <Label htmlFor="approved" className="flex items-center">
-                                <Check className="w-4 h-4 text-green-500 mr-2" />
-                                Approved - Application meets all requirements
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="disapproved" id="disapproved" disabled={!currentAuthLevel.canDisapprove} />
-                              <Label htmlFor="disapproved" className="flex items-center">
-                                <X className="w-4 h-4 text-red-500 mr-2" />
-                                Disapproved - Application does not qualify
-                              </Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="pending" id="pending" />
-                              <Label htmlFor="pending">
-                                Pending - Further review required
-                              </Label>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div>
-                  <h3 className="text-xl font-medium mb-4">Uploaded Documentation</h3>
-                  <div className="space-y-4">
-                    {/* Photos Summary */}
-                    <div>
-                      <h4 className="font-medium mb-2">Photos ({photos.length})</h4>
-                      {photos.length === 0 ? (
-                        <p className="text-sm text-gray-500">No photos uploaded</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {photos.map((photo, index) => (
-                            <Badge 
-                              key={index} 
-                              className="flex gap-1 items-center px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-                              onClick={() => canEditField('fieldNotes') && removeFile(index, 'photos')}
-                            >
-                              {photo.name.substring(0, 15)}{photo.name.length > 15 ? '...' : ''}
-                              {canEditField('fieldNotes') && <X className="w-3 h-3 cursor-pointer" />}
-                            </Badge>
+              <TabsContent value="review" className="space-y-4">
+                <div className="space-y-6">
+                  <div className="rounded-md bg-gray-50 dark:bg-gray-800 p-4">
+                    <h3 className="text-lg font-semibold mb-2 text-purple-700 dark:text-purple-400">Application Summary</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Please review all the information before submitting your application.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div className="p-3 bg-white dark:bg-gray-900 rounded-md shadow-sm">
+                        <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">Client Details</h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div className="text-gray-500 dark:text-gray-400">Full Name:</div>
+                          <div>{form.getValues("fullName") || "Not provided"}</div>
+                          
+                          <div className="text-gray-500 dark:text-gray-400">National ID:</div>
+                          <div>{form.getValues("nationalId") || "Not provided"}</div>
+                          
+                          <div className="text-gray-500 dark:text-gray-400">Phone:</div>
+                          <div>{form.getValues("phoneNumber") || "Not provided"}</div>
+                          
+                          <div className="text-gray-500 dark:text-gray-400">Email:</div>
+                          <div>{form.getValues("email") || "Not provided"}</div>
+                          
+                          <div className="text-gray-500 dark:text-gray-400">Loan Amount:</div>
+                          <div>{form.getValues("loanAmount") ? `UGX ${form.getValues("loanAmount")}` : "Not provided"}</div>
+                          
+                          <div className="text-gray-500 dark:text-gray-400">Loan Term:</div>
+                          <div>{form.getValues("loanTerm") ? `${form.getValues("loanTerm")} months` : "Not provided"}</div>
+                          
+                          <div className="text-gray-500 dark:text-gray-400">Disbursement Method:</div>
+                          <div>{form.getValues("disbursementMethod") === "mobileMoney" ? "Mobile Money" : "Bank Transfer"}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="p-3 bg-white dark:bg-gray-900 rounded-md shadow-sm">
+                        <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">Document Status</h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          {requiredDocuments.map((doc) => (
+                            <React.Fragment key={doc.id}>
+                              <div className="text-gray-500 dark:text-gray-400">{doc.label}:</div>
+                              <div className={form.getValues(doc.id as any) ? "text-green-600 dark:text-green-400" : "text-red-500"}>
+                                {form.getValues(doc.id as any) ? "Provided" : "Missing"}
+                              </div>
+                            </React.Fragment>
                           ))}
                         </div>
-                      )}
+                      </div>
                     </div>
                     
-                    {/* Videos Summary */}
-                    <div>
-                      <h4 className="font-medium mb-2">Videos ({videos.length})</h4>
-                      {videos.length === 0 ? (
-                        <p className="text-sm text-gray-500">No videos uploaded</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {videos.map((video, index) => (
-                            <Badge 
-                              key={index} 
-                              className="flex gap-1 items-center px-3 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300"
-                              onClick={() => canEditField('fieldNotes') && removeFile(index, 'videos')}
-                            >
-                              {video.name.substring(0, 15)}{video.name.length > 15 ? '...' : ''}
-                              {canEditField('fieldNotes') && <X className="w-3 h-3 cursor-pointer" />}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Documents Summary */}
-                    <div>
-                      <h4 className="font-medium mb-2">Documents ({documents.length})</h4>
-                      {documents.length === 0 ? (
-                        <p className="text-sm text-gray-500">No documents uploaded</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {documents.map((doc, index) => (
-                            <Badge 
-                              key={index} 
-                              className="flex gap-1 items-center px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                              onClick={() => canEditField('fieldNotes') && removeFile(index, 'documents')}
-                            >
-                              {doc.name.substring(0, 15)}{doc.name.length > 15 ? '...' : ''}
-                              {canEditField('fieldNotes') && <X className="w-3 h-3 cursor-pointer" />}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
+                    <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                      By submitting this application, you confirm that all information provided is accurate and complete.
                     </div>
                   </div>
                 </div>
-                
-                <div className="pt-4">
-                  <Card className={`border-l-4 ${form.watch('applicationStatus') === 'approved' ? 'border-l-green-500' : form.watch('applicationStatus') === 'disapproved' ? 'border-l-red-500' : 'border-l-yellow-500'}`}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <h3 className="font-medium">
-                          Application Status: 
-                          <span className={`ml-2 ${
-                            form.watch('applicationStatus') === 'approved' ? 'text-green-600' : 
-                            form.watch('applicationStatus') === 'disapproved' ? 'text-red-600' : 
-                            'text-yellow-600'
-                          }`}>
-                            {form.watch('applicationStatus').charAt(0).toUpperCase() + form.watch('applicationStatus').slice(1)}
-                          </span>
-                        </h3>
-                        
-                        <div className="flex flex-wrap gap-2">
-                          <Badge className={`${
-                            form.watch('applicationRating') === 'complete' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 
-                            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                          }`}>
-                            {form.watch('applicationRating') === 'complete' ? 'Complete Documentation' : 'Incomplete Documentation'}
-                          </Badge>
-                          
-                          <Badge className={`${currentAuthLevel.color}`}>
-                            {currentAuthLevel.name}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
               </TabsContent>
             </Tabs>
-            
-            <DialogFooter>
-              <Button type="submit" className="bg-purple-700 hover:bg-purple-800">Submit Application</Button>
-            </DialogFooter>
           </form>
-        </Form>
+        </ScrollArea>
+        
+        <DialogFooter className="flex justify-between items-center pt-2">
+          <Button variant="outline" onClick={() => setOpen(false)} className="transition-all duration-300 hover:bg-gray-100">
+            Cancel
+          </Button>
+          <Button onClick={form.handleSubmit(onSubmit)} className="bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700 transition-all duration-300 hover:shadow-md">
+            Submit Application
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
