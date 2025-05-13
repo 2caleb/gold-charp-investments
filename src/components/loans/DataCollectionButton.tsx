@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -810,3 +811,512 @@ const DataCollectionButton = () => {
                     </AccordionItem>
                   </Accordion>
                 </TabsContent>
+                
+                {/* Guarantor 1 Tab */}
+                <TabsContent value="guarantor1" className="space-y-4">
+                  <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-md border border-purple-100 dark:border-purple-900/50">
+                    <h3 className="text-lg font-medium text-purple-800 dark:text-purple-300 mb-2">First Guarantor Details</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Provide details of the primary guarantor for this loan application.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="guarantor1FullName">Full Name</Label>
+                        <Input 
+                          id="guarantor1FullName" 
+                          {...form.register("guarantor1FullName")} 
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                        {form.formState.errors.guarantor1FullName && (
+                          <p className="text-red-500 text-xs">{form.formState.errors.guarantor1FullName.message}</p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="guarantor1NationalId">National ID</Label>
+                        <Input 
+                          id="guarantor1NationalId" 
+                          {...form.register("guarantor1NationalId")} 
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                        {form.formState.errors.guarantor1NationalId && (
+                          <p className="text-red-500 text-xs">{form.formState.errors.guarantor1NationalId.message}</p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="guarantor1Relationship">Relationship to Applicant</Label>
+                        <Input 
+                          id="guarantor1Relationship" 
+                          placeholder="e.g. Spouse, Parent, Sibling" 
+                          {...form.register("guarantor1Relationship")} 
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                        {form.formState.errors.guarantor1Relationship && (
+                          <p className="text-red-500 text-xs">{form.formState.errors.guarantor1Relationship.message}</p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="guarantor1PhoneNumber">Phone Number</Label>
+                        <Input 
+                          id="guarantor1PhoneNumber" 
+                          {...form.register("guarantor1PhoneNumber")} 
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                        {form.formState.errors.guarantor1PhoneNumber && (
+                          <p className="text-red-500 text-xs">{form.formState.errors.guarantor1PhoneNumber.message}</p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="guarantor1Address">Physical Address</Label>
+                        <Textarea 
+                          id="guarantor1Address" 
+                          {...form.register("guarantor1Address")} 
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                        {form.formState.errors.guarantor1Address && (
+                          <p className="text-red-500 text-xs">{form.formState.errors.guarantor1Address.message}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Guarantor 2 Tab */}
+                <TabsContent value="guarantor2" className="space-y-4">
+                  <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-md border border-purple-100 dark:border-purple-900/50">
+                    <h3 className="text-lg font-medium text-purple-800 dark:text-purple-300 mb-2">Second Guarantor Details</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Provide details of the secondary guarantor for this loan application.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="guarantor2FullName">Full Name</Label>
+                        <Input 
+                          id="guarantor2FullName" 
+                          {...form.register("guarantor2FullName")} 
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                        {form.formState.errors.guarantor2FullName && (
+                          <p className="text-red-500 text-xs">{form.formState.errors.guarantor2FullName.message}</p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="guarantor2NationalId">National ID</Label>
+                        <Input 
+                          id="guarantor2NationalId" 
+                          {...form.register("guarantor2NationalId")} 
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                        {form.formState.errors.guarantor2NationalId && (
+                          <p className="text-red-500 text-xs">{form.formState.errors.guarantor2NationalId.message}</p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="guarantor2Relationship">Relationship to Applicant</Label>
+                        <Input 
+                          id="guarantor2Relationship" 
+                          placeholder="e.g. Spouse, Parent, Sibling" 
+                          {...form.register("guarantor2Relationship")} 
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                        {form.formState.errors.guarantor2Relationship && (
+                          <p className="text-red-500 text-xs">{form.formState.errors.guarantor2Relationship.message}</p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="guarantor2PhoneNumber">Phone Number</Label>
+                        <Input 
+                          id="guarantor2PhoneNumber" 
+                          {...form.register("guarantor2PhoneNumber")} 
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                        {form.formState.errors.guarantor2PhoneNumber && (
+                          <p className="text-red-500 text-xs">{form.formState.errors.guarantor2PhoneNumber.message}</p>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="guarantor2Address">Physical Address</Label>
+                        <Textarea 
+                          id="guarantor2Address" 
+                          {...form.register("guarantor2Address")} 
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                        {form.formState.errors.guarantor2Address && (
+                          <p className="text-red-500 text-xs">{form.formState.errors.guarantor2Address.message}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Media & Documents Tab */}
+                <TabsContent value="media" className="space-y-4">
+                  <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-md border border-purple-100 dark:border-purple-900/50">
+                    <h3 className="text-lg font-medium text-purple-800 dark:text-purple-300 mb-2">Required Documentation</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Check the documents that have been collected from the client.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      {requiredDocuments.map((doc) => (
+                        <div key={doc.id} className="flex items-start space-x-3 p-3 bg-white dark:bg-gray-800 rounded-md">
+                          <Checkbox
+                            id={doc.id}
+                            onCheckedChange={(checked) => {
+                              form.setValue(doc.id as any, checked as boolean);
+                            }}
+                            className="mt-1"
+                          />
+                          <div>
+                            <Label 
+                              htmlFor={doc.id} 
+                              className="text-sm font-medium cursor-pointer"
+                            >
+                              {doc.label}
+                            </Label>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{doc.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-6 border-t border-purple-100 dark:border-purple-800 pt-4">
+                      <h4 className="text-md font-medium mb-3">Scanned Documents</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        {scannedDocuments.length > 0 ? scannedDocuments.map((doc) => (
+                          <Card key={doc.id} className="overflow-hidden">
+                            <AspectRatio ratio={4/3}>
+                              <img src={doc.url} alt={doc.name} className="object-cover w-full h-full" />
+                            </AspectRatio>
+                            <CardContent className="p-2">
+                              <p className="text-xs font-medium truncate">{doc.name}</p>
+                            </CardContent>
+                          </Card>
+                        )) : (
+                          <div className="col-span-3 flex flex-col items-center justify-center h-32 bg-gray-50 dark:bg-gray-800/50 rounded-md text-gray-500 dark:text-gray-400">
+                            <FileScan className="h-10 w-10 mb-2 opacity-40" />
+                            <p className="text-sm">No documents scanned yet</p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => triggerCapture('scan')} 
+                        className="w-full flex items-center justify-center gap-2"
+                      >
+                        <Upload className="h-4 w-4" /> Scan Document
+                      </Button>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Site Visit Tab */}
+                <TabsContent value="siteVisit" className="space-y-4">
+                  <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-md border border-purple-100 dark:border-purple-900/50">
+                    <h3 className="text-lg font-medium text-purple-800 dark:text-purple-300 mb-2">Site Visit Documentation</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Capture photos and videos of client's business or residence during site visit.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => triggerCapture('photo')} 
+                        className="flex items-center justify-center gap-2"
+                      >
+                        <Camera className="h-4 w-4" /> Take Photo
+                      </Button>
+                      
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => triggerCapture('video')} 
+                        className="flex items-center justify-center gap-2"
+                      >
+                        <Video className="h-4 w-4" /> Record Video
+                      </Button>
+                    </div>
+                    
+                    {/* Photos Section */}
+                    <div className="mb-6">
+                      <h4 className="text-md font-medium mb-3">Photos</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {capturedPhotos.length > 0 ? capturedPhotos.map((photo, index) => (
+                          <Card key={index} className="overflow-hidden">
+                            <AspectRatio ratio={1}>
+                              <img src={photo} alt={`Photo ${index + 1}`} className="object-cover w-full h-full" />
+                            </AspectRatio>
+                          </Card>
+                        )) : (
+                          <div className="col-span-4 flex flex-col items-center justify-center h-32 bg-gray-50 dark:bg-gray-800/50 rounded-md text-gray-500 dark:text-gray-400">
+                            <Camera className="h-10 w-10 mb-2 opacity-40" />
+                            <p className="text-sm">No photos taken yet</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Videos Section */}
+                    <div className="mb-6">
+                      <h4 className="text-md font-medium mb-3">Videos</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        {capturedVideos.length > 0 ? capturedVideos.map((video, index) => (
+                          <div key={index} className="overflow-hidden bg-gray-100 dark:bg-gray-800 rounded-md">
+                            <AspectRatio ratio={16/9}>
+                              <video 
+                                src={video} 
+                                className="w-full h-full" 
+                                controls 
+                              />
+                            </AspectRatio>
+                          </div>
+                        )) : (
+                          <div className="col-span-3 flex flex-col items-center justify-center h-32 bg-gray-50 dark:bg-gray-800/50 rounded-md text-gray-500 dark:text-gray-400">
+                            <Video className="h-10 w-10 mb-2 opacity-40" />
+                            <p className="text-sm">No videos recorded yet</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Communication with Office */}
+                    <div>
+                      <h4 className="text-md font-medium mb-3">Communication with Office</h4>
+                      <div className="bg-white dark:bg-gray-800 rounded-md p-3 mb-3 h-48 overflow-y-auto flex flex-col space-y-3">
+                        {messages.length > 0 ? messages.map((msg, index) => (
+                          <div 
+                            key={index} 
+                            className={`${
+                              msg.sender === "Field Officer" 
+                                ? "bg-purple-100 dark:bg-purple-900/30 ml-8" 
+                                : "bg-gray-100 dark:bg-gray-700 mr-8"
+                            } p-2 rounded-md`}
+                          >
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs font-semibold">{msg.sender}</span>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {new Date(msg.timestamp).toLocaleTimeString()}
+                              </span>
+                            </div>
+                            <p className="text-sm">{msg.message}</p>
+                          </div>
+                        )) : (
+                          <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                            <MessageSquare className="h-10 w-10 mb-2 opacity-40" />
+                            <p className="text-sm">No messages yet</p>
+                          </div>
+                        )}
+                        <div ref={messageEndRef} />
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Input 
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          placeholder="Type a message..."
+                          className="flex-1"
+                          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                        />
+                        <Button 
+                          type="button" 
+                          onClick={handleSendMessage} 
+                          size="icon"
+                          className="bg-purple-600 hover:bg-purple-700"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </TabsContent>
+                
+                {/* Review Tab */}
+                <TabsContent value="review" className="space-y-4">
+                  <div className="bg-purple-50 dark:bg-purple-950/20 p-4 rounded-md border border-purple-100 dark:border-purple-900/50">
+                    <h3 className="text-lg font-medium text-purple-800 dark:text-purple-300 mb-2">Application Review</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Applicant Information</h4>
+                        <Card className="bg-white dark:bg-gray-800">
+                          <CardContent className="p-4">
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Name:</span>
+                                <span className="text-sm font-medium">{form.getValues("fullName") || "N/A"}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">National ID:</span>
+                                <span className="text-sm font-medium">{form.getValues("nationalId") || "N/A"}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Phone Number:</span>
+                                <span className="text-sm font-medium">{form.getValues("phoneNumber") || "N/A"}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Loan Amount:</span>
+                                <span className="text-sm font-medium">{form.getValues("loanAmount") ? `UGX ${form.getValues("loanAmount")}` : "N/A"}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Loan Term:</span>
+                                <span className="text-sm font-medium">{form.getValues("loanTerm") ? `${form.getValues("loanTerm")} Months` : "N/A"}</span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-medium mb-2">Documentation Status</h4>
+                        <Card className="bg-white dark:bg-gray-800">
+                          <CardContent className="p-4">
+                            <div className="space-y-2">
+                              {requiredDocuments.map((doc) => (
+                                <div key={doc.id} className="flex justify-between items-center">
+                                  <span className="text-sm text-gray-500 dark:text-gray-400">{doc.label}:</span>
+                                  {form.getValues(doc.id as any) ? (
+                                    <Badge className="bg-green-500">Collected</Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-red-500 border-red-200 dark:border-red-900">Missing</Badge>
+                                  )}
+                                </div>
+                              ))}
+                              <div className="flex justify-between items-center mt-2">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Photos:</span>
+                                <Badge className={capturedPhotos.length > 0 ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"}>
+                                  {capturedPhotos.length}
+                                </Badge>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-500 dark:text-gray-400">Videos:</span>
+                                <Badge className={capturedVideos.length > 0 ? "bg-green-500" : "bg-gray-300 dark:bg-gray-600"}>
+                                  {capturedVideos.length}
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                    
+                    <h4 className="text-sm font-medium mb-2">Application Rating</h4>
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-md mb-4">
+                      <div className="flex items-center mb-3">
+                        <div className="flex mr-3">
+                          {getRatingStars(form.getValues("applicationRating") || 3)}
+                        </div>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          ({form.getValues("applicationRating") || 3}/5)
+                        </span>
+                      </div>
+                      
+                      <div className="mb-4">
+                        <Label htmlFor="applicationRating" className="mb-1 block">Adjust Rating</Label>
+                        <input 
+                          type="range" 
+                          min="1" 
+                          max="5" 
+                          step="0.5"
+                          value={form.getValues("applicationRating") || 3}
+                          onChange={(e) => form.setValue("applicationRating", parseFloat(e.target.value))}
+                          className="w-full h-2 bg-purple-200 rounded-lg appearance-none cursor-pointer dark:bg-purple-700"
+                        />
+                      </div>
+                      
+                      <div className="mb-4">
+                        <Label htmlFor="applicationNotes" className="mb-1 block">Application Notes</Label>
+                        <Textarea 
+                          id="applicationNotes" 
+                          {...form.register("applicationNotes")} 
+                          placeholder="Add any notes about this application..."
+                          className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="applicationStatus" className="mb-1 block">Application Status</Label>
+                        <div className="flex space-x-3">
+                          <div 
+                            onClick={() => form.setValue("applicationStatus", "pending")}
+                            className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-all ${
+                              form.getValues("applicationStatus") === "pending" 
+                                ? "border-purple-500 bg-purple-50 dark:bg-purple-900/20" 
+                                : "border-gray-200 dark:border-gray-700"
+                            }`}
+                          >
+                            <Clock className={`h-4 w-4 ${form.getValues("applicationStatus") === "pending" ? "text-purple-500" : "text-gray-400"}`} />
+                            <span className={form.getValues("applicationStatus") === "pending" ? "text-purple-700 dark:text-purple-300" : "text-gray-500"}>Pending</span>
+                          </div>
+                          
+                          <div 
+                            onClick={() => form.setValue("applicationStatus", "approved")}
+                            className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-all ${
+                              form.getValues("applicationStatus") === "approved" 
+                                ? "border-green-500 bg-green-50 dark:bg-green-900/20" 
+                                : "border-gray-200 dark:border-gray-700"
+                            }`}
+                          >
+                            <CheckCircle className={`h-4 w-4 ${form.getValues("applicationStatus") === "approved" ? "text-green-500" : "text-gray-400"}`} />
+                            <span className={form.getValues("applicationStatus") === "approved" ? "text-green-700 dark:text-green-300" : "text-gray-500"}>Approved</span>
+                          </div>
+                          
+                          <div 
+                            onClick={() => form.setValue("applicationStatus", "disapproved")}
+                            className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-all ${
+                              form.getValues("applicationStatus") === "disapproved" 
+                                ? "border-red-500 bg-red-50 dark:bg-red-900/20" 
+                                : "border-gray-200 dark:border-gray-700"
+                            }`}
+                          >
+                            <XCircle className={`h-4 w-4 ${form.getValues("applicationStatus") === "disapproved" ? "text-red-500" : "text-gray-400"}`} />
+                            <span className={form.getValues("applicationStatus") === "disapproved" ? "text-red-700 dark:text-red-300" : "text-gray-500"}>Disapproved</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      type="submit"
+                      className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                    >
+                      Submit Client Information
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
+              
+              <MediaInputs />
+            </form>
+          </ScrollArea>
+          
+          <DialogFooter className="mt-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              type="button"
+              onClick={form.handleSubmit(onSubmit)} 
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              Submit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default DataCollectionButton;
