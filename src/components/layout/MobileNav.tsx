@@ -44,7 +44,7 @@ const MobileNav = ({ brandText = "Gold Charp Investments", isOpen, onClose }: Mo
         {brandText}
       </Link>
       
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <ThemeToggle />
         
         <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
@@ -57,15 +57,17 @@ const MobileNav = ({ brandText = "Gold Charp Investments", isOpen, onClose }: Mo
               <Menu size={24} />
             </Button>
           </SheetTrigger>
-          <SheetContent>
+          <SheetContent className="w-[280px] sm:w-[350px]">
             <SheetHeader className="mb-6">
-              <SheetTitle>{brandText}</SheetTitle>
+              <SheetTitle className="text-xl">{brandText}</SheetTitle>
               <SheetDescription>Navigation</SheetDescription>
             </SheetHeader>
             
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-8 py-4">
               <NavLinks isMobile={true} onClick={handleActionComplete} />
-              <UserSection />
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
+                <UserSection />
+              </div>
             </div>
           </SheetContent>
         </Sheet>
