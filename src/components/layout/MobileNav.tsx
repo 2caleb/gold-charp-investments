@@ -1,24 +1,26 @@
 
-import React, { useState } from 'react';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Menu } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { X } from 'lucide-react';
 import NavLinks from './NavLinks';
 import UserSection from './UserSection';
 import { Link } from 'react-router-dom';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { ThemeToggle } from '../theme/ThemeToggle';
+import { Button } from '@/components/ui/button';
 
 // Props type for the MobileNav component
 interface MobileNavProps {
   brandText?: string;
-  isOpen?: boolean; 
+  isOpen?: boolean;
   onClose?: () => void;
 }
 
-const MobileNav = ({ brandText = "Gold Charp Investments", isOpen, onClose }: MobileNavProps) => {
-  const isMobile = useIsMobile();
-  const [sheetOpen, setSheetOpen] = useState(isOpen || false);
+const MobileNav = ({ brandText = "Gold Charp Investments", isOpen = false, onClose }: MobileNavProps) => {
+  const [sheetOpen, setSheetOpen] = useState(isOpen);
+  
+  // Update internal state when prop changes
+  useEffect(() => {
+    setSheetOpen(isOpen);
+  }, [isOpen]);
   
   const handleSheetOpenChange = (open: boolean) => {
     setSheetOpen(open);
@@ -36,43 +38,46 @@ const MobileNav = ({ brandText = "Gold Charp Investments", isOpen, onClose }: Mo
   };
 
   return (
-    <div className="lg:hidden flex justify-between items-center w-full">
-      <Link 
-        to="/" 
-        className="text-lg font-serif font-bold hover:text-purple-800 dark:hover:text-purple-400 transition-colors"
-      >
-        {brandText}
-      </Link>
-      
-      <div className="flex items-center gap-3">
-        <ThemeToggle />
-        
-        <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
-          <SheetTrigger asChild>
+    <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
+      <SheetContent className="w-[280px] sm:w-[320px]">
+        <SheetHeader className="mb-6">
+          <div className="flex justify-between items-center">
+            <SheetTitle className="text-xl font-serif text-purple-700 dark:text-purple-400">
+              Gold<span className="text-amber-500">Charp</span>
+            </SheetTitle>
             <Button 
               variant="ghost" 
-              className="px-2"
-              aria-label="Menu"
+              size="icon" 
+              onClick={() => handleSheetOpenChange(false)}
+              className="h-8 w-8 p-0"
             >
-              <Menu size={24} />
+              <X size={20} />
+              <span className="sr-only">Close</span>
             </Button>
-          </SheetTrigger>
-          <SheetContent className="w-[280px] sm:w-[350px]">
-            <SheetHeader className="mb-6">
-              <SheetTitle className="text-xl">{brandText}</SheetTitle>
-              <SheetDescription>Navigation</SheetDescription>
-            </SheetHeader>
-            
-            <div className="flex flex-col gap-8 py-4">
-              <NavLinks isMobile={true} onClick={handleActionComplete} />
-              <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
-                <UserSection />
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-      </div>
-    </div>
+          </div>
+          <SheetDescription>Navigation</SheetDescription>
+        </SheetHeader>
+        
+        <div className="flex flex-col gap-8 py-4">
+          <NavLinks 
+            isMobile={true} 
+            onClick={handleActionComplete} 
+            className="space-y-2" 
+          />
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
+            <UserSection />
+          </div>
+          
+          <Link 
+            to="/contact" 
+            className="mt-4 inline-flex items-center justify-center rounded-md bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700 px-4 py-2 text-sm font-medium text-white shadow transition-colors"
+            onClick={handleActionComplete}
+          >
+            Contact Us
+          </Link>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
 

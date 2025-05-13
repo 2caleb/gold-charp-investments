@@ -7,10 +7,9 @@ interface NavLinksProps {
   isMobile?: boolean;
   onClick?: () => void;
   className?: string;
-  onActionComplete?: () => void;
 }
 
-const NavLinks = ({ isMobile = false, onClick, className, onActionComplete }: NavLinksProps) => {
+const NavLinks = ({ isMobile = false, onClick, className }: NavLinksProps) => {
   const location = useLocation();
   
   const isActive = (path: string) => {
@@ -18,7 +17,7 @@ const NavLinks = ({ isMobile = false, onClick, className, onActionComplete }: Na
   };
 
   // Common classes for mobile and desktop links
-  const linkBaseClasses = 'font-medium transition-colors duration-300 flex items-center gap-1';
+  const linkBaseClasses = 'font-medium transition-colors duration-300 flex items-center gap-2';
   
   // Desktop-specific classes
   const desktopLinkClasses = `${linkBaseClasses} hover:scale-105 transform relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-purple-700 dark:after:bg-purple-400 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left`;
@@ -30,12 +29,11 @@ const NavLinks = ({ isMobile = false, onClick, className, onActionComplete }: Na
 
   const handleClick = () => {
     if (onClick) onClick();
-    if (onActionComplete) onActionComplete();
   };
 
   const containerClass = isMobile 
-    ? `flex flex-col gap-4 ${className || ""}` 
-    : `flex items-center gap-8 ${className || ""}`;
+    ? `flex flex-col ${className || ""}` 
+    : `hidden md:flex items-center space-x-8 ${className || ""}`;
 
   return (
     <div className={containerClass}>
@@ -44,7 +42,7 @@ const NavLinks = ({ isMobile = false, onClick, className, onActionComplete }: Na
         className={`${isActive('/')} ${linkClasses}`}
         onClick={handleClick}
       >
-        <Home size={18} />
+        <Home size={20} />
         <span>Home</span>
       </Link>
       <Link 
@@ -52,7 +50,7 @@ const NavLinks = ({ isMobile = false, onClick, className, onActionComplete }: Na
         className={`${isActive('/properties')} ${linkClasses}`}
         onClick={handleClick}
       >
-        <Building size={18} />
+        <Building size={20} />
         <span>Properties</span>
       </Link>
       <Link 
@@ -60,7 +58,7 @@ const NavLinks = ({ isMobile = false, onClick, className, onActionComplete }: Na
         className={`${isActive('/loans')} ${linkClasses}`}
         onClick={handleClick}
       >
-        <Building size={18} />
+        <Building size={20} />
         <span>Loans</span>
       </Link>
       <Link 
@@ -68,7 +66,7 @@ const NavLinks = ({ isMobile = false, onClick, className, onActionComplete }: Na
         className={`${isActive('/calculator')} ${linkClasses}`}
         onClick={handleClick}
       >
-        <Calculator size={18} />
+        <Calculator size={20} />
         <span>Calculator</span>
       </Link>
       <Link 
@@ -76,7 +74,7 @@ const NavLinks = ({ isMobile = false, onClick, className, onActionComplete }: Na
         className={`${isActive('/about')} ${linkClasses}`}
         onClick={handleClick}
       >
-        <Info size={18} />
+        <Info size={20} />
         <span>About Us</span>
       </Link>
     </div>
