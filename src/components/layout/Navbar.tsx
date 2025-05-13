@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ThemeToggle } from '../theme/ThemeToggle';
 import DesktopNav from './DesktopNav';
 import MobileNav from './MobileNav';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,9 +37,8 @@ const Navbar = () => {
         {/* Desktop Navigation */}
         <DesktopNav />
 
-        {/* Mobile menu button and theme toggle */}
+        {/* Mobile menu button */}
         <div className="md:hidden flex items-center">
-          <ThemeToggle />
           <Button
             onClick={() => setIsOpen(!isOpen)}
             variant="ghost"

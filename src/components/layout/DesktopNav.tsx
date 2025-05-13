@@ -3,7 +3,6 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileText } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from '../theme/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import NavLinks from './NavLinks';
@@ -46,8 +45,6 @@ const DesktopNav = () => {
       )}
       
       <div className="flex items-center space-x-6">
-        <ThemeToggle />
-        
         <Link to="/contact">
           <Button variant="default" size="sm" className="bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700 transition-transform duration-300 hover:scale-105">
             Contact Us
