@@ -12,6 +12,9 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   
+  // Get user's name from metadata if available
+  const userName = user?.user_metadata?.full_name || 'User';
+  
   // Add scroll event listener
   useEffect(() => {
     const handleScroll = () => {
@@ -70,7 +73,7 @@ const Navbar = () => {
           {isAuthenticated ? (
             <div className="flex items-center gap-2">
               <div className="text-sm font-medium text-purple-700 dark:text-purple-400">
-                Hello, {user?.fullName?.split(' ')[0]}
+                Hello, {userName.split(' ')[0]}
               </div>
               <Button 
                 variant="outline" 
@@ -159,7 +162,7 @@ const Navbar = () => {
               <>
                 <div className="px-4 py-2 text-sm font-medium text-purple-700 dark:text-purple-400 flex items-center gap-2">
                   <User size={16} />
-                  <span>{user?.fullName}</span>
+                  <span>{userName}</span>
                 </div>
                 <Button 
                   variant="outline" 
