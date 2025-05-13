@@ -7,12 +7,9 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCurrency(amount: number, currency: string = 'UGX'): string {
-  const formatter = new Intl.NumberFormat('en-UG', {
-    style: 'currency',
-    currency: currency === 'USD' ? 'USD' : 'UGX',
+  // Return the amount as a simple number with thousands separators but no currency symbol
+  return amount.toLocaleString('en-UG', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   });
-  
-  return formatter.format(amount);
 }

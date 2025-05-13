@@ -46,8 +46,6 @@ const properties = [
 const FeaturedProperties = () => {
   const formatPrice = (price: number) => {
     return price.toLocaleString('en-UG', {
-      style: 'currency',
-      currency: 'UGX',
       maximumFractionDigits: 0,
     });
   };

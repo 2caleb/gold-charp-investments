@@ -35,14 +35,12 @@ serve(async (req) => {
     );
   }
   
-  // Format currency helper function
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-UG', {
-      style: 'currency',
-      currency: 'UGX',
+  // Format numbers with thousands separators but no currency symbol
+  const formatNumber = (amount) => {
+    return parseFloat(amount).toLocaleString('en-UG', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(parseFloat(amount));
+    });
   };
   
   // Simple HTML response showing application details
@@ -91,9 +89,9 @@ serve(async (req) => {
         <div class="card">
           <h3>Loan Details</h3>
           <p>Loan Type: ${application.loan_type}</p>
-          <p>Loan Amount: ${formatCurrency(application.loan_amount)}</p>
+          <p>Loan Amount: ${formatNumber(application.loan_amount)}</p>
           <p>Employment: ${application.employment_status}</p>
-          <p>Monthly Income: ${formatCurrency(application.monthly_income)}</p>
+          <p>Monthly Income: ${formatNumber(application.monthly_income)}</p>
         </div>
       </div>
       
