@@ -1,62 +1,66 @@
 
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FileText } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState } from 'react';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Menu } from 'lucide-react';
 import NavLinks from './NavLinks';
 import UserSection from './UserSection';
+import { Link } from 'react-router-dom';
+import { useMobileDetect } from '@/hooks/use-mobile';
+import ThemeToggle from '../theme/ThemeToggle';
 
+// Props type for the MobileNav component
 interface MobileNavProps {
-  isOpen: boolean;
-  onClose: () => void;
+  brandText?: string;
 }
 
-const MobileNav = ({ isOpen, onClose }: MobileNavProps) => {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const handleDataCollectionClick = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "You need to login to access this feature.",
-        variant: "destructive",
-      });
-      navigate('/login');
-    } else {
-      navigate('/staff/data-collection');
-      onClose();
-    }
+const MobileNav = ({ brandText = "Gold Charp Investments" }: MobileNavProps) => {
+  const isMobile = useMobileDetect();
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const handleSheetOpenChange = (open: boolean) => {
+    setIsOpen(open);
   };
   
-  if (!isOpen) return null;
-  
+  const handleActionComplete = () => {
+    // Close the mobile menu when an action is completed
+    setIsOpen(false);
+  };
+
   return (
-    <div className="md:hidden py-4 px-4 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 animate-fade-in">
-      <div className="flex flex-col space-y-4">
-        <NavLinks isMobile onClick={onClose} />
+    <div className="lg:hidden flex justify-between items-center w-full">
+      <Link 
+        to="/" 
+        className="text-lg font-serif font-bold hover:text-purple-800 dark:hover:text-purple-400 transition-colors"
+      >
+        {brandText}
+      </Link>
+      
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
         
-        {/* Show Data Collection button in mobile menu for authenticated users */}
-        {isAuthenticated && (
-          <button
-            onClick={handleDataCollectionClick}
-            className="font-medium px-4 py-2 text-left rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300 flex items-center gap-2"
-          >
-            <FileText size={18} />
-            <span>Data Collection</span>
-          </button>
-        )}
-        
-        <Link to="/contact" className="w-full" onClick={onClose}>
-          <Button variant="default" className="bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700 w-full transition-transform duration-300 hover:scale-105">
-            Contact Us
-          </Button>
-        </Link>
-        
-        <UserSection isMobile onActionComplete={onClose} />
+        <Sheet open={isOpen} onOpenChange={handleSheetOpenChange}>
+          <SheetTrigger asChild>
+            <Button 
+              variant="ghost" 
+              className="px-2"
+              aria-label="Menu"
+            >
+              <Menu size={24} />
+            </Button>
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader className="mb-6">
+              <SheetTitle>{brandText}</SheetTitle>
+              <SheetDescription>Navigation</SheetDescription>
+            </SheetHeader>
+            
+            <div className="flex flex-col gap-6">
+              <NavLinks className="flex flex-col gap-4" onActionComplete={handleActionComplete} />
+              <UserSection onActionComplete={handleActionComplete} />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   );

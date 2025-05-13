@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -52,6 +51,7 @@ const DataCollectionButton = () => {
   });
   const { toast } = useToast();
   const { user } = useAuth();
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Initialize form with react-hook-form
   const form = useForm<FormValues>({
@@ -185,7 +185,237 @@ const DataCollectionButton = () => {
   };
   
   const handlePrint = () => {
-    window.print();
+    // Create a new print window with the entire form content
+    const printWindow = window.open('', '_blank');
+    
+    if (!printWindow) {
+      toast({
+        title: "Print Error",
+        description: "Unable to open print window. Please check your browser settings.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Get the current form values
+    const values = form.getValues();
+    
+    // Format currency values for display
+    const formattedLoanAmount = values.loanAmount && !isNaN(Number(values.loanAmount)) 
+      ? formatCurrency(Number(values.loanAmount), 'UGX')
+      : values.loanAmount;
+      
+    const formattedMonthlyIncome = values.monthlyIncome && !isNaN(Number(values.monthlyIncome)) 
+      ? formatCurrency(Number(values.monthlyIncome), 'UGX')
+      : values.monthlyIncome;
+    
+    // Build HTML content for the print window
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <title>Loan Application Form - ${values.clientName || 'Client'}</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #8A2BE2;
+            padding-bottom: 10px;
+          }
+          .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8A2BE2;
+          }
+          .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+          }
+          .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #8A2BE2;
+          }
+          .field {
+            margin-bottom: 10px;
+          }
+          .field-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 200px;
+          }
+          .field-value {
+            display: inline-block;
+          }
+          .media-section {
+            margin-top: 20px;
+          }
+          .media-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+          }
+          .media-item {
+            max-width: 200px;
+            max-height: 200px;
+            border: 1px solid #ddd;
+          }
+          @media print {
+            .media-item {
+              break-inside: avoid;
+            }
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+          }
+          .signatures {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+          }
+          .signature-line {
+            width: 200px;
+            border-bottom: 1px solid #000;
+            margin-bottom: 5px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company-name">Gold Charp Investments Limited</div>
+          <div>Loan Application Form</div>
+          <div>Date: ${new Date().toLocaleDateString()}</div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Personal Information</div>
+          <div class="field">
+            <span class="field-label">Client Name:</span>
+            <span class="field-value">${values.clientName || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Phone Number:</span>
+            <span class="field-value">${values.phoneNumber || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">ID Number:</span>
+            <span class="field-value">${values.idNumber || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Residential Address:</span>
+            <span class="field-value">${values.address || 'N/A'}</span>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Loan Information</div>
+          <div class="field">
+            <span class="field-label">Loan Type:</span>
+            <span class="field-value">${values.loanType ? values.loanType.charAt(0).toUpperCase() + values.loanType.slice(1) + ' Loan' : 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Loan Amount:</span>
+            <span class="field-value">${formattedLoanAmount || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Purpose of Loan:</span>
+            <span class="field-value">${values.purposeOfLoan || 'N/A'}</span>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Financial Information</div>
+          <div class="field">
+            <span class="field-label">Employment Status:</span>
+            <span class="field-value">${values.employmentStatus ? values.employmentStatus.charAt(0).toUpperCase() + values.employmentStatus.slice(1) : 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Monthly Income:</span>
+            <span class="field-value">${formattedMonthlyIncome || 'N/A'}</span>
+          </div>
+        </div>
+        
+        ${values.notes ? `
+        <div class="section">
+          <div class="section-title">Additional Notes</div>
+          <div class="field">
+            <span class="field-value">${values.notes}</span>
+          </div>
+        </div>
+        ` : ''}
+        
+        ${capturedMedia.photos.length > 0 || capturedMedia.videos.length > 0 || capturedMedia.documents.length > 0 ? `
+        <div class="section media-section">
+          <div class="section-title">Attached Media</div>
+          
+          ${capturedMedia.photos.length > 0 ? `
+          <div class="field">
+            <div class="field-label">Photos:</div>
+            <div class="media-container">
+              ${capturedMedia.photos.map((photo, index) => `
+                <img src="${photo}" alt="Photo ${index + 1}" class="media-item">
+              `).join('')}
+            </div>
+          </div>
+          ` : ''}
+          
+          ${capturedMedia.documents.length > 0 ? `
+          <div class="field">
+            <div class="field-label">Documents:</div>
+            <div class="media-container">
+              ${capturedMedia.documents.map((doc, index) => `
+                <img src="${doc}" alt="Document ${index + 1}" class="media-item">
+              `).join('')}
+            </div>
+          </div>
+          ` : ''}
+        </div>
+        ` : ''}
+        
+        <div class="signatures">
+          <div>
+            <div class="signature-line"></div>
+            <div>Client Signature</div>
+          </div>
+          <div>
+            <div class="signature-line"></div>
+            <div>Officer Signature</div>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>Gold Charp Investments Limited &copy; ${new Date().getFullYear()}. All rights reserved.</p>
+          <p>This document is confidential and contains private information.</p>
+        </div>
+        
+        <script>
+          window.onload = function() {
+            window.print();
+            // Uncomment below if you want the window to close after printing
+            // setTimeout(function() { window.close(); }, 500);
+          }
+        </script>
+      </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    
     toast({
       title: "Printing",
       description: "Sending document to printer...",
@@ -289,7 +519,7 @@ const DataCollectionButton = () => {
           
           {!showCamera && !showVideoCamera && !showScanner && (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Personal Information Section */}
                   <Card>
