@@ -15,7 +15,11 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { User, ArrowRight, ClipboardCheck, FileImage, User as UserIcon, Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 // Form schema definition
 const formSchema = z.object({
@@ -117,14 +121,16 @@ const DataCollectionButton = () => {
   const [currentTab, setCurrentTab] = useState("client");
   const [applicationStatus, setApplicationStatus] = useState(20); // Initial status percentage
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
-  // Define the application statuses
+  // Define the application statuses with visual indicators
   const applicationStatuses = [
-    { name: "Submitted", completed: true },
-    { name: "Under Review", completed: false },
-    { name: "Pending Approval", completed: false },
-    { name: "Approved", completed: false },
-    { name: "Disbursed", completed: false },
+    { name: "Client Details", step: "client", icon: <UserIcon className="h-4 w-4" />, completed: applicationStatus >= 20 },
+    { name: "Guarantors", step: "guarantor1", icon: <User className="h-4 w-4" />, completed: applicationStatus >= 40 },
+    { name: "Documentation", step: "media", icon: <FileImage className="h-4 w-4" />, completed: applicationStatus >= 80 },
+    { name: "Review", step: "review", icon: <ClipboardCheck className="h-4 w-4" />, completed: applicationStatus >= 100 },
+    { name: "Submit", step: "submit", icon: <Send className="h-4 w-4" />, completed: applicationStatus >= 100 },
   ];
   
   // Form definition
@@ -172,13 +178,39 @@ const DataCollectionButton = () => {
   });
 
   // Submit handler
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
-    toast({
-      title: "Client information collected",
-      description: "The information has been submitted successfully.",
-    });
-    setOpen(false);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "You must be logged in to submit client data.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log("Form values:", values);
+      
+      // In a real application, you would submit this data to your backend or Supabase
+      toast({
+        title: "Client information collected",
+        description: "The information has been submitted and sent for manager review.",
+      });
+      
+      // Close the dialog and redirect to the dashboard
+      setOpen(false);
+      
+      // Navigate to the dashboard after submission
+      navigate('/staff/data-collection');
+      
+    } catch (error: any) {
+      console.error("Error submitting form:", error);
+      toast({
+        title: "Submission failed",
+        description: error.message || "An error occurred while submitting the form.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Required documents list with descriptions
@@ -230,10 +262,8 @@ const DataCollectionButton = () => {
         setApplicationStatus(20);
         break;
       case "guarantor1":
-        setApplicationStatus(40);
-        break;
       case "guarantor2":
-        setApplicationStatus(60);
+        setApplicationStatus(40);
         break;
       case "media":
         setApplicationStatus(80);
@@ -243,6 +273,47 @@ const DataCollectionButton = () => {
         break;
     }
   };
+
+  // Visual onboarding process
+  const OnboardingProcess = () => (
+    <div className="mb-6 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+      <div className="mb-2">
+        <h4 className="text-sm font-medium mb-1">Client Onboarding Process</h4>
+        <Progress value={applicationStatus} className="h-2" />
+      </div>
+      
+      <div className="mt-4 grid grid-cols-5 gap-1 text-center">
+        {applicationStatuses.map((status, index) => (
+          <div 
+            key={index} 
+            className={`text-xs p-2 rounded flex flex-col items-center justify-center transition-all duration-300 
+              ${status.completed 
+                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300' 
+                : 'bg-gray-100 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400'}`}
+          >
+            <div className={`rounded-full p-1 mb-1 ${status.completed 
+              ? 'bg-purple-200 dark:bg-purple-800' 
+              : 'bg-gray-200 dark:bg-gray-600'}`}>
+              {status.icon}
+            </div>
+            <span>{status.name}</span>
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+          <span>Field Officer</span>
+          <ArrowRight size={12} className="text-gray-400" />
+          <span>Manager</span>
+          <ArrowRight size={12} className="text-gray-400" />
+          <span>Director</span>
+          <ArrowRight size={12} className="text-gray-400" />
+          <span>CEO</span>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -259,32 +330,28 @@ const DataCollectionButton = () => {
           </DialogDescription>
         </DialogHeader>
         
-        {/* Application Status */}
-        <div className="mb-4 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-          <div className="mb-2 flex justify-between items-center">
-            <h3 className="text-sm font-medium">Application Progress</h3>
-            <span className="text-xs text-gray-500">{applicationStatus}% Complete</span>
-          </div>
-          <Progress value={applicationStatus} className="h-2" />
-          
-          <div className="mt-4 grid grid-cols-5 gap-1">
-            {applicationStatuses.map((status, index) => (
-              <div key={index} className={`text-xs text-center p-1 rounded ${index === 0 ? 'bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400'}`}>
-                {status.name}
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Onboarding Process Visualization */}
+        <OnboardingProcess />
         
         <ScrollArea className="flex-grow pr-4">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
             <Tabs defaultValue="client" className="w-full" onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="client">1. Client Details</TabsTrigger>
-                <TabsTrigger value="guarantor1">2. First Guarantor</TabsTrigger>
-                <TabsTrigger value="guarantor2">3. Second Guarantor</TabsTrigger>
-                <TabsTrigger value="media">4. Documentation</TabsTrigger>
-                <TabsTrigger value="review">5. Review & Submit</TabsTrigger>
+                <TabsTrigger value="client" className="flex items-center gap-1">
+                  <UserIcon className="h-4 w-4" /> Client
+                </TabsTrigger>
+                <TabsTrigger value="guarantor1" className="flex items-center gap-1">
+                  <User className="h-4 w-4" /> Guarantor 1
+                </TabsTrigger>
+                <TabsTrigger value="guarantor2" className="flex items-center gap-1">
+                  <User className="h-4 w-4" /> Guarantor 2
+                </TabsTrigger>
+                <TabsTrigger value="media" className="flex items-center gap-1">
+                  <FileImage className="h-4 w-4" /> Documents
+                </TabsTrigger>
+                <TabsTrigger value="review" className="flex items-center gap-1">
+                  <ClipboardCheck className="h-4 w-4" /> Review
+                </TabsTrigger>
               </TabsList>
               
               {/* Client Details Tab */}
@@ -806,10 +873,56 @@ const DataCollectionButton = () => {
               <TabsContent value="review" className="space-y-4">
                 <div className="space-y-6">
                   <div className="rounded-md bg-gray-50 dark:bg-gray-800 p-4">
-                    <h3 className="text-lg font-semibold mb-2 text-purple-700 dark:text-purple-400">Application Summary</h3>
+                    <h3 className="text-lg font-semibold mb-2 text-purple-700 dark:text-purple-400 flex items-center">
+                      <ClipboardCheck className="mr-2" size={20} /> Application Summary
+                    </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Please review all the information before submitting your application.
+                      Please review all the information before submitting your application. After submission:
                     </p>
+                    
+                    {/* Workflow visualization */}
+                    <div className="mb-6 p-3 bg-white dark:bg-gray-900 rounded-md shadow-sm">
+                      <h4 className="font-medium text-sm mb-3">Approval Workflow</h4>
+                      <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0">
+                        <div className="flex flex-col items-center text-center">
+                          <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full w-10 h-10 flex items-center justify-center">
+                            <UserIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <span className="text-xs mt-1">Field Officer</span>
+                          <span className="text-xs text-purple-600 dark:text-purple-400">Submission</span>
+                        </div>
+                        
+                        <ArrowRight className="hidden md:block mx-2 text-gray-400" />
+                        
+                        <div className="flex flex-col items-center text-center">
+                          <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full w-10 h-10 flex items-center justify-center">
+                            <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <span className="text-xs mt-1">Manager</span>
+                          <span className="text-xs text-blue-600 dark:text-blue-400">Initial Review</span>
+                        </div>
+                        
+                        <ArrowRight className="hidden md:block mx-2 text-gray-400" />
+                        
+                        <div className="flex flex-col items-center text-center">
+                          <div className="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full w-10 h-10 flex items-center justify-center">
+                            <User className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                          <span className="text-xs mt-1">Director</span>
+                          <span className="text-xs text-indigo-600 dark:text-indigo-400">Due Diligence</span>
+                        </div>
+                        
+                        <ArrowRight className="hidden md:block mx-2 text-gray-400" />
+                        
+                        <div className="flex flex-col items-center text-center">
+                          <div className="bg-green-100 dark:bg-green-900 p-2 rounded-full w-10 h-10 flex items-center justify-center">
+                            <User className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          </div>
+                          <span className="text-xs mt-1">CEO</span>
+                          <span className="text-xs text-green-600 dark:text-green-400">Final Approval</span>
+                        </div>
+                      </div>
+                    </div>
                     
                     <div className="space-y-4">
                       <div className="p-3 bg-white dark:bg-gray-900 rounded-md shadow-sm">
@@ -853,8 +966,14 @@ const DataCollectionButton = () => {
                       </div>
                     </div>
                     
-                    <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                      By submitting this application, you confirm that all information provided is accurate and complete.
+                    <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-md">
+                      <p className="font-medium mb-1 text-yellow-700 dark:text-yellow-400">What happens next?</p>
+                      <ol className="list-decimal pl-5 space-y-1 text-yellow-800 dark:text-yellow-300">
+                        <li>Your application will be reviewed by a manager within 1-2 business days</li>
+                        <li>The application will then go to a director for due diligence assessment</li>
+                        <li>Final approval is granted by the CEO</li>
+                        <li>You will receive updates on each step of the process</li>
+                      </ol>
                     </div>
                   </div>
                 </div>

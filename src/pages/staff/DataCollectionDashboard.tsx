@@ -15,9 +15,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DataCollectionButton from '@/components/loans/DataCollectionButton';
-import { useToast } from '@/components/ui/use-toast';
-import { Shield, ClipboardCheck, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  ClipboardCheck, 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  User,
+  Users,
+  Briefcase,
+  ArrowRight,
+  BadgeCheck
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
 
 // Types for client data and its statuses
 type ClientDataStatus = 'pending' | 'manager_reviewing' | 'director_reviewing' | 'ceo_reviewing' | 'approved' | 'rejected';
@@ -90,6 +101,9 @@ const DataCollectionDashboard = () => {
   useEffect(() => {
     if (user?.user_metadata?.role) {
       setUserRole(user.user_metadata.role);
+    } else {
+      // Default role for authenticated users without specific role
+      setUserRole('field_officer');
     }
   }, [user]);
 
@@ -148,7 +162,7 @@ const DataCollectionDashboard = () => {
           item.status === 'rejected'
         );
       default:
-        return [];
+        return clientData;
     }
   };
 
@@ -238,86 +252,172 @@ const DataCollectionDashboard = () => {
   const getStatusBadge = (status: ClientDataStatus) => {
     switch (status) {
       case 'pending':
-        return <span className="px-2 py-1 rounded text-xs bg-yellow-100 text-yellow-800">Pending</span>;
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/50">Pending</Badge>;
       case 'manager_reviewing':
-        return <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">Manager Review</span>;
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50">Manager Review</Badge>;
       case 'director_reviewing':
-        return <span className="px-2 py-1 rounded text-xs bg-purple-100 text-purple-800">Director Review</span>;
+        return <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800/50">Director Review</Badge>;
       case 'ceo_reviewing':
-        return <span className="px-2 py-1 rounded text-xs bg-indigo-100 text-indigo-800">CEO Review</span>;
+        return <Badge variant="outline" className="bg-indigo-100 text-indigo-800 border-indigo-300 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800/50">CEO Review</Badge>;
       case 'approved':
-        return <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">Approved</span>;
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50">Approved</Badge>;
       case 'rejected':
-        return <span className="px-2 py-1 rounded text-xs bg-red-100 text-red-800">Rejected</span>;
+        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50">Rejected</Badge>;
       default:
-        return <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-800">Unknown</span>;
+        return <Badge variant="outline" className="bg-gray-100 text-gray-800">Unknown</Badge>;
     }
   };
+
+  // Get current role display
+  const getRoleDisplay = () => {
+    switch (userRole) {
+      case 'field_officer':
+        return (
+          <div className="flex items-center bg-blue-50 dark:bg-blue-950/40 px-3 py-2 rounded-md">
+            <Briefcase className="text-blue-600 dark:text-blue-400 mr-2" size={18} />
+            <span className="text-blue-700 dark:text-blue-400 font-medium">Field Officer</span>
+            <BadgeCheck className="ml-2 text-blue-500 dark:text-blue-400" size={16} />
+          </div>
+        );
+      case 'manager':
+        return (
+          <div className="flex items-center bg-purple-50 dark:bg-purple-950/40 px-3 py-2 rounded-md">
+            <Briefcase className="text-purple-600 dark:text-purple-400 mr-2" size={18} />
+            <span className="text-purple-700 dark:text-purple-400 font-medium">Manager</span>
+            <BadgeCheck className="ml-2 text-purple-500 dark:text-purple-400" size={16} />
+          </div>
+        );
+      case 'director':
+        return (
+          <div className="flex items-center bg-indigo-50 dark:bg-indigo-950/40 px-3 py-2 rounded-md">
+            <Briefcase className="text-indigo-600 dark:text-indigo-400 mr-2" size={18} />
+            <span className="text-indigo-700 dark:text-indigo-400 font-medium">Director</span>
+            <BadgeCheck className="ml-2 text-indigo-500 dark:text-indigo-400" size={16} />
+          </div>
+        );
+      case 'ceo':
+        return (
+          <div className="flex items-center bg-green-50 dark:bg-green-950/40 px-3 py-2 rounded-md">
+            <Briefcase className="text-green-600 dark:text-green-400 mr-2" size={18} />
+            <span className="text-green-700 dark:text-green-400 font-medium">CEO</span>
+            <BadgeCheck className="ml-2 text-green-500 dark:text-green-400" size={16} />
+          </div>
+        );
+      default:
+        return (
+          <div className="flex items-center bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-md">
+            <User className="text-gray-600 dark:text-gray-400 mr-2" size={18} />
+            <span className="text-gray-700 dark:text-gray-400 font-medium">Authenticated User</span>
+            <BadgeCheck className="ml-2 text-gray-500 dark:text-gray-400" size={16} />
+          </div>
+        );
+    }
+  };
+  
+  // Render workflow visualization
+  const WorkflowVisualization = () => (
+    <Card className="mb-8">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl font-bold flex items-center">
+          <ClipboardCheck className="mr-2" size={20} />
+          Client Data Workflow
+        </CardTitle>
+        <CardDescription>
+          Client data goes through a structured approval process from collection to final decision.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap lg:flex-nowrap items-center justify-between gap-4 text-center">
+          {/* Step 1: Field Officer */}
+          <div className="flex flex-col items-center min-w-[120px] relative">
+            <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center mb-2">
+              <ClipboardCheck className="text-blue-600 dark:text-blue-400" />
+            </div>
+            <h3 className="font-medium">Field Officer</h3>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <div>Data Collection</div>
+              <div className="text-blue-600 dark:text-blue-500 font-medium mt-1">Client Details</div>
+            </div>
+            <div className="hidden lg:block absolute top-6 -right-4 z-10">
+              <ArrowRight className="text-gray-400" size={16} />
+            </div>
+          </div>
+          
+          {/* Step 1.5: Onboarding Details */}
+          <div className="flex-1 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-md min-w-[200px] lg:mx-2">
+            <h4 className="font-medium text-sm mb-2 text-blue-600 dark:text-blue-400">Onboarding & Due Diligence</h4>
+            <ul className="text-xs text-left space-y-1">
+              <li className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 mr-2"></div>
+                <span>Client Personal Details</span>
+              </li>
+              <li className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 mr-2"></div>
+                <span>Guarantors Information</span>
+              </li>
+              <li className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 mr-2"></div>
+                <span>Documentation Verification</span>
+              </li>
+              <li className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 mr-2"></div>
+                <span>Loan Details & Requirements</span>
+              </li>
+            </ul>
+          </div>
+          
+          {/* Step 2: Manager */}
+          <div className="flex flex-col items-center min-w-[120px] relative">
+            <div className="bg-purple-50 dark:bg-purple-950 p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center mb-2">
+              <Users className="text-purple-600 dark:text-purple-400" />
+            </div>
+            <h3 className="font-medium">Manager</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Initial Review</p>
+            <div className="hidden lg:block absolute top-6 -right-4 z-10">
+              <ArrowRight className="text-gray-400" size={16} />
+            </div>
+          </div>
+          
+          {/* Step 3: Director */}
+          <div className="flex flex-col items-center min-w-[120px] relative">
+            <div className="bg-indigo-50 dark:bg-indigo-950 p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center mb-2">
+              <Users className="text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <h3 className="font-medium">Director</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Risk Assessment</p>
+            <div className="hidden lg:block absolute top-6 -right-4 z-10">
+              <ArrowRight className="text-gray-400" size={16} />
+            </div>
+          </div>
+          
+          {/* Step 4: CEO */}
+          <div className="flex flex-col items-center min-w-[120px]">
+            <div className="bg-green-50 dark:bg-green-950 p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center mb-2">
+              <Users className="text-green-600 dark:text-green-400" />
+            </div>
+            <h3 className="font-medium">CEO</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Final Approval</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold">Client Data Collection Dashboard</h1>
-            <p className="text-gray-600">
-              {userRole && (
-                <span className="flex items-center mt-2">
-                  <Shield className="mr-2" size={18} />
-                  Role: <span className="font-semibold ml-1 capitalize">{userRole.replace('_', ' ')}</span>
-                </span>
-              )}
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              {getRoleDisplay()}
             </p>
           </div>
           
-          {userRole === 'field_officer' && (
-            <DataCollectionButton />
-          )}
+          <DataCollectionButton />
         </div>
         
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Workflow Process</CardTitle>
-            <CardDescription>
-              Client data goes through a multi-step approval workflow from Field Officer to CEO.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap items-center justify-between gap-4 text-center">
-              <div className="flex-1 min-w-[120px]">
-                <div className="bg-blue-50 dark:bg-blue-950 p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center mb-2">
-                  <ClipboardCheck className="text-blue-600 dark:text-blue-400" />
-                </div>
-                <h3 className="font-medium">Field Officer</h3>
-                <p className="text-xs text-gray-500">Collects Data</p>
-              </div>
-              <div className="hidden md:block text-gray-400">→</div>
-              <div className="flex-1 min-w-[120px]">
-                <div className="bg-purple-50 dark:bg-purple-950 p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center mb-2">
-                  <CheckCircle className="text-purple-600 dark:text-purple-400" />
-                </div>
-                <h3 className="font-medium">Manager</h3>
-                <p className="text-xs text-gray-500">Reviews Data</p>
-              </div>
-              <div className="hidden md:block text-gray-400">→</div>
-              <div className="flex-1 min-w-[120px]">
-                <div className="bg-indigo-50 dark:bg-indigo-950 p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center mb-2">
-                  <CheckCircle className="text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <h3 className="font-medium">Director</h3>
-                <p className="text-xs text-gray-500">Further Review</p>
-              </div>
-              <div className="hidden md:block text-gray-400">→</div>
-              <div className="flex-1 min-w-[120px]">
-                <div className="bg-green-50 dark:bg-green-950 p-3 rounded-full w-12 h-12 mx-auto flex items-center justify-center mb-2">
-                  <CheckCircle className="text-green-600 dark:text-green-400" />
-                </div>
-                <h3 className="font-medium">CEO</h3>
-                <p className="text-xs text-gray-500">Final Approval</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <WorkflowVisualization />
         
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="mb-4">
