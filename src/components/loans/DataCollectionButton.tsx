@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -5,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, Form } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormDescription, Form, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -19,7 +20,7 @@ import { MediaCapture } from '@/components/media/MediaCapture';
 import { DocumentScanner } from '@/components/media/DocumentScanner';
 import { formatCurrency } from '@/lib/utils';
 
-// Define the form schema
+// Define the form schema with guarantors
 const formSchema = z.object({
   clientName: z.string().min(2, "Client name must be at least 2 characters"),
   phoneNumber: z.string().min(10, "Please enter a valid phone number"),
@@ -27,10 +28,23 @@ const formSchema = z.object({
   address: z.string().min(5, "Address is required"),
   loanType: z.string().min(1, "Please select a loan type"),
   loanAmount: z.string().min(1, "Loan amount is required"),
+  loanDuration: z.string().min(1, "Loan duration is required"),
   purposeOfLoan: z.string().min(10, "Please provide more details about the purpose"),
   employmentStatus: z.string().min(1, "Please select employment status"),
   monthlyIncome: z.string().min(1, "Monthly income is required"),
   notes: z.string().optional(),
+  // First Guarantor
+  guarantor1Name: z.string().min(2, "Guarantor name must be at least 2 characters"),
+  guarantor1Phone: z.string().min(10, "Please enter a valid phone number"),
+  guarantor1IdNumber: z.string().min(5, "ID number is required"),
+  guarantor1Address: z.string().min(5, "Address is required"),
+  guarantor1Relationship: z.string().min(2, "Relationship is required"),
+  // Second Guarantor
+  guarantor2Name: z.string().min(2, "Guarantor name must be at least 2 characters"),
+  guarantor2Phone: z.string().min(10, "Please enter a valid phone number"),
+  guarantor2IdNumber: z.string().min(5, "ID number is required"),
+  guarantor2Address: z.string().min(5, "Address is required"),
+  guarantor2Relationship: z.string().min(2, "Relationship is required"),
 });
 
 // Create a type from the schema
@@ -49,6 +63,13 @@ const DataCollectionButton = () => {
     videos: [],
     documents: []
   });
+  const [loanRepaymentInfo, setLoanRepaymentInfo] = useState({
+    interestRate: 18, // 18% interest rate
+    monthlyPayment: 0,
+    totalInterest: 0,
+    totalRepayment: 0
+  });
+
   const { toast } = useToast();
   const { user } = useAuth();
   const formRef = useRef<HTMLFormElement>(null);
@@ -63,10 +84,21 @@ const DataCollectionButton = () => {
       address: "",
       loanType: "",
       loanAmount: "",
+      loanDuration: "12", // Default to 12 months
       purposeOfLoan: "",
       employmentStatus: "",
       monthlyIncome: "",
       notes: "",
+      guarantor1Name: "",
+      guarantor1Phone: "",
+      guarantor1IdNumber: "",
+      guarantor1Address: "",
+      guarantor1Relationship: "",
+      guarantor2Name: "",
+      guarantor2Phone: "",
+      guarantor2IdNumber: "",
+      guarantor2Address: "",
+      guarantor2Relationship: "",
     },
   });
   
@@ -85,6 +117,30 @@ const DataCollectionButton = () => {
     
     return progress;
   };
+  
+  // Calculate loan repayment details whenever loan amount or duration changes
+  useEffect(() => {
+    const loanAmount = parseFloat(form.watch("loanAmount")) || 0;
+    const loanDuration = parseInt(form.watch("loanDuration")) || 12;
+    
+    if (loanAmount > 0 && loanDuration > 0) {
+      // Simple interest calculation: P * r * t
+      const principal = loanAmount;
+      const annualRate = loanRepaymentInfo.interestRate / 100;
+      const timeYears = loanDuration / 12;
+      
+      const totalInterest = principal * annualRate * timeYears;
+      const totalRepayment = principal + totalInterest;
+      const monthlyPayment = totalRepayment / loanDuration;
+      
+      setLoanRepaymentInfo({
+        ...loanRepaymentInfo,
+        monthlyPayment,
+        totalInterest,
+        totalRepayment
+      });
+    }
+  }, [form.watch("loanAmount"), form.watch("loanDuration")]);
   
   // Watch form values to update progress
   React.useEffect(() => {
@@ -121,7 +177,30 @@ const DataCollectionButton = () => {
           purpose_of_loan: values.purposeOfLoan,
           employment_status: values.employmentStatus,
           monthly_income: values.monthlyIncome,
-          notes: values.notes || null,
+          notes: JSON.stringify({
+            general: values.notes || null,
+            loanDuration: values.loanDuration,
+            guarantor1: {
+              name: values.guarantor1Name,
+              phone: values.guarantor1Phone,
+              idNumber: values.guarantor1IdNumber,
+              address: values.guarantor1Address,
+              relationship: values.guarantor1Relationship
+            },
+            guarantor2: {
+              name: values.guarantor2Name,
+              phone: values.guarantor2Phone,
+              idNumber: values.guarantor2IdNumber,
+              address: values.guarantor2Address,
+              relationship: values.guarantor2Relationship
+            },
+            loanCalculation: {
+              interestRate: loanRepaymentInfo.interestRate,
+              monthlyPayment: loanRepaymentInfo.monthlyPayment,
+              totalInterest: loanRepaymentInfo.totalInterest,
+              totalRepayment: loanRepaymentInfo.totalRepayment
+            }
+          }),
           created_by: user.id,
           status: 'submitted',
           current_approver: user.id, // Initially set to the submitter
@@ -208,6 +287,10 @@ const DataCollectionButton = () => {
     const formattedMonthlyIncome = values.monthlyIncome && !isNaN(Number(values.monthlyIncome)) 
       ? formatCurrency(Number(values.monthlyIncome), 'UGX')
       : values.monthlyIncome;
+      
+    const formattedMonthlyPayment = formatCurrency(loanRepaymentInfo.monthlyPayment, 'UGX');
+    const formattedTotalRepayment = formatCurrency(loanRepaymentInfo.totalRepayment, 'UGX');
+    const formattedTotalInterest = formatCurrency(loanRepaymentInfo.totalInterest, 'UGX');
     
     // Build HTML content for the print window
     printWindow.document.write(`
@@ -293,6 +376,16 @@ const DataCollectionButton = () => {
             border-bottom: 1px solid #000;
             margin-bottom: 5px;
           }
+          .loan-calculations {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+          }
+          .highlight {
+            color: #8A2BE2;
+            font-weight: bold;
+          }
         </style>
       </head>
       <body>
@@ -333,8 +426,28 @@ const DataCollectionButton = () => {
             <span class="field-value">${formattedLoanAmount || 'N/A'}</span>
           </div>
           <div class="field">
+            <span class="field-label">Loan Duration:</span>
+            <span class="field-value">${values.loanDuration || 'N/A'} months</span>
+          </div>
+          <div class="field">
             <span class="field-label">Purpose of Loan:</span>
             <span class="field-value">${values.purposeOfLoan || 'N/A'}</span>
+          </div>
+          
+          <div class="loan-calculations">
+            <div class="section-title">Loan Calculations (${loanRepaymentInfo.interestRate}% Interest Rate)</div>
+            <div class="field">
+              <span class="field-label">Monthly Payment:</span>
+              <span class="field-value highlight">${formattedMonthlyPayment}</span>
+            </div>
+            <div class="field">
+              <span class="field-label">Total Interest:</span>
+              <span class="field-value">${formattedTotalInterest}</span>
+            </div>
+            <div class="field">
+              <span class="field-label">Total Repayment:</span>
+              <span class="field-value highlight">${formattedTotalRepayment}</span>
+            </div>
           </div>
         </div>
         
@@ -347,6 +460,54 @@ const DataCollectionButton = () => {
           <div class="field">
             <span class="field-label">Monthly Income:</span>
             <span class="field-value">${formattedMonthlyIncome || 'N/A'}</span>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">First Guarantor Information</div>
+          <div class="field">
+            <span class="field-label">Name:</span>
+            <span class="field-value">${values.guarantor1Name || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Phone Number:</span>
+            <span class="field-value">${values.guarantor1Phone || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">ID Number:</span>
+            <span class="field-value">${values.guarantor1IdNumber || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Address:</span>
+            <span class="field-value">${values.guarantor1Address || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Relationship to Client:</span>
+            <span class="field-value">${values.guarantor1Relationship || 'N/A'}</span>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">Second Guarantor Information</div>
+          <div class="field">
+            <span class="field-label">Name:</span>
+            <span class="field-value">${values.guarantor2Name || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Phone Number:</span>
+            <span class="field-value">${values.guarantor2Phone || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">ID Number:</span>
+            <span class="field-value">${values.guarantor2IdNumber || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Address:</span>
+            <span class="field-value">${values.guarantor2Address || 'N/A'}</span>
+          </div>
+          <div class="field">
+            <span class="field-label">Relationship to Client:</span>
+            <span class="field-value">${values.guarantor2Relationship || 'N/A'}</span>
           </div>
         </div>
         
@@ -391,6 +552,14 @@ const DataCollectionButton = () => {
           <div>
             <div class="signature-line"></div>
             <div>Client Signature</div>
+          </div>
+          <div>
+            <div class="signature-line"></div>
+            <div>First Guarantor Signature</div>
+          </div>
+          <div>
+            <div class="signature-line"></div>
+            <div>Second Guarantor Signature</div>
           </div>
           <div>
             <div class="signature-line"></div>
@@ -536,6 +705,7 @@ const DataCollectionButton = () => {
                               <FormControl>
                                 <Input placeholder="Full name" {...field} className="h-12" />
                               </FormControl>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -549,6 +719,7 @@ const DataCollectionButton = () => {
                               <FormControl>
                                 <Input placeholder="e.g. +256 712 345 678" {...field} className="h-12" />
                               </FormControl>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -562,6 +733,7 @@ const DataCollectionButton = () => {
                               <FormControl>
                                 <Input placeholder="ID number" {...field} className="h-12" />
                               </FormControl>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -575,6 +747,7 @@ const DataCollectionButton = () => {
                               <FormControl>
                                 <Textarea placeholder="Full address" {...field} className="min-h-[80px]" />
                               </FormControl>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -611,6 +784,7 @@ const DataCollectionButton = () => {
                                   <SelectItem value="education">Education Loan</SelectItem>
                                 </SelectContent>
                               </Select>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -629,9 +803,62 @@ const DataCollectionButton = () => {
                                   ? formatCurrency(Number(field.value), 'UGX')
                                   : 'Enter amount in Uganda Shillings'}
                               </FormDescription>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
+                        
+                        <FormField
+                          control={form.control}
+                          name="loanDuration"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Loan Duration (Months)</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="h-12">
+                                    <SelectValue placeholder="Select duration" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="6">6 months</SelectItem>
+                                  <SelectItem value="12">12 months</SelectItem>
+                                  <SelectItem value="24">24 months</SelectItem>
+                                  <SelectItem value="36">36 months</SelectItem>
+                                  <SelectItem value="48">48 months</SelectItem>
+                                  <SelectItem value="60">60 months</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        {/* Loan Calculation Preview */}
+                        {form.watch("loanAmount") && form.watch("loanDuration") && (
+                          <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                            <h4 className="font-medium mb-2">Loan Calculation (18% Interest)</h4>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>Monthly Payment:</div>
+                              <div className="font-medium text-right">
+                                {formatCurrency(loanRepaymentInfo.monthlyPayment, 'UGX')}
+                              </div>
+                              
+                              <div>Total Interest:</div>
+                              <div className="text-right">
+                                {formatCurrency(loanRepaymentInfo.totalInterest, 'UGX')}
+                              </div>
+                              
+                              <div>Total Repayment:</div>
+                              <div className="font-medium text-right">
+                                {formatCurrency(loanRepaymentInfo.totalRepayment, 'UGX')}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         
                         <FormField
                           control={form.control}
@@ -646,6 +873,7 @@ const DataCollectionButton = () => {
                                   className="min-h-[80px]" 
                                 />
                               </FormControl>
+                              <FormMessage />
                             </FormItem>
                           )}
                         />
@@ -683,6 +911,7 @@ const DataCollectionButton = () => {
                                 <SelectItem value="retired">Retired</SelectItem>
                               </SelectContent>
                             </Select>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -701,6 +930,165 @@ const DataCollectionButton = () => {
                                 ? formatCurrency(Number(field.value), 'UGX')
                                 : 'Enter amount in Uganda Shillings'}
                             </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* First Guarantor Information */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-medium mb-4">First Guarantor Information</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="guarantor1Name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Guarantor's full name" {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor1Phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. +256 712 345 678" {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor1IdNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>National ID / Passport Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="ID number" {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor1Relationship"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Relationship to Client</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Spouse, Parent, Sibling" {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor1Address"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Residential Address</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Full address" {...field} className="min-h-[80px]" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                {/* Second Guarantor Information */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <h3 className="text-lg font-medium mb-4">Second Guarantor Information</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="guarantor2Name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Guarantor's full name" {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor2Phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. +256 712 345 678" {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor2IdNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>National ID / Passport Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="ID number" {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor2Relationship"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Relationship to Client</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Spouse, Parent, Sibling" {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor2Address"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Residential Address</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Full address" {...field} className="min-h-[80px]" />
+                            </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
@@ -726,6 +1114,7 @@ const DataCollectionButton = () => {
                               className="min-h-[120px]" 
                             />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
