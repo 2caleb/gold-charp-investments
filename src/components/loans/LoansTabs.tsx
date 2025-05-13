@@ -24,10 +24,17 @@ const LoansTabs = () => {
   const handleDataCollectionClick = () => {
     if (isAuthenticated && isStaff()) {
       navigate('/staff/data-collection');
+    } else if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "You need to login to access this feature.",
+        variant: "destructive",
+      });
+      navigate('/login');
     } else {
       toast({
         title: "Staff Access Only",
-        description: "You need to login as a staff member to access this feature.",
+        description: "You need to have staff permissions to access this feature.",
         variant: "destructive",
       });
     }
@@ -36,18 +43,16 @@ const LoansTabs = () => {
   return (
     <>
       {/* Staff Data Collection Button - Only visible if user is staff */}
-      {isAuthenticated && isStaff() && (
-        <div className="mb-8 flex justify-end">
-          <Button 
-            onClick={handleDataCollectionClick}
-            variant="outline" 
-            className="flex items-center gap-2 border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50"
-          >
-            <FileText size={16} />
-            Client Data Collection
-          </Button>
-        </div>
-      )}
+      <div className="mb-8 flex justify-end">
+        <Button 
+          onClick={handleDataCollectionClick}
+          variant="outline" 
+          className="flex items-center gap-2 border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50"
+        >
+          <FileText size={16} />
+          Client Data Collection
+        </Button>
+      </div>
       
       <Tabs defaultValue="mortgage" className="max-w-5xl mx-auto">
         <TabsList className="grid w-full grid-cols-3 mb-8">

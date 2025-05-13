@@ -1,19 +1,28 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Home, Building, Calculator, Info, LogIn, LogOut, User } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, Home, Building, Calculator, Info, LogIn, LogOut, User, FileText } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeToggle } from '../theme/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   // Get user's name from metadata if available
   const userName = user?.user_metadata?.full_name || 'User';
+  
+  // Check if user has staff role
+  const isStaff = () => {
+    if (!user?.user_metadata?.role) return false;
+    return ['field_officer', 'manager', 'director', 'ceo'].includes(user.user_metadata.role);
+  };
   
   // Add scroll event listener
   useEffect(() => {
@@ -32,6 +41,33 @@ const Navbar = () => {
   
   const isActive = (path: string) => {
     return location.pathname === path ? "text-purple-700 dark:text-purple-400" : "text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400";
+  };
+  
+  const handleLogout = async () => {
+    await logout();
+    toast({
+      title: "Successfully logged out",
+      description: "You have been logged out of your account",
+    });
+  };
+  
+  const handleDataCollectionClick = () => {
+    if (isAuthenticated && isStaff()) {
+      navigate('/staff/data-collection');
+    } else if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "You need to login to access this feature.",
+        variant: "destructive",
+      });
+      navigate('/login');
+    } else {
+      toast({
+        title: "Staff Access Only",
+        description: "You need to have staff permissions to access this feature.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -63,7 +99,23 @@ const Navbar = () => {
             <Info size={18} />
             <span className="relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-purple-700 dark:after:bg-purple-400 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">About Us</span>
           </Link>
+          
+          {/* Show Data Collection button only for staff */}
+          {isAuthenticated && isStaff() && (
+            <Button
+              onClick={handleDataCollectionClick}
+              variant="ghost"
+              className="font-medium transition-colors duration-300 flex items-center gap-1 hover:scale-105 transform"
+            >
+              <FileText size={18} />
+              <span className="relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-purple-700 dark:after:bg-purple-400 after:origin-bottom-right after:transition-transform after:duration-300 hover:after:scale-x-100 hover:after:origin-bottom-left">
+                Data Collection
+              </span>
+            </Button>
+          )}
+          
           <ThemeToggle />
+          
           <Link to="/contact">
             <Button variant="default" size="sm" className="bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700 transition-transform duration-300 hover:scale-105">
               Contact Us
@@ -74,11 +126,16 @@ const Navbar = () => {
             <div className="flex items-center gap-2">
               <div className="text-sm font-medium text-purple-700 dark:text-purple-400">
                 Hello, {userName.split(' ')[0]}
+                {isStaff() && (
+                  <span className="ml-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 px-1.5 py-0.5 rounded-full">
+                    Staff
+                  </span>
+                )}
               </div>
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={logout}
+                onClick={handleLogout}
                 className="border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50 flex items-center gap-1 transition-transform duration-300 hover:scale-105"
               >
                 <LogOut size={16} />
@@ -152,6 +209,21 @@ const Navbar = () => {
               <Info size={18} />
               <span>About Us</span>
             </Link>
+            
+            {/* Show Data Collection in mobile menu for staff */}
+            {isAuthenticated && isStaff() && (
+              <button
+                onClick={() => {
+                  handleDataCollectionClick();
+                  setIsOpen(false);
+                }}
+                className={`${isActive('/staff/data-collection')} font-medium px-4 py-2 text-left rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300 flex items-center gap-2`}
+              >
+                <FileText size={18} />
+                <span>Data Collection</span>
+              </button>
+            )}
+            
             <Link to="/contact" className="w-full" onClick={() => setIsOpen(false)}>
               <Button variant="default" className="bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700 w-full transition-transform duration-300 hover:scale-105">
                 Contact Us
@@ -163,12 +235,17 @@ const Navbar = () => {
                 <div className="px-4 py-2 text-sm font-medium text-purple-700 dark:text-purple-400 flex items-center gap-2">
                   <User size={16} />
                   <span>{userName}</span>
+                  {isStaff() && (
+                    <span className="ml-1 text-xs bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-300 px-1.5 py-0.5 rounded-full">
+                      Staff
+                    </span>
+                  )}
                 </div>
                 <Button 
                   variant="outline" 
                   className="border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50 w-full flex items-center justify-center gap-2 transition-transform duration-300 hover:scale-105"
                   onClick={() => {
-                    logout();
+                    handleLogout();
                     setIsOpen(false);
                   }}
                 >

@@ -33,8 +33,17 @@ const Login = () => {
       // Redirect to where they were trying to go, or to home page
       const from = (location.state as any)?.from?.pathname || '/';
       navigate(from, { replace: true });
+      
+      // Show welcome toast with role info
+      const roleName = user?.user_metadata?.role || 'user';
+      const formattedRole = roleName.charAt(0).toUpperCase() + roleName.slice(1).replace('_', ' ');
+      
+      toast({
+        title: `Welcome back, ${user?.user_metadata?.full_name || 'User'}!`,
+        description: isStaff() ? `You're logged in as a ${formattedRole}` : "You're logged in as a regular user",
+      });
     }
-  }, [isAuthenticated, navigate, location]);
+  }, [isAuthenticated, navigate, location, user, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
