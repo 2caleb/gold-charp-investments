@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -18,10 +17,30 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, ArrowRight, ClipboardCheck, FileImage, User as UserIcon, Send } from 'lucide-react';
+import { 
+  User, 
+  ArrowRight, 
+  ClipboardCheck, 
+  FileImage, 
+  User as UserIcon, 
+  Send, 
+  Camera, 
+  Video, 
+  Upload, 
+  MessageSquare,
+  Star,
+  StarHalf,
+  Clock,
+  CheckCircle,
+  XCircle,
+  FileScan
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
-// Form schema definition
+// Form schema definition with additional fields for document scanning and application rating
 const formSchema = z.object({
   // Client details
   fullName: z.string().min(2, {
@@ -114,6 +133,11 @@ const formSchema = z.object({
     accountName: z.string().optional(),
     branchCode: z.string().optional(),
   }).optional(),
+  
+  // New fields for application rating and approval
+  applicationRating: z.number().min(1).max(5).optional(),
+  applicationNotes: z.string().optional(),
+  applicationStatus: z.enum(["pending", "approved", "disapproved"]).default("pending"),
 });
 
 const DataCollectionButton = () => {
@@ -124,13 +148,27 @@ const DataCollectionButton = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
+  // New state for media handling
+  const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
+  const [capturedVideos, setCapturedVideos] = useState<string[]>([]);
+  const [scannedDocuments, setScannedDocuments] = useState<{id: string, name: string, url: string}[]>([]);
+  const [messages, setMessages] = useState<{sender: string, message: string, timestamp: string}[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [isCapturing, setIsCapturing] = useState<'photo' | 'video' | 'scan' | null>(null);
+  
+  // Refs for media capture
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const scanInputRef = useRef<HTMLInputElement>(null);
+  const messageEndRef = useRef<HTMLDivElement>(null);
+  
   // Define the application statuses with visual indicators
   const applicationStatuses = [
     { name: "Client Details", step: "client", icon: <UserIcon className="h-4 w-4" />, completed: applicationStatus >= 20 },
     { name: "Guarantors", step: "guarantor1", icon: <User className="h-4 w-4" />, completed: applicationStatus >= 40 },
-    { name: "Documentation", step: "media", icon: <FileImage className="h-4 w-4" />, completed: applicationStatus >= 80 },
+    { name: "Documentation", step: "media", icon: <FileImage className="h-4 w-4" />, completed: applicationStatus >= 60 },
+    { name: "Site Visit", step: "siteVisit", icon: <Camera className="h-4 w-4" />, completed: applicationStatus >= 80 },
     { name: "Review", step: "review", icon: <ClipboardCheck className="h-4 w-4" />, completed: applicationStatus >= 100 },
-    { name: "Submit", step: "submit", icon: <Send className="h-4 w-4" />, completed: applicationStatus >= 100 },
   ];
   
   // Form definition
@@ -174,6 +212,11 @@ const DataCollectionButton = () => {
       hasGuarantorDetails: false,
 
       disbursementMethod: "mobileMoney",
+      
+      // Default for new fields
+      applicationRating: 3,
+      applicationNotes: "",
+      applicationStatus: "pending",
     },
   });
 
@@ -191,10 +234,35 @@ const DataCollectionButton = () => {
       
       console.log("Form values:", values);
       
+      // Calculate completeness score for documents
+      const requiredDocs = [
+        values.hasNationalId,
+        values.hasProofOfResidence, 
+        values.hasProofOfIncome,
+        values.hasBankStatements,
+        values.hasBusinessPlan,
+        values.hasCollateralDocuments,
+        values.hasGuarantorDetails
+      ];
+      
+      const completedDocs = requiredDocs.filter(Boolean).length;
+      const totalDocs = requiredDocs.length;
+      const completenessScore = Math.round((completedDocs / totalDocs) * 100);
+      
+      // Auto-determine application status based on documents and rating
+      let finalStatus = values.applicationStatus;
+      if (completenessScore < 50) {
+        finalStatus = "disapproved";
+        form.setValue("applicationStatus", "disapproved");
+      } else if (values.applicationRating && values.applicationRating >= 4 && completenessScore >= 80) {
+        finalStatus = "approved";
+        form.setValue("applicationStatus", "approved");
+      }
+      
       // In a real application, you would submit this data to your backend or Supabase
       toast({
         title: "Client information collected",
-        description: "The information has been submitted and sent for manager review.",
+        description: `The information has been submitted with status: ${finalStatus.toUpperCase()}`,
       });
       
       // Close the dialog and redirect to the dashboard
@@ -266,12 +334,166 @@ const DataCollectionButton = () => {
         setApplicationStatus(40);
         break;
       case "media":
+        setApplicationStatus(60);
+        break;
+      case "siteVisit":
         setApplicationStatus(80);
         break;
       case "review":
         setApplicationStatus(100);
         break;
     }
+  };
+  
+  // Handle photo capture
+  const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        if (event.target && event.target.result) {
+          setCapturedPhotos([...capturedPhotos, event.target.result as string]);
+          
+          toast({
+            title: "Photo captured",
+            description: `Photo added to client documentation.`,
+          });
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+    setIsCapturing(null);
+  };
+  
+  // Handle video capture
+  const handleVideoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        if (event.target && event.target.result) {
+          setCapturedVideos([...capturedVideos, event.target.result as string]);
+          
+          toast({
+            title: "Video captured",
+            description: `Video added to client documentation.`,
+          });
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+    setIsCapturing(null);
+  };
+  
+  // Handle document scanning
+  const handleDocumentScan = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        if (event.target && event.target.result) {
+          const newDoc = {
+            id: `doc-${Date.now()}`,
+            name: file.name,
+            url: event.target.result as string
+          };
+          
+          setScannedDocuments([...scannedDocuments, newDoc]);
+          
+          toast({
+            title: "Document scanned",
+            description: `${file.name} added to client documentation.`,
+          });
+        }
+      };
+      
+      reader.readAsDataURL(file);
+    }
+    setIsCapturing(null);
+  };
+  
+  // Handle sending a message
+  const handleSendMessage = () => {
+    if (newMessage.trim() === "") return;
+    
+    const newMsg = {
+      sender: "Field Officer",
+      message: newMessage,
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessages([...messages, newMsg]);
+    setNewMessage("");
+    
+    // Scroll to bottom of messages
+    setTimeout(() => {
+      if (messageEndRef.current) {
+        messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 100);
+    
+    // Simulate reply from manager after 2 seconds
+    setTimeout(() => {
+      const replyMsg = {
+        sender: "Manager",
+        message: "Thanks for the update. Please make sure to verify the client's income source.",
+        timestamp: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, replyMsg]);
+      
+      // Scroll to bottom again
+      setTimeout(() => {
+        if (messageEndRef.current) {
+          messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }, 2000);
+  };
+  
+  // Trigger file input click for media capture
+  const triggerCapture = (type: 'photo' | 'video' | 'scan') => {
+    setIsCapturing(type);
+    
+    setTimeout(() => {
+      if (type === 'photo' && photoInputRef.current) {
+        photoInputRef.current.click();
+      } else if (type === 'video' && videoInputRef.current) {
+        videoInputRef.current.click();
+      } else if (type === 'scan' && scanInputRef.current) {
+        scanInputRef.current.click();
+      }
+    }, 100);
+  };
+  
+  // Get formatted rating stars
+  const getRatingStars = (rating: number) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    // Add full stars
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<Star key={`full-${i}`} className="w-5 h-5 text-yellow-500 fill-yellow-500" />);
+    }
+    
+    // Add half star if needed
+    if (hasHalfStar) {
+      stars.push(<StarHalf key="half" className="w-5 h-5 text-yellow-500 fill-yellow-500" />);
+    }
+    
+    // Add empty stars
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<Star key={`empty-${i}`} className="w-5 h-5 text-gray-300" />);
+    }
+    
+    return stars;
   };
 
   // Visual onboarding process
@@ -314,685 +536,277 @@ const DataCollectionButton = () => {
       </div>
     </div>
   );
+  
+  // Hidden file inputs for media capture
+  const MediaInputs = () => (
+    <div className="hidden">
+      <input 
+        type="file" 
+        ref={photoInputRef}
+        accept="image/*" 
+        capture="environment"
+        onChange={handlePhotoCapture}
+      />
+      <input 
+        type="file" 
+        ref={videoInputRef}
+        accept="video/*" 
+        capture="environment"
+        onChange={handleVideoCapture}
+      />
+      <input 
+        type="file" 
+        ref={scanInputRef}
+        accept="image/*" 
+        onChange={handleDocumentScan}
+      />
+    </div>
+  );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="border-purple-600 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-all duration-300 hover:scale-105">
-          Collect Client Data
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Client Data Collection</DialogTitle>
-          <DialogDescription>
-            Collect all necessary client information for loan application processing.
-          </DialogDescription>
-        </DialogHeader>
-        
-        {/* Onboarding Process Visualization */}
-        <OnboardingProcess />
-        
-        <ScrollArea className="flex-grow pr-4">
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-            <Tabs defaultValue="client" className="w-full" onValueChange={handleTabChange}>
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="client" className="flex items-center gap-1">
-                  <UserIcon className="h-4 w-4" /> Client
-                </TabsTrigger>
-                <TabsTrigger value="guarantor1" className="flex items-center gap-1">
-                  <User className="h-4 w-4" /> Guarantor 1
-                </TabsTrigger>
-                <TabsTrigger value="guarantor2" className="flex items-center gap-1">
-                  <User className="h-4 w-4" /> Guarantor 2
-                </TabsTrigger>
-                <TabsTrigger value="media" className="flex items-center gap-1">
-                  <FileImage className="h-4 w-4" /> Documents
-                </TabsTrigger>
-                <TabsTrigger value="review" className="flex items-center gap-1">
-                  <ClipboardCheck className="h-4 w-4" /> Review
-                </TabsTrigger>
-              </TabsList>
-              
-              {/* Client Details Tab */}
-              <TabsContent value="client" className="space-y-4">
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="personal-info">
-                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Personal Information</AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="fullName">Full Name</Label>
-                          <Input 
-                            id="fullName" 
-                            {...form.register("fullName")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                          />
-                          {form.formState.errors.fullName && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.fullName.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="nationalId">National ID</Label>
-                          <Input 
-                            id="nationalId" 
-                            {...form.register("nationalId")}
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
-                          />
-                          {form.formState.errors.nationalId && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.nationalId.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                          <Input 
-                            id="dateOfBirth" 
-                            type="date" 
-                            {...form.register("dateOfBirth")}
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="gender">Gender</Label>
-                          <Select 
-                            onValueChange={(value) => form.setValue("gender", value)}
-                            defaultValue={form.getValues("gender")}
-                          >
-                            <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
-                              <SelectValue placeholder="Select Gender" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="maritalStatus">Marital Status</Label>
-                          <Select 
-                            onValueChange={(value) => form.setValue("maritalStatus", value)}
-                            defaultValue={form.getValues("maritalStatus")}
-                          >
-                            <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
-                              <SelectValue placeholder="Select Marital Status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="single">Single</SelectItem>
-                              <SelectItem value="married">Married</SelectItem>
-                              <SelectItem value="divorced">Divorced</SelectItem>
-                              <SelectItem value="widowed">Widowed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                  
-                  <AccordionItem value="contact-info">
-                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Contact Information</AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="phoneNumber">Phone Number</Label>
-                          <Input 
-                            id="phoneNumber" 
-                            {...form.register("phoneNumber")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                          />
-                          {form.formState.errors.phoneNumber && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.phoneNumber.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="email">Email Address</Label>
-                          <Input 
-                            id="email" 
-                            type="email" 
-                            {...form.register("email")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                          />
-                          {form.formState.errors.email && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.email.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="physicalAddress">Physical Address</Label>
-                          <Textarea 
-                            id="physicalAddress" 
-                            {...form.register("physicalAddress")}
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
-                          />
-                          {form.formState.errors.physicalAddress && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.physicalAddress.message}</p>
-                          )}
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                  
-                  <AccordionItem value="financial-info">
-                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Financial Information</AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="occupation">Occupation</Label>
-                          <Input 
-                            id="occupation" 
-                            {...form.register("occupation")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                          />
-                          {form.formState.errors.occupation && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.occupation.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="incomeSource">Income Source</Label>
-                          <Input 
-                            id="incomeSource" 
-                            {...form.register("incomeSource")}
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
-                          />
-                          {form.formState.errors.incomeSource && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.incomeSource.message}</p>
-                          )}
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                  
-                  <AccordionItem value="loan-details">
-                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Loan Details</AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="loanPurpose">Loan Purpose</Label>
-                          <Textarea 
-                            id="loanPurpose" 
-                            {...form.register("loanPurpose")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                            placeholder="Please describe what the loan will be used for"
-                          />
-                          {form.formState.errors.loanPurpose && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.loanPurpose.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="loanAmount">Loan Amount (UGX)</Label>
-                          <Input 
-                            id="loanAmount" 
-                            type="number" 
-                            {...form.register("loanAmount")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                          />
-                          {form.formState.errors.loanAmount && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.loanAmount.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="loanTerm">Loan Term (Months)</Label>
-                          <Select 
-                            onValueChange={(value) => form.setValue("loanTerm", value)}
-                            defaultValue={form.getValues("loanTerm")}
-                          >
-                            <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
-                              <SelectValue placeholder="Select Loan Term" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="3">3 Months</SelectItem>
-                              <SelectItem value="6">6 Months</SelectItem>
-                              <SelectItem value="12">12 Months</SelectItem>
-                              <SelectItem value="24">24 Months</SelectItem>
-                              <SelectItem value="36">36 Months</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </TabsContent>
-              
-              {/* First Guarantor Tab */}
-              <TabsContent value="guarantor1" className="space-y-4">
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="guarantor-personal">
-                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Guarantor Information</AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="guarantor1FullName">Full Name</Label>
-                          <Input 
-                            id="guarantor1FullName" 
-                            {...form.register("guarantor1FullName")}
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
-                          />
-                          {form.formState.errors.guarantor1FullName && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor1FullName.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="guarantor1NationalId">National ID</Label>
-                          <Input 
-                            id="guarantor1NationalId" 
-                            {...form.register("guarantor1NationalId")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                          />
-                          {form.formState.errors.guarantor1NationalId && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor1NationalId.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="guarantor1Relationship">Relationship to Applicant</Label>
-                          <Input 
-                            id="guarantor1Relationship" 
-                            {...form.register("guarantor1Relationship")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                          />
-                          {form.formState.errors.guarantor1Relationship && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor1Relationship.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="guarantor1PhoneNumber">Phone Number</Label>
-                          <Input 
-                            id="guarantor1PhoneNumber" 
-                            {...form.register("guarantor1PhoneNumber")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                          />
-                          {form.formState.errors.guarantor1PhoneNumber && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor1PhoneNumber.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="guarantor1Address">Physical Address</Label>
-                          <Input 
-                            id="guarantor1Address" 
-                            {...form.register("guarantor1Address")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                          />
-                          {form.formState.errors.guarantor1Address && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor1Address.message}</p>
-                          )}
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </TabsContent>
-              
-              {/* Second Guarantor Tab */}
-              <TabsContent value="guarantor2" className="space-y-4">
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="guarantor-personal">
-                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Guarantor Information</AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="guarantor2FullName">Full Name</Label>
-                          <Input 
-                            id="guarantor2FullName" 
-                            {...form.register("guarantor2FullName")}
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
-                          />
-                          {form.formState.errors.guarantor2FullName && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor2FullName.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="guarantor2NationalId">National ID</Label>
-                          <Input 
-                            id="guarantor2NationalId" 
-                            {...form.register("guarantor2NationalId")}
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
-                          />
-                          {form.formState.errors.guarantor2NationalId && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor2NationalId.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="guarantor2Relationship">Relationship to Applicant</Label>
-                          <Input 
-                            id="guarantor2Relationship" 
-                            {...form.register("guarantor2Relationship")} 
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                          />
-                          {form.formState.errors.guarantor2Relationship && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor2Relationship.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="guarantor2PhoneNumber">Phone Number</Label>
-                          <Input 
-                            id="guarantor2PhoneNumber" 
-                            {...form.register("guarantor2PhoneNumber")}
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
-                          />
-                          {form.formState.errors.guarantor2PhoneNumber && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor2PhoneNumber.message}</p>
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="guarantor2Address">Physical Address</Label>
-                          <Input 
-                            id="guarantor2Address" 
-                            {...form.register("guarantor2Address")}
-                            className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
-                          />
-                          {form.formState.errors.guarantor2Address && (
-                            <p className="text-red-500 text-xs">{form.formState.errors.guarantor2Address.message}</p>
-                          )}
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </TabsContent>
-              
-              {/* Documentation Tab */}
-              <TabsContent value="media" className="space-y-4">
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="required-documents">
-                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Required Documents</AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <div className="space-y-4">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          The following documents are required for loan application processing:
-                        </p>
-                        
-                        <div className="grid grid-cols-1 gap-4">
-                          <Form {...form}>
-                            {requiredDocuments.map((doc) => (
-                              <FormField
-                                key={doc.id}
-                                control={form.control}
-                                name={doc.id as any}
-                                render={({ field }) => (
-                                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                        className="data-[state=checked]:bg-purple-600"
-                                      />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                      <FormLabel className="font-medium">{doc.label}</FormLabel>
-                                      <FormDescription className="text-xs text-gray-500 dark:text-gray-400">
-                                        {doc.description}
-                                      </FormDescription>
-                                    </div>
-                                  </FormItem>
-                                )}
-                              />
-                            ))}
-                          </Form>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                  
-                  <AccordionItem value="disbursement-info">
-                    <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Disbursement Method</AccordionTrigger>
-                    <AccordionContent className="space-y-4">
-                      <div className="space-y-4">
-                        <Form {...form}>
-                          <FormField
-                            control={form.control}
-                            name="disbursementMethod"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Select Disbursement Method</FormLabel>
-                                <Select
-                                  onValueChange={field.onChange}
-                                  defaultValue={field.value}
-                                >
-                                  <SelectTrigger className="w-full transition-all duration-300 focus:ring-2 focus:ring-purple-500">
-                                    <SelectValue placeholder="Select method" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="mobileMoney">Mobile Money</SelectItem>
-                                    <SelectItem value="bankTransfer">Bank Transfer</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </FormItem>
+    <>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="border-purple-600 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-all duration-300 hover:scale-105">
+            Collect Client Data
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Client Data Collection</DialogTitle>
+            <DialogDescription>
+              Collect all necessary client information for loan application processing.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Onboarding Process Visualization */}
+          <OnboardingProcess />
+          
+          <ScrollArea className="flex-grow pr-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+              <Tabs defaultValue="client" className="w-full" onValueChange={handleTabChange}>
+                <TabsList className="grid w-full grid-cols-5">
+                  <TabsTrigger value="client" className="flex items-center gap-1">
+                    <UserIcon className="h-4 w-4" /> Client
+                  </TabsTrigger>
+                  <TabsTrigger value="guarantor1" className="flex items-center gap-1">
+                    <User className="h-4 w-4" /> Guarantor 1
+                  </TabsTrigger>
+                  <TabsTrigger value="guarantor2" className="flex items-center gap-1">
+                    <User className="h-4 w-4" /> Guarantor 2
+                  </TabsTrigger>
+                  <TabsTrigger value="media" className="flex items-center gap-1">
+                    <FileImage className="h-4 w-4" /> Documents
+                  </TabsTrigger>
+                  <TabsTrigger value="siteVisit" className="flex items-center gap-1">
+                    <Camera className="h-4 w-4" /> Site Visit
+                  </TabsTrigger>
+                </TabsList>
+                
+                {/* Client Details Tab */}
+                <TabsContent value="client" className="space-y-4">
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="personal-info">
+                      <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Personal Information</AccordionTrigger>
+                      <AccordionContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="fullName">Full Name</Label>
+                            <Input 
+                              id="fullName" 
+                              {...form.register("fullName")} 
+                              className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                            />
+                            {form.formState.errors.fullName && (
+                              <p className="text-red-500 text-xs">{form.formState.errors.fullName.message}</p>
                             )}
-                          />
-                        </Form>
-                        
-                        {form.watch("disbursementMethod") === "mobileMoney" && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800/50">
-                            <div className="space-y-2">
-                              <Label htmlFor="mobileMoneyProvider">Mobile Money Provider</Label>
-                              <Select 
-                                onValueChange={(value) => form.setValue("mobileMoney.provider", value)}
-                              >
-                                <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
-                                  <SelectValue placeholder="Select Provider" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="mtn">MTN Mobile Money</SelectItem>
-                                  <SelectItem value="airtel">Airtel Money</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <Label htmlFor="mobileMoneyNumber">Mobile Money Number</Label>
-                              <Input 
-                                id="mobileMoneyNumber" 
-                                onChange={(e) => form.setValue("mobileMoney.number", e.target.value)}
-                                className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                              />
-                            </div>
-                            
-                            <div className="space-y-2 md:col-span-2">
-                              <Label htmlFor="mobileMoneyName">Account Holder Name</Label>
-                              <Input 
-                                id="mobileMoneyName" 
-                                onChange={(e) => form.setValue("mobileMoney.name", e.target.value)}
-                                className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                              />
-                            </div>
                           </div>
-                        )}
-                        
-                        {form.watch("disbursementMethod") === "bankTransfer" && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800/50">
-                            <div className="space-y-2">
-                              <Label htmlFor="bankName">Bank Name</Label>
-                              <Select 
-                                onValueChange={(value) => form.setValue("bankTransfer.bankName", value)}
-                              >
-                                <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
-                                  <SelectValue placeholder="Select Bank" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="stanbic">Stanbic Bank</SelectItem>
-                                  <SelectItem value="centenary">Centenary Bank</SelectItem>
-                                  <SelectItem value="dfcu">DFCU Bank</SelectItem>
-                                  <SelectItem value="equity">Equity Bank</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <Label htmlFor="accountNumber">Account Number</Label>
-                              <Input 
-                                id="accountNumber" 
-                                onChange={(e) => form.setValue("bankTransfer.accountNumber", e.target.value)}
-                                className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                              />
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <Label htmlFor="accountName">Account Holder Name</Label>
-                              <Input 
-                                id="accountName" 
-                                onChange={(e) => form.setValue("bankTransfer.accountName", e.target.value)}
-                                className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                              />
-                            </div>
-                            
-                            <div className="space-y-2">
-                              <Label htmlFor="branchCode">Branch Code (Optional)</Label>
-                              <Input 
-                                id="branchCode" 
-                                onChange={(e) => form.setValue("bankTransfer.branchCode", e.target.value)}
-                                className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
-                              />
-                            </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="nationalId">National ID</Label>
+                            <Input 
+                              id="nationalId" 
+                              {...form.register("nationalId")}
+                              className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                            />
+                            {form.formState.errors.nationalId && (
+                              <p className="text-red-500 text-xs">{form.formState.errors.nationalId.message}</p>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </TabsContent>
-              
-              {/* Review & Submit Tab */}
-              <TabsContent value="review" className="space-y-4">
-                <div className="space-y-6">
-                  <div className="rounded-md bg-gray-50 dark:bg-gray-800 p-4">
-                    <h3 className="text-lg font-semibold mb-2 text-purple-700 dark:text-purple-400 flex items-center">
-                      <ClipboardCheck className="mr-2" size={20} /> Application Summary
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Please review all the information before submitting your application. After submission:
-                    </p>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                            <Input 
+                              id="dateOfBirth" 
+                              type="date" 
+                              {...form.register("dateOfBirth")}
+                              className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="gender">Gender</Label>
+                            <Select 
+                              onValueChange={(value) => form.setValue("gender", value)}
+                              defaultValue={form.getValues("gender")}
+                            >
+                              <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
+                                <SelectValue placeholder="Select Gender" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="male">Male</SelectItem>
+                                <SelectItem value="female">Female</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="maritalStatus">Marital Status</Label>
+                            <Select 
+                              onValueChange={(value) => form.setValue("maritalStatus", value)}
+                              defaultValue={form.getValues("maritalStatus")}
+                            >
+                              <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
+                                <SelectValue placeholder="Select Marital Status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="single">Single</SelectItem>
+                                <SelectItem value="married">Married</SelectItem>
+                                <SelectItem value="divorced">Divorced</SelectItem>
+                                <SelectItem value="widowed">Widowed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
                     
-                    {/* Workflow visualization */}
-                    <div className="mb-6 p-3 bg-white dark:bg-gray-900 rounded-md shadow-sm">
-                      <h4 className="font-medium text-sm mb-3">Approval Workflow</h4>
-                      <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0">
-                        <div className="flex flex-col items-center text-center">
-                          <div className="bg-purple-100 dark:bg-purple-900 p-2 rounded-full w-10 h-10 flex items-center justify-center">
-                            <UserIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <AccordionItem value="contact-info">
+                      <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Contact Information</AccordionTrigger>
+                      <AccordionContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="phoneNumber">Phone Number</Label>
+                            <Input 
+                              id="phoneNumber" 
+                              {...form.register("phoneNumber")} 
+                              className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                            />
+                            {form.formState.errors.phoneNumber && (
+                              <p className="text-red-500 text-xs">{form.formState.errors.phoneNumber.message}</p>
+                            )}
                           </div>
-                          <span className="text-xs mt-1">Field Officer</span>
-                          <span className="text-xs text-purple-600 dark:text-purple-400">Submission</span>
-                        </div>
-                        
-                        <ArrowRight className="hidden md:block mx-2 text-gray-400" />
-                        
-                        <div className="flex flex-col items-center text-center">
-                          <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-full w-10 h-10 flex items-center justify-center">
-                            <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email Address</Label>
+                            <Input 
+                              id="email" 
+                              type="email" 
+                              {...form.register("email")} 
+                              className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                            />
+                            {form.formState.errors.email && (
+                              <p className="text-red-500 text-xs">{form.formState.errors.email.message}</p>
+                            )}
                           </div>
-                          <span className="text-xs mt-1">Manager</span>
-                          <span className="text-xs text-blue-600 dark:text-blue-400">Initial Review</span>
-                        </div>
-                        
-                        <ArrowRight className="hidden md:block mx-2 text-gray-400" />
-                        
-                        <div className="flex flex-col items-center text-center">
-                          <div className="bg-indigo-100 dark:bg-indigo-900 p-2 rounded-full w-10 h-10 flex items-center justify-center">
-                            <User className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                          
+                          <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="physicalAddress">Physical Address</Label>
+                            <Textarea 
+                              id="physicalAddress" 
+                              {...form.register("physicalAddress")}
+                              className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                            />
+                            {form.formState.errors.physicalAddress && (
+                              <p className="text-red-500 text-xs">{form.formState.errors.physicalAddress.message}</p>
+                            )}
                           </div>
-                          <span className="text-xs mt-1">Director</span>
-                          <span className="text-xs text-indigo-600 dark:text-indigo-400">Due Diligence</span>
                         </div>
-                        
-                        <ArrowRight className="hidden md:block mx-2 text-gray-400" />
-                        
-                        <div className="flex flex-col items-center text-center">
-                          <div className="bg-green-100 dark:bg-green-900 p-2 rounded-full w-10 h-10 flex items-center justify-center">
-                            <User className="h-5 w-5 text-green-600 dark:text-green-400" />
-                          </div>
-                          <span className="text-xs mt-1">CEO</span>
-                          <span className="text-xs text-green-600 dark:text-green-400">Final Approval</span>
-                        </div>
-                      </div>
-                    </div>
+                      </AccordionContent>
+                    </AccordionItem>
                     
-                    <div className="space-y-4">
-                      <div className="p-3 bg-white dark:bg-gray-900 rounded-md shadow-sm">
-                        <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">Client Details</h4>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div className="text-gray-500 dark:text-gray-400">Full Name:</div>
-                          <div>{form.getValues("fullName") || "Not provided"}</div>
+                    <AccordionItem value="financial-info">
+                      <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Financial Information</AccordionTrigger>
+                      <AccordionContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="occupation">Occupation</Label>
+                            <Input 
+                              id="occupation" 
+                              {...form.register("occupation")} 
+                              className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                            />
+                            {form.formState.errors.occupation && (
+                              <p className="text-red-500 text-xs">{form.formState.errors.occupation.message}</p>
+                            )}
+                          </div>
                           
-                          <div className="text-gray-500 dark:text-gray-400">National ID:</div>
-                          <div>{form.getValues("nationalId") || "Not provided"}</div>
-                          
-                          <div className="text-gray-500 dark:text-gray-400">Phone:</div>
-                          <div>{form.getValues("phoneNumber") || "Not provided"}</div>
-                          
-                          <div className="text-gray-500 dark:text-gray-400">Email:</div>
-                          <div>{form.getValues("email") || "Not provided"}</div>
-                          
-                          <div className="text-gray-500 dark:text-gray-400">Loan Amount:</div>
-                          <div>{form.getValues("loanAmount") ? `UGX ${form.getValues("loanAmount")}` : "Not provided"}</div>
-                          
-                          <div className="text-gray-500 dark:text-gray-400">Loan Term:</div>
-                          <div>{form.getValues("loanTerm") ? `${form.getValues("loanTerm")} months` : "Not provided"}</div>
-                          
-                          <div className="text-gray-500 dark:text-gray-400">Disbursement Method:</div>
-                          <div>{form.getValues("disbursementMethod") === "mobileMoney" ? "Mobile Money" : "Bank Transfer"}</div>
+                          <div className="space-y-2">
+                            <Label htmlFor="incomeSource">Income Source</Label>
+                            <Input 
+                              id="incomeSource" 
+                              {...form.register("incomeSource")}
+                              className="transition-all duration-300 focus:ring-2 focus:ring-purple-500" 
+                            />
+                            {form.formState.errors.incomeSource && (
+                              <p className="text-red-500 text-xs">{form.formState.errors.incomeSource.message}</p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="p-3 bg-white dark:bg-gray-900 rounded-md shadow-sm">
-                        <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 mb-2">Document Status</h4>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          {requiredDocuments.map((doc) => (
-                            <React.Fragment key={doc.id}>
-                              <div className="text-gray-500 dark:text-gray-400">{doc.label}:</div>
-                              <div className={form.getValues(doc.id as any) ? "text-green-600 dark:text-green-400" : "text-red-500"}>
-                                {form.getValues(doc.id as any) ? "Provided" : "Missing"}
-                              </div>
-                            </React.Fragment>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                      </AccordionContent>
+                    </AccordionItem>
                     
-                    <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/30 rounded-md">
-                      <p className="font-medium mb-1 text-yellow-700 dark:text-yellow-400">What happens next?</p>
-                      <ol className="list-decimal pl-5 space-y-1 text-yellow-800 dark:text-yellow-300">
-                        <li>Your application will be reviewed by a manager within 1-2 business days</li>
-                        <li>The application will then go to a director for due diligence assessment</li>
-                        <li>Final approval is granted by the CEO</li>
-                        <li>You will receive updates on each step of the process</li>
-                      </ol>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </form>
-        </ScrollArea>
-        
-        <DialogFooter className="flex justify-between items-center pt-2">
-          <Button variant="outline" onClick={() => setOpen(false)} className="transition-all duration-300 hover:bg-gray-100">
-            Cancel
-          </Button>
-          <Button onClick={form.handleSubmit(onSubmit)} className="bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700 transition-all duration-300 hover:shadow-md">
-            Submit Application
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-export default DataCollectionButton;
+                    <AccordionItem value="loan-details">
+                      <AccordionTrigger className="text-purple-700 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300">Loan Details</AccordionTrigger>
+                      <AccordionContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2 md:col-span-2">
+                            <Label htmlFor="loanPurpose">Loan Purpose</Label>
+                            <Textarea 
+                              id="loanPurpose" 
+                              {...form.register("loanPurpose")} 
+                              className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                              placeholder="Please describe what the loan will be used for"
+                            />
+                            {form.formState.errors.loanPurpose && (
+                              <p className="text-red-500 text-xs">{form.formState.errors.loanPurpose.message}</p>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="loanAmount">Loan Amount (UGX)</Label>
+                            <Input 
+                              id="loanAmount" 
+                              type="number" 
+                              {...form.register("loanAmount")} 
+                              className="transition-all duration-300 focus:ring-2 focus:ring-purple-500"
+                            />
+                            {form.formState.errors.loanAmount && (
+                              <p className="text-red-500 text-xs">{form.formState.errors.loanAmount.message}</p>
+                            )}
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor="loanTerm">Loan Term (Months)</Label>
+                            <Select 
+                              onValueChange={(value) => form.setValue("loanTerm", value)}
+                              defaultValue={form.getValues("loanTerm")}
+                            >
+                              <SelectTrigger className="transition-all duration-300 focus:ring-2 focus:ring-purple-500">
+                                <SelectValue placeholder="Select Loan Term" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="3">3 Months</SelectItem>
+                                <SelectItem value="6">6 Months</SelectItem>
+                                <SelectItem value="12">12 Months</SelectItem>
+                                <SelectItem value="24">24 Months</SelectItem>
+                                <SelectItem value="36">36 Months</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </TabsContent>

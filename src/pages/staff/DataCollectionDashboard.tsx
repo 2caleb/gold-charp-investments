@@ -25,10 +25,18 @@ import {
   Users,
   Briefcase,
   ArrowRight,
-  BadgeCheck
+  BadgeCheck,
+  FileImage,
+  Camera,
+  MessageSquare,
+  FileScan,
+  Star
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 // Types for client data and its statuses
 type ClientDataStatus = 'pending' | 'manager_reviewing' | 'director_reviewing' | 'ceo_reviewing' | 'approved' | 'rejected';
@@ -44,9 +52,15 @@ interface ClientData {
   manager_feedback?: string;
   director_feedback?: string;
   ceo_feedback?: string;
+  rating?: number;
+  documents_complete?: number;
+  has_photos?: boolean;
+  has_videos?: boolean;
+  has_scans?: boolean;
+  messages_count?: number;
 }
 
-// Mock data - in a real app this would come from the database
+// Mock data with new fields for media and documentation completeness
 const mockClientData: ClientData[] = [
   {
     id: '1',
@@ -56,6 +70,12 @@ const mockClientData: ClientData[] = [
     submitted_by: 'Field Officer 1',
     last_updated: '2023-05-10',
     notes: 'Client looking for mortgage options',
+    rating: 3,
+    documents_complete: 40,
+    has_photos: true,
+    has_videos: false, 
+    has_scans: true,
+    messages_count: 2
   },
   {
     id: '2',
@@ -66,6 +86,12 @@ const mockClientData: ClientData[] = [
     last_updated: '2023-05-09',
     notes: 'Interested in commercial property',
     manager_feedback: 'Checking credit history',
+    rating: 4,
+    documents_complete: 70,
+    has_photos: true,
+    has_videos: true,
+    has_scans: true,
+    messages_count: 5
   },
   {
     id: '3',
@@ -76,6 +102,12 @@ const mockClientData: ClientData[] = [
     last_updated: '2023-05-07',
     notes: 'High net worth individual',
     manager_feedback: 'All documents verified, recommending approval',
+    rating: 5,
+    documents_complete: 95,
+    has_photos: true,
+    has_videos: true,
+    has_scans: true,
+    messages_count: 8
   },
   {
     id: '4',
@@ -88,6 +120,29 @@ const mockClientData: ClientData[] = [
     manager_feedback: 'Verified income documents',
     director_feedback: 'Approved with standard terms',
     ceo_feedback: 'Final approval granted',
+    rating: 5,
+    documents_complete: 100,
+    has_photos: true,
+    has_videos: true,
+    has_scans: true,
+    messages_count: 12
+  },
+  {
+    id: '5',
+    client_name: 'David Wilson',
+    submission_date: '2023-05-01',
+    status: 'rejected',
+    submitted_by: 'Field Officer 2',
+    last_updated: '2023-05-04',
+    notes: 'Unable to provide sufficient income proof',
+    manager_feedback: 'Income documents insufficient',
+    director_feedback: 'Does not meet loan requirements',
+    rating: 2,
+    documents_complete: 30,
+    has_photos: true,
+    has_videos: false,
+    has_scans: false,
+    messages_count: 6
   },
 ];
 
@@ -96,6 +151,8 @@ const DataCollectionDashboard = () => {
   const { toast } = useToast();
   const [clientData, setClientData] = useState<ClientData[]>(mockClientData);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [viewingClient, setViewingClient] = useState<ClientData | null>(null);
+  const [viewDialog, setViewDialog] = useState<'media' | 'feedback' | null>(null);
   
   // Get user role from metadata
   useEffect(() => {
@@ -314,6 +371,252 @@ const DataCollectionDashboard = () => {
     }
   };
   
+  // Function to get rating stars display
+  const getRatingStars = (rating: number = 0) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    // Add full stars
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<Star key={`full-${i}`} className="w-4 h-4 text-yellow-500 fill-yellow-500" />);
+    }
+    
+    // Add half star if needed
+    if (hasHalfStar) {
+      stars.push(<Star key="half" className="w-4 h-4 text-yellow-500 fill-yellow-500" />);
+    }
+    
+    // Add empty stars
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<Star key={`empty-${i}`} className="w-4 h-4 text-gray-300" />);
+    }
+    
+    return <div className="flex items-center gap-0.5">{stars}</div>;
+  };
+  
+  // Display media icons based on client data
+  const getMediaIcons = (client: ClientData) => {
+    return (
+      <div className="flex items-center space-x-1">
+        {client.has_photos && <Camera size={16} className="text-blue-500" />}
+        {client.has_videos && <FileImage size={16} className="text-purple-500" />}
+        {client.has_scans && <FileScan size={16} className="text-green-500" />}
+        {client.messages_count && client.messages_count > 0 && (
+          <div className="flex items-center">
+            <MessageSquare size={16} className="text-indigo-500" />
+            <span className="text-xs ml-1">{client.messages_count}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  // View client media dialog
+  const ClientMediaDialog = () => {
+    if (!viewingClient) return null;
+    
+    // Mock media data for demonstration
+    const mockPhotos = [
+      'https://via.placeholder.com/400x300?text=Client+Photo+1',
+      'https://via.placeholder.com/400x300?text=Client+Photo+2',
+      'https://via.placeholder.com/400x300?text=Client+Photo+3',
+    ];
+    
+    const mockVideos = [
+      'https://via.placeholder.com/400x300?text=Client+Video+1',
+    ];
+    
+    const mockScans = [
+      { id: '1', name: 'National ID.pdf', url: '#' },
+      { id: '2', name: 'Bank Statement.pdf', url: '#' },
+      { id: '3', name: 'Proof of Income.pdf', url: '#' },
+    ];
+    
+    const mockMessages = [
+      { sender: 'Field Officer', message: 'Client visit completed. All documents collected.', timestamp: '2023-05-10T10:30:00Z' },
+      { sender: 'Manager', message: 'Good job. Did you verify their employment?', timestamp: '2023-05-10T11:15:00Z' },
+      { sender: 'Field Officer', message: 'Yes, I contacted their employer and confirmed.', timestamp: '2023-05-10T11:30:00Z' },
+    ];
+    
+    return (
+      <Dialog open={viewDialog === 'media'} onOpenChange={() => setViewDialog(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{viewingClient.client_name}'s Documentation</DialogTitle>
+            <DialogDescription>
+              Photos, videos, scanned documents, and communication history
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-6">
+              {/* Photos section */}
+              <div className="space-y-3">
+                <h3 className="font-medium flex items-center gap-2">
+                  <Camera size={18} /> 
+                  Photos ({mockPhotos.length})
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {mockPhotos.map((photo, idx) => (
+                    <div key={idx} className="border rounded-md overflow-hidden">
+                      <AspectRatio ratio={4/3}>
+                        <img src={photo} alt={`Client photo ${idx+1}`} className="object-cover w-full h-full" />
+                      </AspectRatio>
+                      <div className="p-2 text-xs">Photo {idx+1}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Videos section */}
+              <div className="space-y-3">
+                <h3 className="font-medium flex items-center gap-2">
+                  <FileImage size={18} /> 
+                  Videos ({mockVideos.length})
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {mockVideos.map((video, idx) => (
+                    <div key={idx} className="border rounded-md overflow-hidden">
+                      <div className="bg-gray-100 dark:bg-gray-800 aspect-video flex items-center justify-center">
+                        <div className="text-center">
+                          <FileImage size={32} className="mx-auto mb-2 text-purple-500" />
+                          <span className="text-sm">Video {idx+1}</span>
+                        </div>
+                      </div>
+                      <div className="p-2 text-xs flex justify-between">
+                        <span>Video {idx+1}</span>
+                        <Button size="sm" variant="ghost">View</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Scanned documents section */}
+              <div className="space-y-3">
+                <h3 className="font-medium flex items-center gap-2">
+                  <FileScan size={18} /> 
+                  Scanned Documents ({mockScans.length})
+                </h3>
+                <div className="space-y-2">
+                  {mockScans.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 border rounded-md bg-gray-50 dark:bg-gray-800">
+                      <div className="flex items-center gap-2">
+                        <FileScan size={18} className="text-green-500" />
+                        <span>{doc.name}</span>
+                      </div>
+                      <Button size="sm" variant="outline">View Document</Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Communication history */}
+              <div className="space-y-3">
+                <h3 className="font-medium flex items-center gap-2">
+                  <MessageSquare size={18} /> 
+                  Communication History ({mockMessages.length} messages)
+                </h3>
+                <div className="border rounded-md p-4 space-y-3 bg-gray-50 dark:bg-gray-800">
+                  {mockMessages.map((msg, idx) => (
+                    <div key={idx} className="border-b pb-3 last:border-b-0 last:pb-0">
+                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <span className="font-medium">{msg.sender}</span>
+                        <time>{new Date(msg.timestamp).toLocaleString()}</time>
+                      </div>
+                      <p className="text-sm">{msg.message}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+  
+  // View client feedback dialog
+  const ClientFeedbackDialog = () => {
+    if (!viewingClient) return null;
+    
+    return (
+      <Dialog open={viewDialog === 'feedback'} onOpenChange={() => setViewDialog(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl">{viewingClient.client_name}</DialogTitle>
+            <DialogDescription>
+              Application details and feedback history
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Rating:</span>
+                {getRatingStars(viewingClient.rating || 0)}
+              </div>
+              <Badge 
+                variant="outline" 
+                className={
+                  viewingClient.status === 'approved' ? "bg-green-100 text-green-800" :
+                  viewingClient.status === 'rejected' ? "bg-red-100 text-red-800" :
+                  "bg-blue-100 text-blue-800"
+                }
+              >
+                {viewingClient.status.charAt(0).toUpperCase() + viewingClient.status.slice(1).replace('_', ' ')}
+              </Badge>
+            </div>
+            
+            <div className="p-3 border rounded-md bg-gray-50 dark:bg-gray-800">
+              <h3 className="text-sm font-medium mb-2">Application Notes</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{viewingClient.notes}</p>
+            </div>
+            
+            {viewingClient.manager_feedback && (
+              <div className="p-3 border rounded-md bg-blue-50 dark:bg-blue-900/20">
+                <h3 className="text-sm font-medium mb-2 text-blue-700 dark:text-blue-400">Manager Feedback</h3>
+                <p className="text-sm text-blue-700 dark:text-blue-400">{viewingClient.manager_feedback}</p>
+              </div>
+            )}
+            
+            {viewingClient.director_feedback && (
+              <div className="p-3 border rounded-md bg-purple-50 dark:bg-purple-900/20">
+                <h3 className="text-sm font-medium mb-2 text-purple-700 dark:text-purple-400">Director Feedback</h3>
+                <p className="text-sm text-purple-700 dark:text-purple-400">{viewingClient.director_feedback}</p>
+              </div>
+            )}
+            
+            {viewingClient.ceo_feedback && (
+              <div className="p-3 border rounded-md bg-green-50 dark:bg-green-900/20">
+                <h3 className="text-sm font-medium mb-2 text-green-700 dark:text-green-400">CEO Feedback</h3>
+                <p className="text-sm text-green-700 dark:text-green-400">{viewingClient.ceo_feedback}</p>
+              </div>
+            )}
+            
+            <div className="p-3 border rounded-md">
+              <h3 className="text-sm font-medium mb-2">Documentation Completeness</h3>
+              <div className="flex items-center gap-2">
+                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                  <div 
+                    className={`h-2.5 rounded-full ${
+                      (viewingClient.documents_complete || 0) >= 80 ? "bg-green-500" :
+                      (viewingClient.documents_complete || 0) >= 50 ? "bg-yellow-500" : "bg-red-500"
+                    }`} 
+                    style={{ width: `${viewingClient.documents_complete || 0}%` }}
+                  ></div>
+                </div>
+                <span className="text-xs font-medium">{viewingClient.documents_complete || 0}%</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+  
   // Render workflow visualization
   const WorkflowVisualization = () => (
     <Card className="mb-8">
@@ -362,6 +665,14 @@ const DataCollectionDashboard = () => {
               <li className="flex items-center">
                 <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 mr-2"></div>
                 <span>Loan Details & Requirements</span>
+              </li>
+              <li className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 mr-2"></div>
+                <span>Photos & Videos from Site Visit</span>
+              </li>
+              <li className="flex items-center">
+                <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 mr-2"></div>
+                <span>Scanned Document Upload</span>
               </li>
             </ul>
           </div>
@@ -435,8 +746,9 @@ const DataCollectionDashboard = () => {
                   <TableHead>Client Name</TableHead>
                   <TableHead>Submission Date</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Submitted By</TableHead>
-                  <TableHead>Last Updated</TableHead>
+                  <TableHead>Rating</TableHead>
+                  <TableHead>Documents</TableHead>
+                  <TableHead>Media</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -446,14 +758,58 @@ const DataCollectionDashboard = () => {
                     <TableCell className="font-medium">{client.client_name}</TableCell>
                     <TableCell>{client.submission_date}</TableCell>
                     <TableCell>{getStatusBadge(client.status)}</TableCell>
-                    <TableCell>{client.submitted_by}</TableCell>
-                    <TableCell>{client.last_updated}</TableCell>
-                    <TableCell>{renderActionButtons(client)}</TableCell>
+                    <TableCell>{getRatingStars(client.rating)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center">
+                        <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700 mr-2" style={{width: "50px"}}>
+                          <div 
+                            className={`h-2 rounded-full ${
+                              (client.documents_complete || 0) >= 80 ? "bg-green-500" :
+                              (client.documents_complete || 0) >= 50 ? "bg-yellow-500" : "bg-red-500"
+                            }`} 
+                            style={{ width: `${client.documents_complete || 0}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs">{client.documents_complete || 0}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getMediaIcons(client)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        {renderActionButtons(client)}
+                        <div className="space-x-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="p-1 h-auto"
+                            onClick={() => {
+                              setViewingClient(client);
+                              setViewDialog('media');
+                            }}
+                          >
+                            <Camera size={16} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="p-1 h-auto"
+                            onClick={() => {
+                              setViewingClient(client);
+                              setViewDialog('feedback');
+                            }}
+                          >
+                            <ClipboardCheck size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {getFilteredData().length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       No records found
                     </TableCell>
                   </TableRow>
@@ -573,6 +929,10 @@ const DataCollectionDashboard = () => {
             </Table>
           </TabsContent>
         </Tabs>
+        
+        {/* Client media and feedback dialogs */}
+        <ClientMediaDialog />
+        <ClientFeedbackDialog />
       </div>
     </Layout>
   );
