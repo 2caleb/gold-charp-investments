@@ -23,6 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import GuarantorSection, { GuarantorData } from './GuarantorSection';
 import { useLoanCalculator } from '@/hooks/use-loan-calculator';
 import LoanCalculationDisplay from './LoanCalculationDisplay';
+import { formatCurrency } from '@/lib/utils';
 
 // Define the form schema with Zod
 const clientFormSchema = z.object({
@@ -254,20 +255,20 @@ const DataCollectionButton = () => {
           <div class="section">
             <div class="section-title">Loan Details</div>
             <div class="field"><span class="label">Loan Type:</span> <span class="value">${data.loanType}</span></div>
-            <div class="field"><span class="label">Loan Amount:</span> <span class="value">$${data.loanAmount}</span></div>
+            <div class="field"><span class="label">Loan Amount:</span> <span class="value">${parseInt(data.loanAmount).toLocaleString('en-UG')}</span></div>
             <div class="field"><span class="label">Loan Duration:</span> <span class="value">${data.loanDuration} ${data.durationType}</span></div>
             <div class="field"><span class="label">Purpose of Loan:</span> <span class="value">${data.purposeOfLoan}</span></div>
             <div class="field"><span class="label">Employment Status:</span> <span class="value">${data.employmentStatus}</span></div>
-            <div class="field"><span class="label">Monthly Income:</span> <span class="value">$${data.monthlyIncome}</span></div>
+            <div class="field"><span class="label">Monthly Income:</span> <span class="value">${parseInt(data.monthlyIncome).toLocaleString('en-UG')}</span></div>
             ${data.notes ? `<div class="field"><span class="label">Notes:</span> <span class="value">${data.notes}</span></div>` : ''}
           </div>
           
           ${calculationData ? `
           <div class="section">
             <div class="section-title">Loan Calculation (18% Annual Interest Rate)</div>
-            <div class="field"><span class="label">Principal Amount:</span> <span class="value">$${calculationData.principal.toFixed(2)}</span></div>
-            <div class="field"><span class="label">Total Interest:</span> <span class="value">$${calculationData.totalInterest.toFixed(2)}</span></div>
-            <div class="field"><span class="label">Total Repayment:</span> <span class="value">$${calculationData.totalAmount.toFixed(2)}</span></div>
+            <div class="field"><span class="label">Principal Amount:</span> <span class="value">${calculationData.principal.toLocaleString('en-UG')}</span></div>
+            <div class="field"><span class="label">Total Interest:</span> <span class="value">${calculationData.totalInterest.toLocaleString('en-UG')}</span></div>
+            <div class="field"><span class="label">Total Repayment:</span> <span class="value">${calculationData.totalAmount.toLocaleString('en-UG')}</span></div>
             
             <table>
               <tr>
@@ -279,15 +280,15 @@ const DataCollectionButton = () => {
               ${calculationData.payments.slice(0, 5).map((payment, i) => `
                 <tr>
                   <td>${data.durationType === 'daily' ? 'Day' : data.durationType === 'weekly' ? 'Week' : 'Month'} ${payment.number}</td>
-                  <td>$${payment.principal.toFixed(2)}</td>
-                  <td>$${payment.interest.toFixed(2)}</td>
-                  <td>$${payment.total.toFixed(2)}</td>
+                  <td>${payment.principal.toLocaleString('en-UG')}</td>
+                  <td>${payment.interest.toLocaleString('en-UG')}</td>
+                  <td>${payment.total.toLocaleString('en-UG')}</td>
                 </tr>
               `).join('')}
               ${calculationData.payments.length > 5 ? `
                 <tr>
                   <td colspan="3" style="text-align: center;">... ${calculationData.payments.length - 5} more payments</td>
-                  <td>$${calculationData.totalAmount.toFixed(2)}</td>
+                  <td>${calculationData.totalAmount.toLocaleString('en-UG')}</td>
                 </tr>
               ` : ''}
             </table>
@@ -305,7 +306,7 @@ const DataCollectionButton = () => {
             <div class="field"><span class="label">Relationship to Client:</span> <span class="value">${data.guarantors[0]?.relationship || ''}</span></div>
             <div class="field"><span class="label">Occupation:</span> <span class="value">${data.guarantors[0]?.occupation || ''}</span></div>
             <div class="field"><span class="label">Employer:</span> <span class="value">${data.guarantors[0]?.employer || ''}</span></div>
-            <div class="field"><span class="label">Monthly Income:</span> <span class="value">$${data.guarantors[0]?.monthlyIncome || ''}</span></div>
+            <div class="field"><span class="label">Monthly Income:</span> <span class="value">${parseInt(data.guarantors[0]?.monthlyIncome || '0').toLocaleString('en-UG')}</span></div>
             <div class="field"><span class="label">Years Known Client:</span> <span class="value">${data.guarantors[0]?.yearsKnown || ''}</span></div>
             <div class="field"><span class="label">Commitment Statement:</span> <span class="value">${data.guarantors[0]?.commitmentStatement || ''}</span></div>
           </div>
@@ -321,7 +322,7 @@ const DataCollectionButton = () => {
             <div class="field"><span class="label">Relationship to Client:</span> <span class="value">${data.guarantors[1]?.relationship || ''}</span></div>
             <div class="field"><span class="label">Occupation:</span> <span class="value">${data.guarantors[1]?.occupation || ''}</span></div>
             <div class="field"><span class="label">Employer:</span> <span class="value">${data.guarantors[1]?.employer || ''}</span></div>
-            <div class="field"><span class="label">Monthly Income:</span> <span class="value">$${data.guarantors[1]?.monthlyIncome || ''}</span></div>
+            <div class="field"><span class="label">Monthly Income:</span> <span class="value">${parseInt(data.guarantors[1]?.monthlyIncome || '0').toLocaleString('en-UG')}</span></div>
             <div class="field"><span class="label">Years Known Client:</span> <span class="value">${data.guarantors[1]?.yearsKnown || ''}</span></div>
             <div class="field"><span class="label">Commitment Statement:</span> <span class="value">${data.guarantors[1]?.commitmentStatement || ''}</span></div>
           </div>
