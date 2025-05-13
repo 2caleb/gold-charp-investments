@@ -2,21 +2,17 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
-
-interface User {
-  id: string;
-  fullName: string;
-  email: string;
-  role: 'user' | 'admin' | 'staff';
-}
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 interface RegisterData {
@@ -32,53 +28,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Check if user is already logged in on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('goldcharp_user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user:', error);
-        localStorage.removeItem('goldcharp_user');
+    // Set up the auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (event === 'SIGNED_OUT') {
+          toast({
+            title: 'Logged Out',
+            description: 'You have been successfully logged out.',
+          });
+        }
       }
-    }
-    setIsLoading(false);
-  }, []);
+    );
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [toast]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // For demo purposes, we're simulating an API call
-      // In a real application, this would be an actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Simulate validation (in real app, this would be done server-side)
-      if (email.trim() === '' || password.trim() === '') {
-        throw new Error('Email and password are required');
-      }
-
-      // Mock successful login with a fake user
-      const mockUser: User = {
-        id: '1',
-        fullName: email.split('@')[0],
+      const { error } = await supabase.auth.signInWithPassword({
         email,
-        role: 'user',
-      };
+        password,
+      });
 
-      // Store user in local storage and state
-      localStorage.setItem('goldcharp_user', JSON.stringify(mockUser));
-      setUser(mockUser);
+      if (error) {
+        throw error;
+      }
 
       // Show success toast
       toast({
         title: 'Login Successful',
-        description: `Welcome back, ${mockUser.fullName}!`,
+        description: 'Welcome back!',
       });
 
-      // Redirect to home page
+      // Navigate to home page
       navigate('/');
     } catch (error: any) {
       toast({
@@ -94,10 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (userData: RegisterData) => {
     setIsLoading(true);
     try {
-      // For demo purposes, we're simulating an API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Simulate validation
+      // Validate input
       if (!userData.email || !userData.password || !userData.fullName) {
         throw new Error('Please fill in all required fields');
       }
@@ -106,17 +102,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Password must be at least 6 characters');
       }
 
-      // Mock successful registration
-      const mockUser: User = {
-        id: Math.random().toString(36).substring(2, 9),
-        fullName: userData.fullName,
+      // Sign up with Supabase
+      const { error } = await supabase.auth.signUp({
         email: userData.email,
-        role: 'user',
-      };
+        password: userData.password,
+        options: {
+          data: {
+            full_name: userData.fullName,
+            phone: userData.phone || null,
+          },
+        },
+      });
 
-      // Store user in local storage and state
-      localStorage.setItem('goldcharp_user', JSON.stringify(mockUser));
-      setUser(mockUser);
+      if (error) {
+        throw error;
+      }
 
       // Show success toast
       toast({
@@ -124,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `Welcome to Gold Charp Investments, ${userData.fullName}!`,
       });
 
-      // Redirect to home page
+      // Navigate to home page
       navigate('/');
     } catch (error: any) {
       toast({
@@ -137,20 +137,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('goldcharp_user');
-    setUser(null);
-    toast({
-      title: 'Logged Out',
-      description: 'You have been successfully logged out.',
-    });
-    navigate('/login');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/login');
+    } catch (error: any) {
+      toast({
+        title: 'Logout Failed',
+        description: error.message || 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        session,
         isAuthenticated: !!user,
         isLoading,
         login,
