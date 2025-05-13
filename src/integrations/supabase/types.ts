@@ -9,6 +9,69 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      loan_applications: {
+        Row: {
+          address: string
+          approval_notes: string | null
+          client_name: string
+          created_at: string | null
+          created_by: string
+          current_approver: string
+          employment_status: string
+          id: string
+          id_number: string
+          last_updated: string | null
+          loan_amount: string
+          loan_type: string
+          monthly_income: string
+          notes: string | null
+          phone_number: string
+          purpose_of_loan: string
+          rejection_reason: string | null
+          status: string
+        }
+        Insert: {
+          address: string
+          approval_notes?: string | null
+          client_name: string
+          created_at?: string | null
+          created_by: string
+          current_approver: string
+          employment_status: string
+          id?: string
+          id_number: string
+          last_updated?: string | null
+          loan_amount: string
+          loan_type: string
+          monthly_income: string
+          notes?: string | null
+          phone_number: string
+          purpose_of_loan: string
+          rejection_reason?: string | null
+          status?: string
+        }
+        Update: {
+          address?: string
+          approval_notes?: string | null
+          client_name?: string
+          created_at?: string | null
+          created_by?: string
+          current_approver?: string
+          employment_status?: string
+          id?: string
+          id_number?: string
+          last_updated?: string | null
+          loan_amount?: string
+          loan_type?: string
+          monthly_income?: string
+          notes?: string | null
+          phone_number?: string
+          purpose_of_loan?: string
+          rejection_reason?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
