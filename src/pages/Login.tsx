@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { LogIn, FileText } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,12 +21,6 @@ const Login = () => {
     password: '',
   });
 
-  // Check if user has staff role
-  const isStaff = () => {
-    if (!user?.user_metadata?.role) return false;
-    return ['field_officer', 'manager', 'director', 'ceo'].includes(user.user_metadata.role);
-  };
-
   // If user is already logged in, redirect them
   useEffect(() => {
     if (isAuthenticated) {
@@ -34,13 +28,10 @@ const Login = () => {
       const from = (location.state as any)?.from?.pathname || '/';
       navigate(from, { replace: true });
       
-      // Show welcome toast with role info
-      const roleName = user?.user_metadata?.role || 'user';
-      const formattedRole = roleName.charAt(0).toUpperCase() + roleName.slice(1).replace('_', ' ');
-      
+      // Show welcome toast
       toast({
         title: `Welcome back, ${user?.user_metadata?.full_name || 'User'}!`,
-        description: isStaff() ? `You're logged in as a ${formattedRole}` : "You're logged in as a regular user",
+        description: "You're now logged in",
       });
     }
   }, [isAuthenticated, navigate, location, user, toast]);
@@ -53,18 +44,6 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await login(formData.email, formData.password);
-  };
-
-  const handleDataCollectionClick = () => {
-    if (isAuthenticated && isStaff()) {
-      navigate('/staff/data-collection');
-    } else {
-      toast({
-        title: "Staff Access Only",
-        description: "You need to login as a staff member to access this feature.",
-        variant: "destructive",
-      });
-    }
   };
 
   return (
@@ -148,23 +127,6 @@ const Login = () => {
             </CardFooter>
           </form>
         </Card>
-        
-        {/* Staff Tools Section - Only show if user is authenticated AND is a staff member */}
-        {isAuthenticated && isStaff() && (
-          <div className="my-8 animate-fade-in">
-            <h2 className="text-xl font-bold mb-4 text-center">Staff Tools</h2>
-            <div className="flex justify-center">
-              <Button 
-                onClick={handleDataCollectionClick}
-                variant="outline" 
-                className="flex items-center gap-2 border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50"
-              >
-                <FileText size={16} />
-                Client Data Collection
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </Layout>
   );

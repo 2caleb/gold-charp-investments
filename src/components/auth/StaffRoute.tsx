@@ -8,18 +8,12 @@ interface StaffRoleProps {
   children: React.ReactNode;
 }
 
-// Staff roles in order of hierarchy (lowest to highest)
-export type StaffRole = 'field_officer' | 'manager' | 'director' | 'ceo';
-
-// This component protects routes that should only be accessible to staff members
+// This component protects routes that should only be accessible to authenticated users
 const StaffRoute = ({ children }: StaffRoleProps) => {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
   const { toast } = useToast();
   
-  // Check if the user has any staff role
-  const isStaff = user?.user_metadata?.role && ['field_officer', 'manager', 'director', 'ceo'].includes(user.user_metadata.role);
-
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
@@ -34,16 +28,7 @@ const StaffRoute = ({ children }: StaffRoleProps) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (!isStaff) {
-    // User is authenticated but not a staff member
-    toast({
-      title: "Access Denied",
-      description: "You don't have permission to access this area.",
-      variant: "destructive",
-    });
-    return <Navigate to="/" replace />;
-  }
-
+  // User is authenticated, allow access
   return <>{children}</>;
 };
 

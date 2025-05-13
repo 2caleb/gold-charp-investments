@@ -11,15 +11,9 @@ import RefinanceLoans from './RefinanceLoans';
 import BusinessLoans from './BusinessLoans';
 
 const LoansTabs = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  // Check if user has staff role
-  const isStaff = () => {
-    if (!user?.user_metadata?.role) return false;
-    return ['field_officer', 'manager', 'director', 'ceo'].includes(user.user_metadata.role);
-  };
   
   const handleDataCollectionClick = () => {
     if (!isAuthenticated) {
@@ -29,12 +23,6 @@ const LoansTabs = () => {
         variant: "destructive",
       });
       navigate('/login');
-    } else if (!isStaff()) {
-      toast({
-        title: "Staff Access Only",
-        description: "You need to have staff permissions to access this feature.",
-        variant: "destructive",
-      });
     } else {
       navigate('/staff/data-collection');
     }
@@ -42,7 +30,7 @@ const LoansTabs = () => {
 
   return (
     <>
-      {/* Staff Data Collection Button - Only visible if user is authenticated */}
+      {/* Data Collection Button - Only visible if user is authenticated */}
       {isAuthenticated && (
         <div className="mb-8 flex justify-end">
           <Button 
