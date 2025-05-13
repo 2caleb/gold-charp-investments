@@ -2,7 +2,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/components/ui/toast';
+import { useToast } from '@/hooks/use-toast';
 
 interface StaffRoleProps {
   children: React.ReactNode;
