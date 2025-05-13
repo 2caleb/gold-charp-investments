@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '../theme/ThemeToggle';
 import DesktopNav from './DesktopNav';
 import MobileNav from './MobileNav';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,16 +38,18 @@ const Navbar = () => {
         {/* Desktop Navigation */}
         <DesktopNav />
 
-        {/* Mobile menu button */}
-        <div className="md:hidden flex items-center gap-2">
+        {/* Mobile menu button and theme toggle */}
+        <div className="md:hidden flex items-center">
           <ThemeToggle />
-          <button
+          <Button
             onClick={() => setIsOpen(!isOpen)}
-            className="text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 focus:outline-none transition-transform duration-300 hover:scale-110"
+            variant="ghost"
+            size="icon"
+            className="ml-2 text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400"
             aria-label="Toggle menu"
           >
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+            <Menu size={24} />
+          </Button>
         </div>
       </div>
 

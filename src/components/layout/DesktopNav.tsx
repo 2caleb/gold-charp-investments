@@ -28,8 +28,8 @@ const DesktopNav = () => {
   };
 
   return (
-    <nav className="hidden md:flex items-center space-x-6">
-      <NavLinks />
+    <nav className="hidden md:flex items-center space-x-8">
+      <NavLinks className="flex items-center space-x-8" />
       
       {/* Show Data Collection button only for authenticated users */}
       {isAuthenticated && (
@@ -45,15 +45,17 @@ const DesktopNav = () => {
         </Button>
       )}
       
-      <ThemeToggle />
-      
-      <Link to="/contact">
-        <Button variant="default" size="sm" className="bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700 transition-transform duration-300 hover:scale-105">
-          Contact Us
-        </Button>
-      </Link>
-      
-      <UserSection />
+      <div className="flex items-center space-x-6">
+        <ThemeToggle />
+        
+        <Link to="/contact">
+          <Button variant="default" size="sm" className="bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700 transition-transform duration-300 hover:scale-105">
+            Contact Us
+          </Button>
+        </Link>
+        
+        <UserSection />
+      </div>
     </nav>
   );
 };

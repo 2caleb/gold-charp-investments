@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,6 +7,10 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from "@/components/ui/badge";
+
+interface UserSectionProps {
+  onActionComplete?: () => void;
+}
 
 const getRoleBadgeColor = (role: string) => {
   const roleColors = {
@@ -28,7 +31,7 @@ const formatRoleTitle = (role: string) => {
     .join(' ');
 };
 
-const UserSection = () => {
+const UserSection = ({ onActionComplete }: UserSectionProps = {}) => {
   const { user, isAuthenticated, logout } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   
@@ -58,14 +61,24 @@ const UserSection = () => {
   const displayName = profile?.full_name || user?.email || 'User';
   const userRole = profile?.role || 'user';
 
+  const handleLogout = () => {
+    logout();
+    if (onActionComplete) {
+      onActionComplete();
+    }
+  };
+
+  const handleNavigation = () => {
+    if (onActionComplete) {
+      onActionComplete();
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="flex items-center gap-4">
-        <Link to="/login">
+        <Link to="/login" onClick={handleNavigation}>
           <Button variant="ghost" size="sm">Log in</Button>
-        </Link>
-        <Link to="/register">
-          <Button size="sm">Register</Button>
         </Link>
       </div>
     );
@@ -98,19 +111,19 @@ const UserSection = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to="/profile" className="cursor-pointer flex w-full items-center">
+          <Link to="/profile" className="cursor-pointer flex w-full items-center" onClick={handleNavigation}>
             <User className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/settings" className="cursor-pointer flex w-full items-center">
+          <Link to="/settings" className="cursor-pointer flex w-full items-center" onClick={handleNavigation}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => logout()} className="cursor-pointer">
+        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
