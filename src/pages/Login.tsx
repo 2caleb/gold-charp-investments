@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { LogIn, FileText, AlertTriangle } from 'lucide-react';
+import { LogIn, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,10 +19,7 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    inviteCode: '',
   });
-
-  const [showInviteField, setShowInviteField] = useState(false);
 
   // Check if user has staff role
   const isStaff = () => {
@@ -46,17 +43,6 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (showInviteField && formData.inviteCode !== 'GCIL2025') {
-      // In a real app, this would validate against a database of valid invite codes
-      toast({
-        title: "Invalid Invite Code",
-        description: "The invite code you entered is not valid.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     await login(formData.email, formData.password);
   };
 
@@ -84,9 +70,7 @@ const Login = () => {
             </div>
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
             <CardDescription className="dark:text-gray-400">
-              {showInviteField ? 
-                "Staff login requires an invitation code" : 
-                "Sign in to your Gold Charp Investments account"}
+              Sign in to your Gold Charp Investments account
             </CardDescription>
             <div className="text-xs text-center mt-2 text-gray-500 dark:text-gray-400">
               Our story started in 2025
@@ -123,35 +107,6 @@ const Login = () => {
                   onChange={handleChange}
                   className="dark:bg-gray-800 dark:border-gray-700 transition-all duration-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
-              </div>
-              
-              {showInviteField && (
-                <div className="space-y-2">
-                  <Label htmlFor="inviteCode">Staff Invitation Code</Label>
-                  <Input
-                    id="inviteCode"
-                    name="inviteCode"
-                    type="text"
-                    required
-                    value={formData.inviteCode}
-                    onChange={handleChange}
-                    className="dark:bg-gray-800 dark:border-gray-700 transition-all duration-300 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                  <div className="flex items-start text-xs text-amber-600 dark:text-amber-400">
-                    <AlertTriangle className="h-4 w-4 mr-1 flex-shrink-0 mt-0.5" />
-                    <span>Staff access is by invitation only. Contact administration if you need an invite code.</span>
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex items-center justify-end">
-                <button 
-                  type="button"
-                  onClick={() => setShowInviteField(!showInviteField)}
-                  className="text-xs text-purple-700 dark:text-purple-400 hover:underline"
-                >
-                  {showInviteField ? "Regular user login" : "Staff login"}
-                </button>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
