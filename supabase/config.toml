@@ -1,1 +1,4 @@
+
 project_id = "bjsxekgraxbfqzhbqjff"
+
+[functions.send-approval-email]

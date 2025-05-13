@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,8 @@ import { FormField, FormItem, FormLabel, FormControl, FormDescription, Form } fr
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useToast } from "@/components/ui/use-toast";
-import { Printer, ClipboardList, FileUp, Camera } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { Printer, ClipboardList, FileUp, Camera, Loader2 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from '@/integrations/supabase/client';
@@ -38,6 +38,7 @@ const DataCollectionButton = () => {
   const [open, setOpen] = useState(false);
   const [formProgress, setFormProgress] = useState(0);
   const [formComplete, setFormComplete] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -84,13 +85,65 @@ const DataCollectionButton = () => {
   }, [form.watch]);
   
   const onSubmit = async (values: FormValues) => {
-    try {
-      // Here you would normally submit to Supabase
-      // For demo purposes just showing a toast
-      
+    if (!user) {
       toast({
-        title: "Client Data Collected",
-        description: `Successfully collected data for ${values.clientName}`,
+        title: "Authentication Required",
+        description: "You must be logged in to submit client data.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSubmitting(true);
+    
+    try {
+      // 1. Insert the loan application into the database
+      const { data: applicationData, error: applicationError } = await supabase
+        .from('loan_applications')
+        .insert({
+          client_name: values.clientName,
+          phone_number: values.phoneNumber,
+          id_number: values.idNumber,
+          address: values.address,
+          loan_type: values.loanType,
+          loan_amount: values.loanAmount,
+          purpose_of_loan: values.purposeOfLoan,
+          employment_status: values.employmentStatus,
+          monthly_income: values.monthlyIncome,
+          notes: values.notes || null,
+          created_by: user.id,
+          status: 'submitted',
+          current_approver: user.id, // Initially set to the submitter
+        })
+        .select('id')
+        .single();
+      
+      if (applicationError) {
+        throw new Error(applicationError.message);
+      }
+      
+      // 2. Trigger the email workflow
+      const response = await fetch('https://bjsxekgraxbfqzhbqjff.supabase.co/functions/v1/send-approval-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.getSession().then(({data}) => data.session?.access_token)}`,
+        },
+        body: JSON.stringify({
+          applicationId: applicationData.id,
+          action: 'submit'
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to send notification email');
+      }
+      
+      // Success notification
+      toast({
+        title: "Client Data Submitted",
+        description: `Successfully collected data for ${values.clientName} and sent for approval.`,
       });
       
       // Close the dialog
@@ -103,10 +156,12 @@ const DataCollectionButton = () => {
     } catch (error) {
       console.error('Error submitting form:', error);
       toast({
-        title: "Error",
-        description: "There was a problem submitting the form. Please try again.",
+        title: "Submission Error",
+        description: error.message || "There was a problem submitting the form. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
   
@@ -364,7 +419,7 @@ const DataCollectionButton = () => {
                 </CardContent>
               </Card>
               
-              <DialogFooter className="flex flex-col sm:flex-row gap-4">
+              <DialogFooter className="flex flex-col sm:flex-row gap-4 pt-6">
                 <Button 
                   type="button" 
                   variant="outline" 
@@ -376,8 +431,16 @@ const DataCollectionButton = () => {
                 <Button 
                   type="submit" 
                   className="h-12 bg-purple-700 hover:bg-purple-800 w-full sm:w-auto"
+                  disabled={submitting}
                 >
-                  Submit Client Data
+                  {submitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Client Data"
+                  )}
                 </Button>
                 <Button 
                   type="button" 
