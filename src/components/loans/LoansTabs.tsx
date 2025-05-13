@@ -6,7 +6,7 @@ import RefinanceLoans from './RefinanceLoans';
 import BusinessLoans from './BusinessLoans';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/toast';
 import { useNavigate } from 'react-router-dom';
 import { FileText, ClipboardCheck, ArrowRight, Users } from 'lucide-react';
 

@@ -1,9 +1,5 @@
 
-// Custom hook for using toast functionality
-import {
-  useToast as useToastOriginal,
-  toast as toastOriginal,
-} from "@/components/ui/use-toast"
+// Re-export the toast functionality from the UI component
+import { useToast, toast } from "@/components/ui/toast"
 
-export const useToast = useToastOriginal;
-export const toast = toastOriginal;
+export { useToast, toast }
