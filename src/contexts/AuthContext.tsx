@@ -20,6 +20,7 @@ interface RegisterData {
   email: string;
   phone: string;
   password: string;
+  role?: string;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -110,6 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: userData.fullName,
             phone: userData.phone || null,
+            role: userData.role || 'user', // Default role is 'user'
           },
         },
       });

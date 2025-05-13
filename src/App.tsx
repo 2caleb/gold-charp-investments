@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import StaffRoute from "@/components/auth/StaffRoute";
 
 import Index from "./pages/Index";
 import Calculator from "./pages/Calculator";
@@ -16,6 +17,7 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import DataCollectionDashboard from "./pages/staff/DataCollectionDashboard";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 
 const queryClient = new QueryClient();
@@ -35,22 +37,15 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/calculator" element={<Calculator />} />
+              <Route path="/properties" element={<Properties />} />
+              <Route path="/loans" element={<Loans />} />
               
-              {/* Protected routes */}
-              <Route path="/calculator" element={
-                <ProtectedRoute>
-                  <Calculator />
-                </ProtectedRoute>
-              } />
-              <Route path="/properties" element={
-                <ProtectedRoute>
-                  <Properties />
-                </ProtectedRoute>
-              } />
-              <Route path="/loans" element={
-                <ProtectedRoute>
-                  <Loans />
-                </ProtectedRoute>
+              {/* Staff-only routes */}
+              <Route path="/staff/data-collection" element={
+                <StaffRoute>
+                  <DataCollectionDashboard />
+                </StaffRoute>
               } />
               
               {/* Catch-all route */}
