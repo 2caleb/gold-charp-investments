@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from 'react-router-dom';
 import { CheckCircle, Landmark, BadgeDollarSign, ScrollText } from 'lucide-react';
-import DataCollectionButton from '@/components/loans/DataCollectionButton';
 
 const Loans = () => {
   return (
@@ -20,9 +18,6 @@ const Loans = () => {
               <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
                 Gold Charp Investments Limited offers flexible financing solutions to help you achieve your property goals.
               </p>
-            </div>
-            <div className="mt-6 md:mt-0">
-              <DataCollectionButton />
             </div>
           </div>
 
