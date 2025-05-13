@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -19,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
-import { useMediaCapture } from '@/components/media/MediaCapture';
+import { useMediaCapture } from '@/hooks/use-media-capture';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import GuarantorSection, { GuarantorData } from './GuarantorSection';
 import { useLoanCalculator } from '@/hooks/use-loan-calculator';
@@ -67,7 +66,7 @@ type ClientFormValues = z.infer<typeof clientFormSchema>;
 const DataCollectionButton = () => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { captureImage, captureVideo, scanDocument } = useMediaCapture();
+  const { captureImage, captureVideo, scanDocument, MediaCaptureUI } = useMediaCapture();
 
   // Initialize the form
   const form = useForm<ClientFormValues>({
@@ -666,6 +665,9 @@ const DataCollectionButton = () => {
             </form>
           </Form>
         </ScrollArea>
+        
+        {/* Render the MediaCapture UI when needed */}
+        {MediaCaptureUI}
       </DialogContent>
     </Dialog>
   );
