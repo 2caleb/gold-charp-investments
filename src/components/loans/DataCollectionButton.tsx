@@ -1,1281 +1,673 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ClipboardList, FilePlus } from "lucide-react";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, FormSection } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, Form, FormMessage } from "@/components/ui/form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { Printer, ClipboardList, FileUp, Camera, Loader2, Video, ScanLine } from 'lucide-react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { MediaCapture } from '@/components/media/MediaCapture';
-import { DocumentScanner } from '@/components/media/DocumentScanner';
-import { formatCurrency } from '@/lib/utils';
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "@/hooks/use-toast";
+import { useMediaCapture } from '@/components/media/MediaCapture';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import GuarantorSection, { GuarantorData } from './GuarantorSection';
+import { useLoanCalculator } from '@/hooks/use-loan-calculator';
+import LoanCalculationDisplay from './LoanCalculationDisplay';
 
-// Define the form schema with guarantors
-const formSchema = z.object({
-  clientName: z.string().min(2, "Client name must be at least 2 characters"),
-  phoneNumber: z.string().min(10, "Please enter a valid phone number"),
-  idNumber: z.string().min(5, "ID number is required"),
-  address: z.string().min(5, "Address is required"),
-  loanType: z.string().min(1, "Please select a loan type"),
-  loanAmount: z.string().min(1, "Loan amount is required"),
-  loanDuration: z.string().min(1, "Loan duration is required"),
-  purposeOfLoan: z.string().min(10, "Please provide more details about the purpose"),
-  employmentStatus: z.string().min(1, "Please select employment status"),
-  monthlyIncome: z.string().min(1, "Monthly income is required"),
+// Define the form schema with Zod
+const clientFormSchema = z.object({
+  clientName: z.string().min(1, { message: "Client name is required" }),
+  phoneNumber: z.string().min(1, { message: "Phone number is required" }),
+  idNumber: z.string().min(1, { message: "ID number is required" }),
+  address: z.string().min(1, { message: "Address is required" }),
+  loanType: z.string().min(1, { message: "Loan type is required" }),
+  loanAmount: z.string().min(1, { message: "Loan amount is required" }),
+  loanDuration: z.string().min(1, { message: "Loan duration is required" }),
+  durationType: z.enum(['daily', 'weekly', 'monthly']),
+  purposeOfLoan: z.string().min(1, { message: "Purpose of loan is required" }),
+  employmentStatus: z.enum(['employed', 'self-employed', 'unemployed']),
+  monthlyIncome: z.string().min(1, { message: "Monthly income is required" }),
   notes: z.string().optional(),
-  // First Guarantor
-  guarantor1Name: z.string().min(2, "Guarantor name must be at least 2 characters"),
-  guarantor1Phone: z.string().min(10, "Please enter a valid phone number"),
-  guarantor1IdNumber: z.string().min(5, "ID number is required"),
-  guarantor1Address: z.string().min(5, "Address is required"),
-  guarantor1Relationship: z.string().min(2, "Relationship is required"),
-  // Second Guarantor
-  guarantor2Name: z.string().min(2, "Guarantor name must be at least 2 characters"),
-  guarantor2Phone: z.string().min(10, "Please enter a valid phone number"),
-  guarantor2IdNumber: z.string().min(5, "ID number is required"),
-  guarantor2Address: z.string().min(5, "Address is required"),
-  guarantor2Relationship: z.string().min(2, "Relationship is required"),
+  guarantors: z.array(
+    z.object({
+      fullName: z.string().min(1, { message: "Guarantor name is required" }),
+      idNumber: z.string().min(1, { message: "ID number is required" }),
+      phoneNumber: z.string().min(1, { message: "Phone number is required" }),
+      email: z.string().email().optional().or(z.literal('')),
+      address: z.string().min(1, { message: "Address is required" }),
+      relationship: z.string().min(1, { message: "Relationship is required" }),
+      occupation: z.string().min(1, { message: "Occupation is required" }),
+      employer: z.string().min(1, { message: "Employer is required" }),
+      monthlyIncome: z.string().min(1, { message: "Monthly income is required" }),
+      yearsKnown: z.string().min(1, { message: "Years known is required" }),
+      commitmentStatement: z.string().min(10, { message: "Please provide a detailed commitment statement" }),
+      agreeToTerms: z.boolean().refine(val => val === true, { message: "You must agree to the terms" }),
+      documents: z.object({
+        idDocument: z.any().optional(),
+        proofOfIncome: z.any().optional(),
+        proofOfAddress: z.any().optional(),
+      }),
+    })
+  ).length(2, { message: "Both guarantors are required" }),
 });
 
-// Create a type from the schema
-type FormValues = z.infer<typeof formSchema>;
+type ClientFormValues = z.infer<typeof clientFormSchema>;
 
 const DataCollectionButton = () => {
   const [open, setOpen] = useState(false);
-  const [formProgress, setFormProgress] = useState(0);
-  const [formComplete, setFormComplete] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  const [showVideoCamera, setShowVideoCamera] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
-  const [capturedMedia, setCapturedMedia] = useState<{photos: string[], videos: string[], documents: string[]}>({
-    photos: [],
-    videos: [],
-    documents: []
-  });
-  const [loanRepaymentInfo, setLoanRepaymentInfo] = useState({
-    interestRate: 18, // 18% interest rate
-    monthlyPayment: 0,
-    totalInterest: 0,
-    totalRepayment: 0
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { captureImage, captureVideo, scanDocument } = useMediaCapture();
 
-  const { toast } = useToast();
-  const { user } = useAuth();
-  const formRef = useRef<HTMLFormElement>(null);
-
-  // Initialize form with react-hook-form
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  // Initialize the form
+  const form = useForm<ClientFormValues>({
+    resolver: zodResolver(clientFormSchema),
     defaultValues: {
-      clientName: "",
-      phoneNumber: "",
-      idNumber: "",
-      address: "",
-      loanType: "",
-      loanAmount: "",
-      loanDuration: "12", // Default to 12 months
-      purposeOfLoan: "",
-      employmentStatus: "",
-      monthlyIncome: "",
-      notes: "",
-      guarantor1Name: "",
-      guarantor1Phone: "",
-      guarantor1IdNumber: "",
-      guarantor1Address: "",
-      guarantor1Relationship: "",
-      guarantor2Name: "",
-      guarantor2Phone: "",
-      guarantor2IdNumber: "",
-      guarantor2Address: "",
-      guarantor2Relationship: "",
+      clientName: '',
+      phoneNumber: '',
+      idNumber: '',
+      address: '',
+      loanType: '',
+      loanAmount: '',
+      loanDuration: '1',
+      durationType: 'monthly',
+      purposeOfLoan: '',
+      employmentStatus: 'employed',
+      monthlyIncome: '',
+      notes: '',
+      guarantors: [
+        {
+          fullName: '',
+          idNumber: '',
+          phoneNumber: '',
+          email: '',
+          address: '',
+          relationship: '',
+          occupation: '',
+          employer: '',
+          monthlyIncome: '',
+          yearsKnown: '',
+          commitmentStatement: '',
+          agreeToTerms: false,
+          documents: {
+            idDocument: null,
+            proofOfIncome: null,
+            proofOfAddress: null,
+          },
+        },
+        {
+          fullName: '',
+          idNumber: '',
+          phoneNumber: '',
+          email: '',
+          address: '',
+          relationship: '',
+          occupation: '',
+          employer: '',
+          monthlyIncome: '',
+          yearsKnown: '',
+          commitmentStatement: '',
+          agreeToTerms: false,
+          documents: {
+            idDocument: null,
+            proofOfIncome: null,
+            proofOfAddress: null,
+          },
+        }
+      ],
     },
   });
+
+  // Watch loan amount, duration, and type for calculation
+  const loanAmount = form.watch('loanAmount');
+  const loanDuration = form.watch('loanDuration');
+  const durationType = form.watch('durationType');
   
-  // Track form completion progress
-  const calculateProgress = (values: any) => {
-    const totalFields = Object.keys(formSchema.shape).length;
-    const filledFields = Object.entries(values).filter(([key, value]) => {
-      // If the field is not notes (which is optional) and has a value
-      if (key === 'notes') return true;
-      return value && String(value).trim() !== '';
-    }).length;
-    
-    const progress = Math.floor((filledFields / totalFields) * 100);
-    setFormProgress(progress);
-    setFormComplete(progress === 100);
-    
-    return progress;
-  };
+  // Use the loan calculator hook
+  const { calculation } = useLoanCalculator(
+    parseFloat(loanAmount || '0'),
+    parseInt(loanDuration || '1'),
+    durationType,
+    18 // 18% annual interest rate
+  );
   
-  // Calculate loan repayment details whenever loan amount or duration changes
-  useEffect(() => {
-    const loanAmount = parseFloat(form.watch("loanAmount")) || 0;
-    const loanDuration = parseInt(form.watch("loanDuration")) || 12;
+  // Handle form submission
+  const onSubmit = async (data: ClientFormValues) => {
+    setIsSubmitting(true);
     
-    if (loanAmount > 0 && loanDuration > 0) {
-      // Simple interest calculation: P * r * t
-      const principal = loanAmount;
-      const annualRate = loanRepaymentInfo.interestRate / 100;
-      const timeYears = loanDuration / 12;
-      
-      const totalInterest = principal * annualRate * timeYears;
-      const totalRepayment = principal + totalInterest;
-      const monthlyPayment = totalRepayment / loanDuration;
-      
-      setLoanRepaymentInfo({
-        ...loanRepaymentInfo,
-        monthlyPayment,
-        totalInterest,
-        totalRepayment
-      });
-    }
-  }, [form.watch("loanAmount"), form.watch("loanDuration")]);
-  
-  // Watch form values to update progress
-  React.useEffect(() => {
-    const subscription = form.watch((values) => {
-      calculateProgress(values);
-    });
+    // In a real app, you would send this data to your backend
+    console.log('Client data:', data);
     
-    return () => subscription.unsubscribe();
-  }, [form.watch]);
-  
-  const onSubmit = async (values: FormValues) => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to submit client data.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setSubmitting(true);
-    
-    try {
-      // 1. Insert the loan application into the database
-      const { data: applicationData, error: applicationError } = await supabase
-        .from('loan_applications')
-        .insert({
-          client_name: values.clientName,
-          phone_number: values.phoneNumber,
-          id_number: values.idNumber,
-          address: values.address,
-          loan_type: values.loanType,
-          loan_amount: values.loanAmount,
-          purpose_of_loan: values.purposeOfLoan,
-          employment_status: values.employmentStatus,
-          monthly_income: values.monthlyIncome,
-          notes: JSON.stringify({
-            general: values.notes || null,
-            loanDuration: values.loanDuration,
-            guarantor1: {
-              name: values.guarantor1Name,
-              phone: values.guarantor1Phone,
-              idNumber: values.guarantor1IdNumber,
-              address: values.guarantor1Address,
-              relationship: values.guarantor1Relationship
-            },
-            guarantor2: {
-              name: values.guarantor2Name,
-              phone: values.guarantor2Phone,
-              idNumber: values.guarantor2IdNumber,
-              address: values.guarantor2Address,
-              relationship: values.guarantor2Relationship
-            },
-            loanCalculation: {
-              interestRate: loanRepaymentInfo.interestRate,
-              monthlyPayment: loanRepaymentInfo.monthlyPayment,
-              totalInterest: loanRepaymentInfo.totalInterest,
-              totalRepayment: loanRepaymentInfo.totalRepayment
-            }
-          }),
-          created_by: user.id,
-          status: 'submitted',
-          current_approver: user.id, // Initially set to the submitter
-        })
-        .select('id')
-        .single();
-      
-      if (applicationError) {
-        throw new Error(applicationError.message);
-      }
-      
-      // 2. Get the session token
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('No active session found');
-      }
-      
-      // 3. Trigger the email workflow
-      const response = await fetch('https://bjsxekgraxbfqzhbqjff.supabase.co/functions/v1/send-approval-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          applicationId: applicationData.id,
-          action: 'submit'
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send notification email');
-      }
-      
-      // Success notification
-      toast({
-        title: "Client Data Submitted",
-        description: `Successfully collected data for ${values.clientName} and sent for approval.`,
-      });
-      
-      // Close the dialog
+    // For demo purposes, simulate an API call
+    setTimeout(() => {
+      setIsSubmitting(false);
       setOpen(false);
-      
-      // Reset the form
-      form.reset();
-      setFormProgress(0);
-      setFormComplete(false);
-      setCapturedMedia({photos: [], videos: [], documents: []});
+      toast({
+        title: 'Client data collected',
+        description: `${data.clientName}'s information has been successfully collected.`,
+      });
+    }, 1500);
+  };
+
+  // Handle capturing photos
+  const handleCapturePhoto = async () => {
+    try {
+      await captureImage();
+      toast({
+        title: 'Photo captured',
+        description: 'Client photo has been successfully captured.',
+      });
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error capturing photo:', error);
       toast({
-        title: "Submission Error",
-        description: error.message || "There was a problem submitting the form. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to capture photo. Please try again.',
+        variant: 'destructive',
       });
-    } finally {
-      setSubmitting(false);
     }
   };
-  
-  const handlePrint = () => {
-    // Create a new print window with the entire form content
-    const printWindow = window.open('', '_blank');
-    
-    if (!printWindow) {
+
+  // Handle capturing videos
+  const handleCaptureVideo = async () => {
+    try {
+      await captureVideo();
       toast({
-        title: "Print Error",
-        description: "Unable to open print window. Please check your browser settings.",
-        variant: "destructive",
+        title: 'Video captured',
+        description: 'Client video has been successfully recorded.',
       });
-      return;
+    } catch (error) {
+      console.error('Error capturing video:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to record video. Please try again.',
+        variant: 'destructive',
+      });
     }
+  };
+
+  // Handle document scanning
+  const handleScanDocument = async () => {
+    try {
+      await scanDocument();
+      toast({
+        title: 'Document scanned',
+        description: 'Client document has been successfully scanned.',
+      });
+    } catch (error) {
+      console.error('Error scanning document:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to scan document. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Handle printing the form
+  const handlePrintForm = () => {
+    const data = form.getValues();
+    const calculationData = calculation;
     
-    // Get the current form values
-    const values = form.getValues();
-    
-    // Format currency values for display
-    const formattedLoanAmount = values.loanAmount && !isNaN(Number(values.loanAmount)) 
-      ? formatCurrency(Number(values.loanAmount), 'UGX')
-      : values.loanAmount;
-      
-    const formattedMonthlyIncome = values.monthlyIncome && !isNaN(Number(values.monthlyIncome)) 
-      ? formatCurrency(Number(values.monthlyIncome), 'UGX')
-      : values.monthlyIncome;
-      
-    const formattedMonthlyPayment = formatCurrency(loanRepaymentInfo.monthlyPayment, 'UGX');
-    const formattedTotalRepayment = formatCurrency(loanRepaymentInfo.totalRepayment, 'UGX');
-    const formattedTotalInterest = formatCurrency(loanRepaymentInfo.totalInterest, 'UGX');
-    
-    // Build HTML content for the print window
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <title>Loan Application Form - ${values.clientName || 'Client'}</title>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            padding: 20px;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #8A2BE2;
-            padding-bottom: 10px;
-          }
-          .company-name {
-            font-size: 24px;
-            font-weight: bold;
-            color: #8A2BE2;
-          }
-          .section {
-            margin-bottom: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-          }
-          .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #8A2BE2;
-          }
-          .field {
-            margin-bottom: 10px;
-          }
-          .field-label {
-            font-weight: bold;
-            display: inline-block;
-            width: 200px;
-          }
-          .field-value {
-            display: inline-block;
-          }
-          .media-section {
-            margin-top: 20px;
-          }
-          .media-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 10px;
-          }
-          .media-item {
-            max-width: 200px;
-            max-height: 200px;
-            border: 1px solid #ddd;
-          }
-          @media print {
-            .media-item {
-              break-inside: avoid;
-            }
-          }
-          .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
-          }
-          .signatures {
-            margin-top: 50px;
-            display: flex;
-            justify-content: space-between;
-          }
-          .signature-line {
-            width: 200px;
-            border-bottom: 1px solid #000;
-            margin-bottom: 5px;
-          }
-          .loan-calculations {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-          }
-          .highlight {
-            color: #8A2BE2;
-            font-weight: bold;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="company-name">Gold Charp Investments Limited</div>
-          <div>Loan Application Form</div>
-          <div>Date: ${new Date().toLocaleDateString()}</div>
-        </div>
-        
-        <div class="section">
-          <div class="section-title">Personal Information</div>
-          <div class="field">
-            <span class="field-label">Client Name:</span>
-            <span class="field-value">${values.clientName || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Phone Number:</span>
-            <span class="field-value">${values.phoneNumber || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">ID Number:</span>
-            <span class="field-value">${values.idNumber || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Residential Address:</span>
-            <span class="field-value">${values.address || 'N/A'}</span>
-          </div>
-        </div>
-        
-        <div class="section">
-          <div class="section-title">Loan Information</div>
-          <div class="field">
-            <span class="field-label">Loan Type:</span>
-            <span class="field-value">${values.loanType ? values.loanType.charAt(0).toUpperCase() + values.loanType.slice(1) + ' Loan' : 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Loan Amount:</span>
-            <span class="field-value">${formattedLoanAmount || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Loan Duration:</span>
-            <span class="field-value">${values.loanDuration || 'N/A'} months</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Purpose of Loan:</span>
-            <span class="field-value">${values.purposeOfLoan || 'N/A'}</span>
+    // Prepare print content
+    const printContent = `
+      <html>
+        <head>
+          <title>Client Loan Application</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .section { margin-bottom: 20px; }
+            .section-title { font-size: 16px; font-weight: bold; border-bottom: 1px solid #ddd; margin-bottom: 10px; padding-bottom: 5px; }
+            .field { margin-bottom: 5px; }
+            .label { font-weight: bold; display: inline-block; width: 180px; }
+            .value { display: inline-block; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .guarantor { margin-top: 30px; }
+            .footer { margin-top: 50px; text-align: center; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>Client Loan Application Form</h2>
+            <p>Date: ${new Date().toLocaleDateString()}</p>
           </div>
           
-          <div class="loan-calculations">
-            <div class="section-title">Loan Calculations (${loanRepaymentInfo.interestRate}% Interest Rate)</div>
-            <div class="field">
-              <span class="field-label">Monthly Payment:</span>
-              <span class="field-value highlight">${formattedMonthlyPayment}</span>
-            </div>
-            <div class="field">
-              <span class="field-label">Total Interest:</span>
-              <span class="field-value">${formattedTotalInterest}</span>
-            </div>
-            <div class="field">
-              <span class="field-label">Total Repayment:</span>
-              <span class="field-value highlight">${formattedTotalRepayment}</span>
-            </div>
+          <div class="section">
+            <div class="section-title">Client Information</div>
+            <div class="field"><span class="label">Client Name:</span> <span class="value">${data.clientName}</span></div>
+            <div class="field"><span class="label">Phone Number:</span> <span class="value">${data.phoneNumber}</span></div>
+            <div class="field"><span class="label">ID Number:</span> <span class="value">${data.idNumber}</span></div>
+            <div class="field"><span class="label">Address:</span> <span class="value">${data.address}</span></div>
           </div>
-        </div>
-        
-        <div class="section">
-          <div class="section-title">Financial Information</div>
-          <div class="field">
-            <span class="field-label">Employment Status:</span>
-            <span class="field-value">${values.employmentStatus ? values.employmentStatus.charAt(0).toUpperCase() + values.employmentStatus.slice(1) : 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Monthly Income:</span>
-            <span class="field-value">${formattedMonthlyIncome || 'N/A'}</span>
-          </div>
-        </div>
-        
-        <div class="section">
-          <div class="section-title">First Guarantor Information</div>
-          <div class="field">
-            <span class="field-label">Name:</span>
-            <span class="field-value">${values.guarantor1Name || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Phone Number:</span>
-            <span class="field-value">${values.guarantor1Phone || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">ID Number:</span>
-            <span class="field-value">${values.guarantor1IdNumber || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Address:</span>
-            <span class="field-value">${values.guarantor1Address || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Relationship to Client:</span>
-            <span class="field-value">${values.guarantor1Relationship || 'N/A'}</span>
-          </div>
-        </div>
-        
-        <div class="section">
-          <div class="section-title">Second Guarantor Information</div>
-          <div class="field">
-            <span class="field-label">Name:</span>
-            <span class="field-value">${values.guarantor2Name || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Phone Number:</span>
-            <span class="field-value">${values.guarantor2Phone || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">ID Number:</span>
-            <span class="field-value">${values.guarantor2IdNumber || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Address:</span>
-            <span class="field-value">${values.guarantor2Address || 'N/A'}</span>
-          </div>
-          <div class="field">
-            <span class="field-label">Relationship to Client:</span>
-            <span class="field-value">${values.guarantor2Relationship || 'N/A'}</span>
-          </div>
-        </div>
-        
-        ${values.notes ? `
-        <div class="section">
-          <div class="section-title">Additional Notes</div>
-          <div class="field">
-            <span class="field-value">${values.notes}</span>
-          </div>
-        </div>
-        ` : ''}
-        
-        ${capturedMedia.photos.length > 0 || capturedMedia.videos.length > 0 || capturedMedia.documents.length > 0 ? `
-        <div class="section media-section">
-          <div class="section-title">Attached Media</div>
           
-          ${capturedMedia.photos.length > 0 ? `
-          <div class="field">
-            <div class="field-label">Photos:</div>
-            <div class="media-container">
-              ${capturedMedia.photos.map((photo, index) => `
-                <img src="${photo}" alt="Photo ${index + 1}" class="media-item">
+          <div class="section">
+            <div class="section-title">Loan Details</div>
+            <div class="field"><span class="label">Loan Type:</span> <span class="value">${data.loanType}</span></div>
+            <div class="field"><span class="label">Loan Amount:</span> <span class="value">$${data.loanAmount}</span></div>
+            <div class="field"><span class="label">Loan Duration:</span> <span class="value">${data.loanDuration} ${data.durationType}</span></div>
+            <div class="field"><span class="label">Purpose of Loan:</span> <span class="value">${data.purposeOfLoan}</span></div>
+            <div class="field"><span class="label">Employment Status:</span> <span class="value">${data.employmentStatus}</span></div>
+            <div class="field"><span class="label">Monthly Income:</span> <span class="value">$${data.monthlyIncome}</span></div>
+            ${data.notes ? `<div class="field"><span class="label">Notes:</span> <span class="value">${data.notes}</span></div>` : ''}
+          </div>
+          
+          ${calculationData ? `
+          <div class="section">
+            <div class="section-title">Loan Calculation (18% Annual Interest Rate)</div>
+            <div class="field"><span class="label">Principal Amount:</span> <span class="value">$${calculationData.principal.toFixed(2)}</span></div>
+            <div class="field"><span class="label">Total Interest:</span> <span class="value">$${calculationData.totalInterest.toFixed(2)}</span></div>
+            <div class="field"><span class="label">Total Repayment:</span> <span class="value">$${calculationData.totalAmount.toFixed(2)}</span></div>
+            
+            <table>
+              <tr>
+                <th>Period</th>
+                <th>Principal</th>
+                <th>Interest</th>
+                <th>Payment</th>
+              </tr>
+              ${calculationData.payments.slice(0, 5).map((payment, i) => `
+                <tr>
+                  <td>${data.durationType === 'daily' ? 'Day' : data.durationType === 'weekly' ? 'Week' : 'Month'} ${payment.number}</td>
+                  <td>$${payment.principal.toFixed(2)}</td>
+                  <td>$${payment.interest.toFixed(2)}</td>
+                  <td>$${payment.total.toFixed(2)}</td>
+                </tr>
               `).join('')}
-            </div>
+              ${calculationData.payments.length > 5 ? `
+                <tr>
+                  <td colspan="3" style="text-align: center;">... ${calculationData.payments.length - 5} more payments</td>
+                  <td>$${calculationData.totalAmount.toFixed(2)}</td>
+                </tr>
+              ` : ''}
+            </table>
           </div>
           ` : ''}
           
-          ${capturedMedia.documents.length > 0 ? `
-          <div class="field">
-            <div class="field-label">Documents:</div>
-            <div class="media-container">
-              ${capturedMedia.documents.map((doc, index) => `
-                <img src="${doc}" alt="Document ${index + 1}" class="media-item">
-              `).join('')}
-            </div>
+          <!-- First Guarantor -->
+          <div class="guarantor">
+            <div class="section-title">First Guarantor Information</div>
+            <div class="field"><span class="label">Full Name:</span> <span class="value">${data.guarantors[0]?.fullName || ''}</span></div>
+            <div class="field"><span class="label">ID Number:</span> <span class="value">${data.guarantors[0]?.idNumber || ''}</span></div>
+            <div class="field"><span class="label">Phone Number:</span> <span class="value">${data.guarantors[0]?.phoneNumber || ''}</span></div>
+            <div class="field"><span class="label">Email:</span> <span class="value">${data.guarantors[0]?.email || ''}</span></div>
+            <div class="field"><span class="label">Address:</span> <span class="value">${data.guarantors[0]?.address || ''}</span></div>
+            <div class="field"><span class="label">Relationship to Client:</span> <span class="value">${data.guarantors[0]?.relationship || ''}</span></div>
+            <div class="field"><span class="label">Occupation:</span> <span class="value">${data.guarantors[0]?.occupation || ''}</span></div>
+            <div class="field"><span class="label">Employer:</span> <span class="value">${data.guarantors[0]?.employer || ''}</span></div>
+            <div class="field"><span class="label">Monthly Income:</span> <span class="value">$${data.guarantors[0]?.monthlyIncome || ''}</span></div>
+            <div class="field"><span class="label">Years Known Client:</span> <span class="value">${data.guarantors[0]?.yearsKnown || ''}</span></div>
+            <div class="field"><span class="label">Commitment Statement:</span> <span class="value">${data.guarantors[0]?.commitmentStatement || ''}</span></div>
           </div>
-          ` : ''}
-        </div>
-        ` : ''}
-        
-        <div class="signatures">
-          <div>
-            <div class="signature-line"></div>
-            <div>Client Signature</div>
+          
+          <!-- Second Guarantor -->
+          <div class="guarantor">
+            <div class="section-title">Second Guarantor Information</div>
+            <div class="field"><span class="label">Full Name:</span> <span class="value">${data.guarantors[1]?.fullName || ''}</span></div>
+            <div class="field"><span class="label">ID Number:</span> <span class="value">${data.guarantors[1]?.idNumber || ''}</span></div>
+            <div class="field"><span class="label">Phone Number:</span> <span class="value">${data.guarantors[1]?.phoneNumber || ''}</span></div>
+            <div class="field"><span class="label">Email:</span> <span class="value">${data.guarantors[1]?.email || ''}</span></div>
+            <div class="field"><span class="label">Address:</span> <span class="value">${data.guarantors[1]?.address || ''}</span></div>
+            <div class="field"><span class="label">Relationship to Client:</span> <span class="value">${data.guarantors[1]?.relationship || ''}</span></div>
+            <div class="field"><span class="label">Occupation:</span> <span class="value">${data.guarantors[1]?.occupation || ''}</span></div>
+            <div class="field"><span class="label">Employer:</span> <span class="value">${data.guarantors[1]?.employer || ''}</span></div>
+            <div class="field"><span class="label">Monthly Income:</span> <span class="value">$${data.guarantors[1]?.monthlyIncome || ''}</span></div>
+            <div class="field"><span class="label">Years Known Client:</span> <span class="value">${data.guarantors[1]?.yearsKnown || ''}</span></div>
+            <div class="field"><span class="label">Commitment Statement:</span> <span class="value">${data.guarantors[1]?.commitmentStatement || ''}</span></div>
           </div>
-          <div>
-            <div class="signature-line"></div>
-            <div>First Guarantor Signature</div>
+          
+          <div class="footer">
+            <p>This document was generated on ${new Date().toLocaleString()}.</p>
           </div>
-          <div>
-            <div class="signature-line"></div>
-            <div>Second Guarantor Signature</div>
-          </div>
-          <div>
-            <div class="signature-line"></div>
-            <div>Officer Signature</div>
-          </div>
-        </div>
-        
-        <div class="footer">
-          <p>Gold Charp Investments Limited &copy; ${new Date().getFullYear()}. All rights reserved.</p>
-          <p>This document is confidential and contains private information.</p>
-        </div>
-        
-        <script>
-          window.onload = function() {
-            window.print();
-            // Uncomment below if you want the window to close after printing
-            // setTimeout(function() { window.close(); }, 500);
-          }
-        </script>
-      </body>
+        </body>
       </html>
-    `);
+    `;
     
-    printWindow.document.close();
-    
-    toast({
-      title: "Printing",
-      description: "Sending document to printer...",
-    });
-  };
-  
-  const handleMediaCapture = (mediaType: 'photo' | 'video', mediaData: string) => {
-    if (mediaType === 'photo') {
-      setCapturedMedia(prev => ({
-        ...prev,
-        photos: [...prev.photos, mediaData]
-      }));
-      setShowCamera(false);
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.focus();
+      
+      // Give the browser some time to load the content before printing
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
     } else {
-      setCapturedMedia(prev => ({
-        ...prev,
-        videos: [...prev.videos, mediaData]
-      }));
-      setShowVideoCamera(false);
+      toast({
+        title: 'Error',
+        description: 'Unable to open print window. Please check your popup blocker settings.',
+        variant: 'destructive',
+      });
     }
-    
-    toast({
-      title: mediaType === 'photo' ? "Photo Captured" : "Video Recorded",
-      description: `${mediaType === 'photo' ? 'Photo' : 'Video'} has been captured successfully.`,
-    });
-  };
-  
-  const handleDocumentScan = (documentData: string) => {
-    setCapturedMedia(prev => ({
-      ...prev,
-      documents: [...prev.documents, documentData]
-    }));
-    setShowScanner(false);
-    
-    toast({
-      title: "Document Scanned",
-      description: "Document has been scanned successfully.",
-    });
-  };
-  
-  const deleteMedia = (type: 'photo' | 'video' | 'document', index: number) => {
-    setCapturedMedia(prev => {
-      const newMedia = { ...prev };
-      if (type === 'photo') {
-        newMedia.photos = prev.photos.filter((_, i) => i !== index);
-      } else if (type === 'video') {
-        newMedia.videos = prev.videos.filter((_, i) => i !== index);
-      } else {
-        newMedia.documents = prev.documents.filter((_, i) => i !== index);
-      }
-      return newMedia;
-    });
   };
 
   return (
-    <>
-      <Button onClick={() => setOpen(true)} className="bg-purple-700 hover:bg-purple-800 dark:bg-purple-600 dark:hover:bg-purple-700 transition-all duration-300">
-        <ClipboardList className="mr-2" size={18} />
-        Collect Client Data
-      </Button>
-      
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Client Data Collection Form</DialogTitle>
-            <DialogDescription>
-              Complete all fields in the form to collect client information for loan processing.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Form Completion</span>
-              <span className="text-sm font-medium">{formProgress}%</span>
-            </div>
-            <Progress value={formProgress} className="h-2" />
-          </div>
-          
-          {showCamera && (
-            <MediaCapture 
-              type="photo" 
-              onCapture={(data) => handleMediaCapture('photo', data)} 
-              onCancel={() => setShowCamera(false)} 
-            />
-          )}
-          
-          {showVideoCamera && (
-            <MediaCapture 
-              type="video" 
-              onCapture={(data) => handleMediaCapture('video', data)} 
-              onCancel={() => setShowVideoCamera(false)} 
-            />
-          )}
-          
-          {showScanner && (
-            <DocumentScanner 
-              onScan={handleDocumentScan} 
-              onCancel={() => setShowScanner(false)} 
-            />
-          )}
-          
-          {!showCamera && !showVideoCamera && !showScanner && (
-            <Form {...form}>
-              <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Personal Information Section */}
-                  <Card>
-                    <CardContent className="pt-6">
-                      <h3 className="text-lg font-medium mb-4">Personal Information</h3>
-                      
-                      <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="clientName"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Client Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Full name" {...field} className="h-12" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="phoneNumber"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Phone Number</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g. +256 712 345 678" {...field} className="h-12" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="idNumber"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>National ID / Passport Number</FormLabel>
-                              <FormControl>
-                                <Input placeholder="ID number" {...field} className="h-12" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="address"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Residential Address</FormLabel>
-                              <FormControl>
-                                <Textarea placeholder="Full address" {...field} className="min-h-[80px]" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  {/* Loan Information Section */}
-                  <Card>
-                    <CardContent className="pt-6">
-                      <h3 className="text-lg font-medium mb-4">Loan Information</h3>
-                      
-                      <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="loanType"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Loan Type</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="h-12">
-                                    <SelectValue placeholder="Select loan type" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="mortgage">Mortgage Loan</SelectItem>
-                                  <SelectItem value="business">Business Loan</SelectItem>
-                                  <SelectItem value="personal">Personal Loan</SelectItem>
-                                  <SelectItem value="agricultural">Agricultural Loan</SelectItem>
-                                  <SelectItem value="education">Education Loan</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="loanAmount"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Loan Amount (UGX)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Amount in UGX" {...field} className="h-12" />
-                              </FormControl>
-                              <FormDescription>
-                                {field.value && !isNaN(Number(field.value)) 
-                                  ? formatCurrency(Number(field.value), 'UGX')
-                                  : 'Enter amount in Uganda Shillings'}
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="loanDuration"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Loan Duration (Months)</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="h-12">
-                                    <SelectValue placeholder="Select duration" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="6">6 months</SelectItem>
-                                  <SelectItem value="12">12 months</SelectItem>
-                                  <SelectItem value="24">24 months</SelectItem>
-                                  <SelectItem value="36">36 months</SelectItem>
-                                  <SelectItem value="48">48 months</SelectItem>
-                                  <SelectItem value="60">60 months</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        {/* Loan Calculation Preview */}
-                        {form.watch("loanAmount") && form.watch("loanDuration") && (
-                          <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                            <h4 className="font-medium mb-2">Loan Calculation (18% Interest)</h4>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              <div>Monthly Payment:</div>
-                              <div className="font-medium text-right">
-                                {formatCurrency(loanRepaymentInfo.monthlyPayment, 'UGX')}
-                              </div>
-                              
-                              <div>Total Interest:</div>
-                              <div className="text-right">
-                                {formatCurrency(loanRepaymentInfo.totalInterest, 'UGX')}
-                              </div>
-                              
-                              <div>Total Repayment:</div>
-                              <div className="font-medium text-right">
-                                {formatCurrency(loanRepaymentInfo.totalRepayment, 'UGX')}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        <FormField
-                          control={form.control}
-                          name="purposeOfLoan"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Purpose of Loan</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Describe how the loan will be used" 
-                                  {...field} 
-                                  className="min-h-[80px]" 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="bg-green-600 hover:bg-green-700">
+          <ClipboardList className="mr-2 h-4 w-4" />
+          Collect Client Data
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh]">
+        <DialogHeader>
+          <DialogTitle>Client Data Collection</DialogTitle>
+          <DialogDescription>
+            Enter the client's information below to collect data for loan processing.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <ScrollArea className="h-[70vh] pr-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Client Personal Information */}
+              <FormSection title="Client Information" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="clientName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Client Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter client name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                {/* Financial Information Section */}
-                <Card>
-                  <CardContent className="pt-6">
-                    <h3 className="text-lg font-medium mb-4">Financial Information</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="employmentStatus"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Employment Status</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="h-12">
-                                  <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="employed">Employed</SelectItem>
-                                <SelectItem value="self-employed">Self-Employed</SelectItem>
-                                <SelectItem value="business-owner">Business Owner</SelectItem>
-                                <SelectItem value="unemployed">Unemployed</SelectItem>
-                                <SelectItem value="retired">Retired</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="monthlyIncome"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Monthly Income (UGX)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Income in UGX" {...field} className="h-12" />
-                            </FormControl>
-                            <FormDescription>
-                              {field.value && !isNaN(Number(field.value)) 
-                                ? formatCurrency(Number(field.value), 'UGX')
-                                : 'Enter amount in Uganda Shillings'}
-                            </FormDescription>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter phone number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                {/* First Guarantor Information */}
-                <Card>
-                  <CardContent className="pt-6">
-                    <h3 className="text-lg font-medium mb-4">First Guarantor Information</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="guarantor1Name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Guarantor's full name" {...field} className="h-12" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor1Phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. +256 712 345 678" {...field} className="h-12" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor1IdNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>National ID / Passport Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="ID number" {...field} className="h-12" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor1Relationship"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Relationship to Client</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. Spouse, Parent, Sibling" {...field} className="h-12" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor1Address"
-                        render={({ field }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Residential Address</FormLabel>
-                            <FormControl>
-                              <Textarea placeholder="Full address" {...field} className="min-h-[80px]" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                <FormField
+                  control={form.control}
+                  name="idNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ID Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter ID number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                {/* Second Guarantor Information */}
-                <Card>
-                  <CardContent className="pt-6">
-                    <h3 className="text-lg font-medium mb-4">Second Guarantor Information</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="guarantor2Name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Guarantor's full name" {...field} className="h-12" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor2Phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. +256 712 345 678" {...field} className="h-12" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor2IdNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>National ID / Passport Number</FormLabel>
-                            <FormControl>
-                              <Input placeholder="ID number" {...field} className="h-12" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor2Relationship"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Relationship to Client</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. Spouse, Parent, Sibling" {...field} className="h-12" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="guarantor2Address"
-                        render={({ field }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Residential Address</FormLabel>
-                            <FormControl>
-                              <Textarea placeholder="Full address" {...field} className="min-h-[80px]" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter address" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {/* Media Capture Buttons */}
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" variant="outline" onClick={handleCapturePhoto}>
+                  <FilePlus className="mr-2 h-4 w-4" />
+                  Capture Photo
+                </Button>
+                <Button type="button" variant="outline" onClick={handleCaptureVideo}>
+                  <FilePlus className="mr-2 h-4 w-4" />
+                  Record Video
+                </Button>
+                <Button type="button" variant="outline" onClick={handleScanDocument}>
+                  <FilePlus className="mr-2 h-4 w-4" />
+                  Scan Document
+                </Button>
+              </div>
+              
+              {/* Loan Information */}
+              <FormSection title="Loan Details" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="loanType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Loan Type</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select loan type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="personal">Personal Loan</SelectItem>
+                          <SelectItem value="business">Business Loan</SelectItem>
+                          <SelectItem value="mortgage">Mortgage</SelectItem>
+                          <SelectItem value="education">Education Loan</SelectItem>
+                          <SelectItem value="auto">Auto Loan</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                {/* Additional Information & Documents */}
-                <Card>
-                  <CardContent className="pt-6">
-                    <h3 className="text-lg font-medium mb-4">Additional Information</h3>
-                    
-                    <FormField
-                      control={form.control}
-                      name="notes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Additional Notes</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Any additional information..." 
-                              {...field} 
-                              className="min-h-[120px]" 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="mt-6 space-y-4">
-                      <h4 className="text-md font-medium">Media & Documents</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="h-12"
-                          onClick={() => setShowCamera(true)}
+                <FormField
+                  control={form.control}
+                  name="loanAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Loan Amount ($)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Enter loan amount" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="loanDuration"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Loan Duration</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Enter duration" min="1" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="durationType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Payment Frequency</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select payment frequency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="purposeOfLoan"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Purpose of Loan</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Enter purpose of loan" 
+                          className="resize-none" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {/* Display loan calculation */}
+              {calculation && (
+                <LoanCalculationDisplay 
+                  calculation={calculation}
+                  durationType={durationType}
+                />
+              )}
+              
+              {/* Employment Information */}
+              <FormSection title="Employment Information" />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="employmentStatus"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Employment Status</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-1"
                         >
-                          <Camera className="mr-2" size={18} />
-                          Take Photo
-                        </Button>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="h-12"
-                          onClick={() => setShowVideoCamera(true)}
-                        >
-                          <Video className="mr-2" size={18} />
-                          Record Video
-                        </Button>
-                        <Button 
-                          type="button" 
-                          variant="outline" 
-                          className="h-12"
-                          onClick={() => setShowScanner(true)}
-                        >
-                          <ScanLine className="mr-2" size={18} />
-                          Scan Document
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Display captured media */}
-                    {(capturedMedia.photos.length > 0 || capturedMedia.videos.length > 0 || capturedMedia.documents.length > 0) && (
-                      <div className="mt-6">
-                        <h4 className="text-md font-medium mb-3">Captured Media</h4>
-                        
-                        {/* Photos */}
-                        {capturedMedia.photos.length > 0 && (
-                          <div className="mb-4">
-                            <h5 className="text-sm font-medium mb-2">Photos ({capturedMedia.photos.length})</h5>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                              {capturedMedia.photos.map((photo, index) => (
-                                <div key={`photo-${index}`} className="relative group">
-                                  <img 
-                                    src={photo} 
-                                    alt={`Captured photo ${index + 1}`} 
-                                    className="w-full h-24 object-cover rounded-md"
-                                  />
-                                  <button 
-                                    type="button"
-                                    onClick={() => deleteMedia('photo', index)}
-                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="employed" id="employed" />
+                            <FormLabel htmlFor="employed" className="font-normal">Employed</FormLabel>
                           </div>
-                        )}
-                        
-                        {/* Videos */}
-                        {capturedMedia.videos.length > 0 && (
-                          <div className="mb-4">
-                            <h5 className="text-sm font-medium mb-2">Videos ({capturedMedia.videos.length})</h5>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                              {capturedMedia.videos.map((video, index) => (
-                                <div key={`video-${index}`} className="relative group">
-                                  <video 
-                                    src={video} 
-                                    controls 
-                                    className="w-full h-32 object-cover rounded-md"
-                                  />
-                                  <button 
-                                    type="button"
-                                    onClick={() => deleteMedia('video', index)}
-                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="self-employed" id="self-employed" />
+                            <FormLabel htmlFor="self-employed" className="font-normal">Self-Employed</FormLabel>
                           </div>
-                        )}
-                        
-                        {/* Documents */}
-                        {capturedMedia.documents.length > 0 && (
-                          <div>
-                            <h5 className="text-sm font-medium mb-2">Documents ({capturedMedia.documents.length})</h5>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                              {capturedMedia.documents.map((doc, index) => (
-                                <div key={`doc-${index}`} className="relative group">
-                                  <img 
-                                    src={doc} 
-                                    alt={`Scanned document ${index + 1}`} 
-                                    className="w-full h-32 object-cover rounded-md"
-                                  />
-                                  <button 
-                                    type="button"
-                                    onClick={() => deleteMedia('document', index)}
-                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    ✕
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="unemployed" id="unemployed" />
+                            <FormLabel htmlFor="unemployed" className="font-normal">Unemployed</FormLabel>
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
-                <DialogFooter className="flex flex-col sm:flex-row gap-4 pt-6">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setOpen(false)}
-                    className="h-12 w-full sm:w-auto"
-                  >
+                <FormField
+                  control={form.control}
+                  name="monthlyIncome"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Monthly Income ($)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Enter monthly income" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Additional Notes</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Enter any additional notes" 
+                          className="resize-none" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Any additional information about the client that might be relevant for the loan application.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              {/* First Guarantor Section */}
+              <GuarantorSection 
+                control={form.control} 
+                index={0} 
+                guarantorLabel="First Guarantor Information" 
+              />
+              
+              {/* Second Guarantor Section */}
+              <GuarantorSection 
+                control={form.control} 
+                index={1} 
+                guarantorLabel="Second Guarantor Information" 
+              />
+              
+              {/* Form Submission and Print Buttons */}
+              <div className="flex justify-between pt-4">
+                <Button type="button" variant="outline" onClick={handlePrintForm}>
+                  Print Form
+                </Button>
+                <div className="space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                     Cancel
                   </Button>
-                  <Button 
-                    type="submit" 
-                    className="h-12 bg-purple-700 hover:bg-purple-800 w-full sm:w-auto"
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit Client Data"
-                    )}
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Submitting...' : 'Submit Data'}
                   </Button>
-                  <Button 
-                    type="button" 
-                    variant="secondary"
-                    onClick={handlePrint}
-                    disabled={!formComplete}
-                    className={`h-12 w-full sm:w-auto flex items-center ${!formComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <Printer className="mr-2" size={18} />
-                    Print Form
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+                </div>
+              </div>
+            </form>
+          </Form>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 };
 
