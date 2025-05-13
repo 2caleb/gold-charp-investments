@@ -1,17 +1,18 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { Link } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Register = () => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const { register, isLoading, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -20,33 +21,32 @@ const Register = () => {
     confirmPassword: ''
   });
 
+  // If user is already logged in, redirect to home
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      toast({
-        title: "Passwords don't match",
-        description: "Please make sure both password fields match.",
-        variant: "destructive"
-      });
+      alert("Passwords don't match");
       return;
     }
     
-    setIsLoading(true);
-    
-    // Simulate registration attempt
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Registration Successful",
-        description: "Welcome to Gold Charp Investments Limited.",
-      });
-    }, 1500);
+    await register({
+      fullName: formData.fullName,
+      email: formData.email,
+      phone: formData.phone,
+      password: formData.password
+    });
   };
 
   return (

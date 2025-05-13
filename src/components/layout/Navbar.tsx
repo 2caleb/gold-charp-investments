@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Home, Building, Calculator, Info, LogIn } from 'lucide-react';
+import { Menu, X, Home, Building, Calculator, Info, LogIn, LogOut, User } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { ThemeToggle } from '../theme/ThemeToggle';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
+  const { isAuthenticated, user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
@@ -64,12 +66,30 @@ const Navbar = () => {
               Contact Us
             </Button>
           </Link>
-          <Link to="/login">
-            <Button variant="outline" size="sm" className="border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50 flex items-center gap-1 transition-transform duration-300 hover:scale-105">
-              <LogIn size={16} />
-              <span>Login</span>
-            </Button>
-          </Link>
+          
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2">
+              <div className="text-sm font-medium text-purple-700 dark:text-purple-400">
+                Hello, {user?.fullName?.split(' ')[0]}
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={logout}
+                className="border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50 flex items-center gap-1 transition-transform duration-300 hover:scale-105"
+              >
+                <LogOut size={16} />
+                <span>Logout</span>
+              </Button>
+            </div>
+          ) : (
+            <Link to="/login">
+              <Button variant="outline" size="sm" className="border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50 flex items-center gap-1 transition-transform duration-300 hover:scale-105">
+                <LogIn size={16} />
+                <span>Login</span>
+              </Button>
+            </Link>
+          )}
         </nav>
 
         {/* Mobile menu button */}
@@ -134,12 +154,33 @@ const Navbar = () => {
                 Contact Us
               </Button>
             </Link>
-            <Link to="/login" className="w-full" onClick={() => setIsOpen(false)}>
-              <Button variant="outline" className="border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50 w-full flex items-center justify-center gap-2 transition-transform duration-300 hover:scale-105">
-                <LogIn size={16} />
-                <span>Login</span>
-              </Button>
-            </Link>
+            
+            {isAuthenticated ? (
+              <>
+                <div className="px-4 py-2 text-sm font-medium text-purple-700 dark:text-purple-400 flex items-center gap-2">
+                  <User size={16} />
+                  <span>{user?.fullName}</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50 w-full flex items-center justify-center gap-2 transition-transform duration-300 hover:scale-105"
+                  onClick={() => {
+                    logout();
+                    setIsOpen(false);
+                  }}
+                >
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </Button>
+              </>
+            ) : (
+              <Link to="/login" className="w-full" onClick={() => setIsOpen(false)}>
+                <Button variant="outline" className="border-purple-700 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-400 dark:hover:bg-purple-950/50 w-full flex items-center justify-center gap-2 transition-transform duration-300 hover:scale-105">
+                  <LogIn size={16} />
+                  <span>Login</span>
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       )}

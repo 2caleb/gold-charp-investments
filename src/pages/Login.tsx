@@ -1,40 +1,42 @@
 
 import React, { useState } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { Link } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import DataCollectionButton from '@/components/loans/DataCollectionButton';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   const [formData, setFormData] = useState({
-    email: 'mwesigwacaleb001@gmail.com',
+    email: '',
     password: '',
   });
+
+  // If user is already logged in, redirect them
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      // Redirect to where they were trying to go, or to home page
+      const from = (location.state as any)?.from?.pathname || '/';
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate login attempt
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Login Successful",
-        description: "Welcome back to Gold Charp Investments Limited.",
-      });
-    }, 1500);
+    await login(formData.email, formData.password);
   };
 
   return (

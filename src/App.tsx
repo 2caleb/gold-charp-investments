@@ -4,6 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
 import Index from "./pages/Index";
 import Calculator from "./pages/Calculator";
 import Properties from "./pages/Properties";
@@ -21,21 +24,39 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="system" storageKey="goldcharp-theme">
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/calculator" element={<Calculator />} />
-            <Route path="/properties" element={<Properties />} />
-            <Route path="/loans" element={<Loans />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              {/* Protected routes */}
+              <Route path="/calculator" element={
+                <ProtectedRoute>
+                  <Calculator />
+                </ProtectedRoute>
+              } />
+              <Route path="/properties" element={
+                <ProtectedRoute>
+                  <Properties />
+                </ProtectedRoute>
+              } />
+              <Route path="/loans" element={
+                <ProtectedRoute>
+                  <Loans />
+                </ProtectedRoute>
+              } />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
