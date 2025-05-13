@@ -185,8 +185,8 @@ const Login = () => {
           </form>
         </Card>
         
-        {/* Staff Tools Section - Only show if we're in staff login mode */}
-        {showInviteField && (
+        {/* Staff Tools Section - Only show if user is authenticated AND is a staff member */}
+        {isAuthenticated && isStaff() && (
           <div className="my-8 animate-fade-in">
             <h2 className="text-xl font-bold mb-4 text-center">Staff Tools</h2>
             <div className="flex justify-center">
