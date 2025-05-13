@@ -22,7 +22,11 @@ const Contact = () => {
             </div>
             <h3 className="text-xl font-bold mb-2">Call Us</h3>
             <p className="text-gray-600 mb-3">Our team is available Monday-Friday, 9am-5pm</p>
-            <a href="tel:+256-700-123456" className="text-purple-700 font-medium">+256 700 123456</a>
+            <div className="flex flex-col space-y-2">
+              <a href="tel:+256-393103974" className="text-purple-700 font-medium">+256-393103974</a>
+              <a href="tel:+256-790501202" className="text-purple-700 font-medium">+256-790501202</a>
+              <a href="tel:+256-200943073" className="text-purple-700 font-medium">+256-200943073</a>
+            </div>
           </div>
           
           <div className="flex flex-col items-center text-center p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
