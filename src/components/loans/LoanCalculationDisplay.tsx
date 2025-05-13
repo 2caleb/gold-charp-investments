@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LoanCalculation } from '@/hooks/use-loan-calculator';
+import { formatCurrency } from "@/lib/utils";
 
 interface LoanCalculationDisplayProps {
   calculation: LoanCalculation | null;
@@ -14,13 +15,6 @@ const LoanCalculationDisplay: React.FC<LoanCalculationDisplayProps> = ({
   durationType
 }) => {
   if (!calculation) return null;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
   
   // Format the payment period based on frequency
   const getPaymentPeriod = (num: number) => {
