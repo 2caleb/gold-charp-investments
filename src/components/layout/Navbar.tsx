@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '../theme/ThemeToggle';
+import DesktopNav from './DesktopNav';
 import MobileNav from './MobileNav';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Button } from '../ui/button';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,26 +28,25 @@ const Navbar = () => {
   }, [scrolled]);
 
   return (
-    <header className={`w-full sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm' : 'bg-white dark:bg-gray-900'} border-b border-gray-200 dark:border-gray-800`}>
-      <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center">
-          <Link to="/" className="flex items-center group transition-transform duration-300 hover:scale-105">
-            <span className="text-2xl font-serif font-bold text-purple-700 dark:text-purple-400">Gold<span className="text-amber-500">Charp</span></span>
-          </Link>
-        </div>
+    <header className={`w-full sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm' : 'bg-white dark:bg-gray-900'} border-b border-gray-200 dark:border-gray-800`}>
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <Link to="/" className="flex items-center group transition-transform duration-300 hover:scale-105">
+          <span className="text-2xl font-serif font-bold text-purple-700 dark:text-purple-400">Gold<span className="text-amber-500">Charp</span></span>
+        </Link>
 
-        {/* Menu button and theme toggle */}
-        <div className="flex items-center gap-4">
+        {/* Desktop Navigation */}
+        <DesktopNav />
+
+        {/* Mobile menu button */}
+        <div className="md:hidden flex items-center gap-2">
           <ThemeToggle />
-          <Button
+          <button
             onClick={() => setIsOpen(!isOpen)}
-            variant="ghost"
-            size="icon"
-            className="md:hidden text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 focus:outline-none transition-transform"
+            className="text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 focus:outline-none transition-transform duration-300 hover:scale-110"
             aria-label="Toggle menu"
           >
-            <Menu size={24} />
-          </Button>
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </div>
 
