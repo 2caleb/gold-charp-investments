@@ -6,25 +6,33 @@ import { Menu } from 'lucide-react';
 import NavLinks from './NavLinks';
 import UserSection from './UserSection';
 import { Link } from 'react-router-dom';
-import { useMobileDetect } from '@/hooks/use-mobile';
-import ThemeToggle from '../theme/ThemeToggle';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ThemeToggle } from '../theme/ThemeToggle';
 
 // Props type for the MobileNav component
 interface MobileNavProps {
   brandText?: string;
+  isOpen?: boolean; 
+  onClose?: () => void;
 }
 
-const MobileNav = ({ brandText = "Gold Charp Investments" }: MobileNavProps) => {
-  const isMobile = useMobileDetect();
-  const [isOpen, setIsOpen] = useState(false);
+const MobileNav = ({ brandText = "Gold Charp Investments", isOpen, onClose }: MobileNavProps) => {
+  const isMobile = useIsMobile();
+  const [sheetOpen, setSheetOpen] = useState(isOpen || false);
   
   const handleSheetOpenChange = (open: boolean) => {
-    setIsOpen(open);
+    setSheetOpen(open);
+    if (!open && onClose) {
+      onClose();
+    }
   };
   
   const handleActionComplete = () => {
     // Close the mobile menu when an action is completed
-    setIsOpen(false);
+    setSheetOpen(false);
+    if (onClose) {
+      onClose();
+    }
   };
 
   return (
@@ -39,7 +47,7 @@ const MobileNav = ({ brandText = "Gold Charp Investments" }: MobileNavProps) => 
       <div className="flex items-center gap-2">
         <ThemeToggle />
         
-        <Sheet open={isOpen} onOpenChange={handleSheetOpenChange}>
+        <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
           <SheetTrigger asChild>
             <Button 
               variant="ghost" 
@@ -56,8 +64,8 @@ const MobileNav = ({ brandText = "Gold Charp Investments" }: MobileNavProps) => 
             </SheetHeader>
             
             <div className="flex flex-col gap-6">
-              <NavLinks className="flex flex-col gap-4" onActionComplete={handleActionComplete} />
-              <UserSection onActionComplete={handleActionComplete} />
+              <NavLinks isMobile={true} onClick={handleActionComplete} />
+              <UserSection />
             </div>
           </SheetContent>
         </Sheet>

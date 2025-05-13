@@ -6,9 +6,11 @@ import { Home, Building, Calculator, Info, FileText } from 'lucide-react';
 interface NavLinksProps {
   isMobile?: boolean;
   onClick?: () => void;
+  className?: string;
+  onActionComplete?: () => void;
 }
 
-const NavLinks = ({ isMobile = false, onClick = () => {} }: NavLinksProps) => {
+const NavLinks = ({ isMobile = false, onClick, className, onActionComplete }: NavLinksProps) => {
   const location = useLocation();
   
   const isActive = (path: string) => {
@@ -26,12 +28,17 @@ const NavLinks = ({ isMobile = false, onClick = () => {} }: NavLinksProps) => {
   
   const linkClasses = isMobile ? mobileLinkClasses : desktopLinkClasses;
 
+  const handleClick = () => {
+    if (onClick) onClick();
+    if (onActionComplete) onActionComplete();
+  };
+
   return (
-    <>
+    <div className={className}>
       <Link 
         to="/" 
         className={`${isActive('/')} ${linkClasses}`}
-        onClick={onClick}
+        onClick={handleClick}
       >
         <Home size={18} />
         <span>Home</span>
@@ -39,7 +46,7 @@ const NavLinks = ({ isMobile = false, onClick = () => {} }: NavLinksProps) => {
       <Link 
         to="/properties" 
         className={`${isActive('/properties')} ${linkClasses}`}
-        onClick={onClick}
+        onClick={handleClick}
       >
         <Building size={18} />
         <span>Properties</span>
@@ -47,7 +54,7 @@ const NavLinks = ({ isMobile = false, onClick = () => {} }: NavLinksProps) => {
       <Link 
         to="/loans" 
         className={`${isActive('/loans')} ${linkClasses}`}
-        onClick={onClick}
+        onClick={handleClick}
       >
         <Building size={18} />
         <span>Loans</span>
@@ -55,7 +62,7 @@ const NavLinks = ({ isMobile = false, onClick = () => {} }: NavLinksProps) => {
       <Link 
         to="/calculator" 
         className={`${isActive('/calculator')} ${linkClasses}`}
-        onClick={onClick}
+        onClick={handleClick}
       >
         <Calculator size={18} />
         <span>Calculator</span>
@@ -63,12 +70,12 @@ const NavLinks = ({ isMobile = false, onClick = () => {} }: NavLinksProps) => {
       <Link 
         to="/about" 
         className={`${isActive('/about')} ${linkClasses}`}
-        onClick={onClick}
+        onClick={handleClick}
       >
         <Info size={18} />
         <span>About Us</span>
       </Link>
-    </>
+    </div>
   );
 };
 
