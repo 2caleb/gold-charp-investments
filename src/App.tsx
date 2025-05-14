@@ -17,6 +17,9 @@ import Loans from '@/pages/Loans';
 import Calculator from '@/pages/Calculator';
 import Contact from '@/pages/Contact';
 import About from '@/pages/About';
+import DataCollectionDashboard from '@/pages/staff/DataCollectionDashboard';
+import NewClient from '@/pages/NewClient';
+import ClientsList from '@/pages/ClientsList';
 
 function App() {
   return (
@@ -61,6 +64,23 @@ function App() {
         <Route path="/notifications" element={
           <PrivateRoute>
             <Notifications />
+          </PrivateRoute>
+        } />
+        <Route path="/clients" element={
+          <PrivateRoute>
+            <ClientsList />
+          </PrivateRoute>
+        } />
+        <Route path="/clients/new" element={
+          <PrivateRoute>
+            <NewClient />
+          </PrivateRoute>
+        } />
+        
+        {/* Staff routes */}
+        <Route path="/staff/data-collection" element={
+          <PrivateRoute>
+            <DataCollectionDashboard />
           </PrivateRoute>
         } />
       </Routes>
