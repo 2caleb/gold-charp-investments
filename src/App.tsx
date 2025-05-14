@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import NewLoanApplication from '@/pages/NewLoanApplication';
+import LoanApplicationsList from '@/pages/LoanApplicationsList';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
 import { Toast } from '@/components/ui/toast';
@@ -26,6 +27,16 @@ function App() {
           </PublicRoute>
         } />
         <Route path="/" element={
+          <PrivateRoute>
+            <NewLoanApplication />
+          </PrivateRoute>
+        } />
+        <Route path="/loan-applications" element={
+          <PrivateRoute>
+            <LoanApplicationsList />
+          </PrivateRoute>
+        } />
+        <Route path="/loan-applications/new" element={
           <PrivateRoute>
             <NewLoanApplication />
           </PrivateRoute>
