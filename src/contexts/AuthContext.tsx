@@ -176,13 +176,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      setIsLoading(true);
+      console.log("Signing out...");
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      // onAuthStateChange listener will handle the toast notification
     } catch (error: any) {
+      console.error("Signout error:", error);
       toast({
         title: 'Logout Failed',
         description: error.message || 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 

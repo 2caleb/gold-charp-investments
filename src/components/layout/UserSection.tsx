@@ -58,9 +58,15 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
   }, [user?.id]);
 
   const handleSignOut = async () => {
-    await signOut();
-    if (onActionComplete) onActionComplete();
-    navigate('/');
+    try {
+      console.log("Sign out button clicked");
+      await signOut();
+      if (onActionComplete) onActionComplete();
+      navigate('/');
+      console.log("Sign out completed");
+    } catch (error) {
+      console.error("Error during sign out:", error);
+    }
   };
 
   const handleSignIn = () => {
