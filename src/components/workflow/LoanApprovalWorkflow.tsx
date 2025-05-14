@@ -9,21 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
-
-interface WorkflowData {
-  id: string;
-  current_stage: string;
-  field_officer_approved: boolean;
-  manager_approved: boolean;
-  director_approved: boolean;
-  ceo_approved: boolean;
-  chairperson_approved: boolean;
-  field_officer_notes?: string;
-  manager_notes?: string;
-  director_notes?: string;
-  ceo_notes?: string;
-  chairperson_notes?: string;
-}
+import { WorkflowData } from '@/types/notification';
 
 interface LoanApplication {
   id: string;
@@ -57,15 +43,17 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch workflow data
+        // Fetch workflow data using PostgreSQL function to handle TypeScript type issues
         const { data: workflowData, error: workflowError } = await supabase
-          .from('loan_application_workflow')
-          .select('*')
-          .eq('loan_application_id', applicationId)
-          .single();
+          .rpc('get_loan_workflow', { application_id: applicationId });
 
         if (workflowError) throw workflowError;
-        setWorkflow(workflowData);
+        
+        if (workflowData) {
+          setWorkflow(workflowData as WorkflowData);
+        } else {
+          throw new Error('No workflow data found');
+        }
 
         // Fetch application data
         const { data: applicationData, error: applicationError } = await supabase
@@ -130,12 +118,9 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
 
       // Refresh data
       const { data: updatedWorkflow } = await supabase
-        .from('loan_application_workflow')
-        .select('*')
-        .eq('loan_application_id', applicationId)
-        .single();
+        .rpc('get_loan_workflow', { application_id: applicationId });
         
-      if (updatedWorkflow) setWorkflow(updatedWorkflow);
+      if (updatedWorkflow) setWorkflow(updatedWorkflow as WorkflowData);
 
       const { data: updatedApplication } = await supabase
         .from('loan_applications')

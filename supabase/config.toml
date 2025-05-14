@@ -18,3 +18,6 @@ verify_jwt = true
 
 [functions.send-notification]
 verify_jwt = true
+
+[functions.get_loan_workflow]
+verify_jwt = true
