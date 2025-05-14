@@ -8,7 +8,7 @@ import NewLoanApplication from '@/pages/NewLoanApplication';
 import LoanApplicationsList from '@/pages/LoanApplicationsList';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
-import { Toast } from '@/components/ui/toast';
+import { Toaster } from '@/components/ui/toaster';
 import Dashboard from '@/pages/Dashboard';
 import Notifications from '@/pages/Notifications';
 
@@ -28,7 +28,7 @@ function App() {
         } />
         <Route path="/" element={
           <PrivateRoute>
-            <NewLoanApplication />
+            <Dashboard />
           </PrivateRoute>
         } />
         <Route path="/loan-applications" element={
@@ -52,7 +52,7 @@ function App() {
           </PrivateRoute>
         } />
       </Routes>
-      <Toast />
+      <Toaster />
     </AuthProvider>
   );
 }
