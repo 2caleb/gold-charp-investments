@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -24,6 +24,7 @@ import GuarantorSection, { GuarantorData } from './GuarantorSection';
 import { useLoanCalculator } from '@/hooks/use-loan-calculator';
 import LoanCalculationDisplay from './LoanCalculationDisplay';
 import { formatCurrency } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
 
 // Define the form schema with Zod
 const clientFormSchema = z.object({
@@ -490,7 +491,11 @@ const DataCollectionButton = () => {
                     <FormItem>
                       <FormLabel>Loan Amount (UGX)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Enter loan amount" {...field} />
+                        <Input 
+                          type="number" 
+                          placeholder="Enter loan amount" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -504,7 +509,12 @@ const DataCollectionButton = () => {
                     <FormItem>
                       <FormLabel>Loan Duration</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="Enter duration" min="1" {...field} />
+                        <Input 
+                          type="number" 
+                          placeholder="Enter duration" 
+                          min="1" 
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -558,10 +568,60 @@ const DataCollectionButton = () => {
               
               {/* Display loan calculation */}
               {calculation && (
-                <LoanCalculationDisplay 
-                  calculation={calculation}
-                  durationType={durationType}
-                />
+                <Card className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                  <CardContent className="pt-4">
+                    <h3 className="text-lg font-medium mb-2">Loan Calculation (18% Annual Interest)</h3>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <p className="text-sm text-gray-500">Principal Amount</p>
+                        <p className="font-semibold">UGX {calculation.principal.toLocaleString()}</p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-sm text-gray-500">Total Interest</p>
+                        <p className="font-semibold">UGX {calculation.totalInterest.toLocaleString()}</p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-sm text-gray-500">Total Repayment</p>
+                        <p className="font-semibold">UGX {calculation.totalAmount.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2">Payment</th>
+                            <th className="text-right py-2">Principal</th>
+                            <th className="text-right py-2">Interest</th>
+                            <th className="text-right py-2">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {calculation.payments.slice(0, 5).map((payment, i) => (
+                            <tr key={i} className="border-b">
+                              <td className="py-2">
+                                {durationType === 'daily' ? 'Day' : 
+                                 durationType === 'weekly' ? 'Week' : 'Month'} {payment.number}
+                              </td>
+                              <td className="text-right py-2">UGX {payment.principal.toLocaleString()}</td>
+                              <td className="text-right py-2">UGX {payment.interest.toLocaleString()}</td>
+                              <td className="text-right py-2">UGX {payment.total.toLocaleString()}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    {calculation.payments.length > 5 && (
+                      <p className="text-sm text-center text-gray-500 mt-2">
+                        ... {calculation.payments.length - 5} more payments
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
               )}
               
               {/* Employment Information */}
