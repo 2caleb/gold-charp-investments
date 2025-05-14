@@ -13,6 +13,8 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { fetchLoanPerformanceData, getMockLoanPerformanceData } from '@/services/dashboardService';
+import { toast } from '@/hooks/use-toast';
 
 // Define data format
 interface LoanPerformanceData {
@@ -28,44 +30,62 @@ export const LoanPerformanceChart = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchLoanPerformance = async () => {
+    const loadLoanPerformance = async () => {
       setIsLoading(true);
       try {
-        // In a real app, this would be a query to Supabase
-        // For now, we'll use mock data
-        const mockData: LoanPerformanceData[] = [
-          { month: 'Jan', disbursed: 4000, repaid: 2400, defaulted: 240 },
-          { month: 'Feb', disbursed: 3000, repaid: 1398, defaulted: 210 },
-          { month: 'Mar', disbursed: 5000, repaid: 3800, defaulted: 290 },
-          { month: 'Apr', disbursed: 2780, repaid: 3908, defaulted: 200 },
-          { month: 'May', disbursed: 1890, repaid: 4800, defaulted: 181 },
-          { month: 'Jun', disbursed: 2390, repaid: 3800, defaulted: 250 },
-          { month: 'Jul', disbursed: 3490, repaid: 4300, defaulted: 210 },
-        ];
-        setData(mockData);
+        // Check if the table exists
+        const { count, error: tableCheckError } = await supabase
+          .from('loan_applications')
+          .select('*', { count: 'exact', head: true });
+
+        if (tableCheckError) {
+          console.log('Using mock data - loan_applications table not available');
+          // Use mock data if table doesn't exist
+          setData(getMockLoanPerformanceData());
+          return;
+        }
+
+        if (count === 0) {
+          // Table exists but no data
+          console.log('Using mock data - no records in loan_applications');
+          setData(getMockLoanPerformanceData());
+          return;
+        }
+
+        // Table exists and has data, fetch real data
+        const { data: loanData, error } = await fetchLoanPerformanceData();
+        
+        if (error) throw error;
+        
+        if (loanData && loanData.length > 0) {
+          setData(loanData);
+        } else {
+          // No data processed, use mock data
+          console.log('Using mock data - no processed data available');
+          setData(getMockLoanPerformanceData());
+        }
       } catch (err) {
-        console.error('Error fetching loan performance data:', err);
+        console.error('Error loading loan performance data:', err);
         setError('Failed to load loan performance data');
+        // Fallback to mock data
+        setData(getMockLoanPerformanceData());
+        toast({
+          title: 'Data Loading Error',
+          description: 'Using sample data while we fix the issue.',
+          variant: 'destructive',
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchLoanPerformance();
+    loadLoanPerformance();
   }, []);
 
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-purple-700" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-center text-red-500 p-4">
-        {error}
       </div>
     );
   }
