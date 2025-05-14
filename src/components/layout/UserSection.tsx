@@ -35,9 +35,20 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
   }
 
   if (user) {
+    // Extract user information
+    const fullName = user.user_metadata?.full_name || 'User';
+    const role = user.user_metadata?.role || 'Client';
+    
     return (
       <div className="flex items-center gap-2">
         <NotificationsDropdown />
+        
+        {/* User info display */}
+        <div className="hidden md:flex flex-col items-end mr-2">
+          <span className="text-sm font-medium">{fullName}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{role}</span>
+        </div>
+        
         <Button
           variant="outline"
           size="sm"

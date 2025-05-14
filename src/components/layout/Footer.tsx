@@ -79,14 +79,19 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Contact Info */}
+          {/* Contact Info - Updated with phone numbers from Contact page */}
           <div>
             <h4 className="font-bold text-lg mb-4">Contact Us</h4>
             <address className="not-italic">
               <p className="mb-2 text-gray-300">Nansana Heights Building</p>
               <p className="mb-2 text-gray-300">Nansana-Yesu Amala, Wakiso, Uganda</p>
+              <div className="mb-2 text-gray-300">
+                <p className="block mb-1">Phone:</p>
+                <p className="block mb-1">+256-393103974</p>
+                <p className="block mb-1">+256-790501202</p>
+                <p className="block mb-1">+256-200943073</p>
+              </div>
               <p className="mb-2 text-gray-300">
-                <span className="block">Phone: +256 7123 45678</span>
                 <span className="block">Email: info@goldcharpinvestments.com</span>
               </p>
             </address>
