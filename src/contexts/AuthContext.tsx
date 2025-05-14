@@ -1,15 +1,21 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthSession, AuthUser } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 export interface AuthContextType {
   user: AuthUser | null;
   session: AuthSession | null;
   isLoading: boolean;
+  isAuthenticated: boolean; // Added missing property
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata?: any) => Promise<void>;
   signOut: () => Promise<void>;
+  // Add aliases for backward compatibility
+  login: (email: string, password: string) => Promise<void>;
+  register: (userData: {email: string, password: string, fullName?: string, phone?: string}) => Promise<void>;
 }
 
 // Create the context
@@ -29,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate(); // Fixed: Import navigate function
 
   useEffect(() => {
     // Set up the auth state listener first
@@ -56,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, [toast]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
@@ -77,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       // Navigate to home page
-      navigate('/');
+      navigate('/'); // Fixed: using imported navigate
     } catch (error: any) {
       toast({
         title: 'Login Failed',
@@ -125,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       // Navigate to home page
-      navigate('/');
+      navigate('/'); // Fixed: using imported navigate
     } catch (error: any) {
       toast({
         title: 'Registration Failed',
@@ -140,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      navigate('/login');
+      navigate('/login'); // Fixed: using imported navigate
     } catch (error: any) {
       toast({
         title: 'Logout Failed',
@@ -150,13 +157,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Add alias methods for backward compatibility
+  const login = signIn;
+  const register = (userData: {email: string, password: string, fullName?: string, phone?: string}) => {
+    return signUp(userData.email, userData.password, {
+      fullName: userData.fullName,
+      phone: userData.phone
+    });
+  };
+
   const value = {
     user,
     session,
     isLoading,
+    isAuthenticated: !!user, // Add this computed property
     signIn,
     signUp,
-    signOut
+    signOut,
+    // Add aliases
+    login,
+    register
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
