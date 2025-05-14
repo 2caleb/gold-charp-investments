@@ -6,6 +6,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import NewLoanApplication from '@/pages/NewLoanApplication';
 import LoanApplicationsList from '@/pages/LoanApplicationsList';
+import LoanApprovalPage from '@/pages/LoanApprovalPage';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
 import { Toaster } from '@/components/ui/toaster';
@@ -59,6 +60,11 @@ function App() {
         <Route path="/loan-applications/new" element={
           <PrivateRoute>
             <NewLoanApplication />
+          </PrivateRoute>
+        } />
+        <Route path="/loan-applications/:id" element={
+          <PrivateRoute>
+            <LoanApprovalPage />
           </PrivateRoute>
         } />
         <Route path="/notifications" element={
