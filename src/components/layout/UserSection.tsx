@@ -1,75 +1,75 @@
 
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import React from 'react';
 import { Button } from "@/components/ui/button";
-import { UserIcon } from 'lucide-react';
-import NotificationsDropdown from '../notifications/NotificationsDropdown';
+import { User, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from '@/contexts/AuthContext';
+import NotificationsDropdown from '@/components/notifications/NotificationsDropdown';
 
-export default function UserSection() {
-  const { user, logout, loading } = useAuth();
+interface UserSectionProps {
+  onActionComplete?: () => void;
+}
 
-  const handleLogout = async () => {
-    await logout();
+const UserSection = ({ onActionComplete }: UserSectionProps) => {
+  const { user, signOut, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    if (onActionComplete) onActionComplete();
+    navigate('/');
   };
 
-  // If auth is still loading, show a placeholder
-  if (loading) {
-    return <div className="h-9 w-9 rounded-full bg-gray-200 animate-pulse"></div>;
+  const handleSignIn = () => {
+    navigate('/login');
+    if (onActionComplete) onActionComplete();
+  };
+
+  const handleRegister = () => {
+    navigate('/register');
+    if (onActionComplete) onActionComplete();
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  // If user is not logged in, show login and register buttons
-  if (!user) {
+  if (user) {
     return (
-      <div className="flex space-x-2">
-        <Button variant="outline" asChild>
-          <Link to="/login">Log in</Link>
+      <div className="flex items-center gap-2">
+        <NotificationsDropdown />
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={() => navigate('/profile')}
+        >
+          <User className="h-4 w-4" />
+          <span className="hidden md:block">Profile</span>
         </Button>
-        <Button className="bg-purple-700 hover:bg-purple-800" asChild>
-          <Link to="/register">Register</Link>
+        <Button
+          variant="destructive"
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={handleSignOut}
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="hidden md:block">Sign Out</span>
         </Button>
       </div>
     );
   }
 
-  // If user is logged in, show the profile menu
   return (
-    <div className="flex items-center space-x-4">
-      <NotificationsDropdown />
-      
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-            <Avatar className="h-10 w-10 border border-gray-200">
-              <AvatarFallback className="bg-purple-100 text-purple-800">
-                <UserIcon className="h-5 w-5" />
-              </AvatarFallback>
-            </Avatar>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>My Account</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link to="/profile">Profile</Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/settings">Settings</Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout} className="text-red-500">
-            Log out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <div className="flex items-center gap-2">
+      <Button variant="outline" size="sm" onClick={handleSignIn}>
+        Sign In
+      </Button>
+      <Button variant="default" size="sm" onClick={handleRegister}>
+        Register
+      </Button>
     </div>
   );
-}
+};
+
+export default UserSection;

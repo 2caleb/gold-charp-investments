@@ -1,36 +1,34 @@
-
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
+import { AuthSession, AuthUser } from '@supabase/supabase-js';
+import { toast } from '@/hooks/use-toast';
 
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  isAuthenticated: boolean;
+export interface AuthContextType {
+  user: AuthUser | null;
+  session: AuthSession | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: RegisterData) => Promise<void>;
-  logout: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
-interface RegisterData {
-  fullName: string;
-  email: string;
-  phone: string;
-  password: string;
-  role?: string;
-}
+// Create the context
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AuthContext = createContext<AuthContextType | null>(null);
+// Custom hook to use the auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
+// Provider component that wraps your app and makes auth object available to any child component that calls useAuth().
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Set up the auth state listener first
@@ -60,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [toast]);
 
-  const login = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -91,27 +89,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (userData: RegisterData) => {
+  const signUp = async (email: string, password: string, metadata?: any) => {
     setIsLoading(true);
     try {
       // Validate input
-      if (!userData.email || !userData.password || !userData.fullName) {
+      if (!email || !password) {
         throw new Error('Please fill in all required fields');
       }
 
-      if (userData.password.length < 6) {
+      if (password.length < 6) {
         throw new Error('Password must be at least 6 characters');
       }
 
       // Sign up with Supabase
       const { error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
+        email,
+        password,
         options: {
           data: {
-            full_name: userData.fullName,
-            phone: userData.phone || null,
-            role: userData.role || 'user', // Default role is 'user'
+            full_name: metadata?.fullName || '',
+            phone: metadata?.phone || null,
+            role: metadata?.role || 'user', // Default role is 'user'
           },
         },
       });
@@ -123,7 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Show success toast
       toast({
         title: 'Registration Successful',
-        description: `Welcome to Gold Charp Investments, ${userData.fullName}!`,
+        description: `Welcome to Gold Charp Investments, ${metadata?.fullName}!`,
       });
 
       // Navigate to home page
@@ -139,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = async () => {
+  const signOut = async () => {
     try {
       await supabase.auth.signOut();
       navigate('/login');
@@ -152,27 +150,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        isAuthenticated: !!user,
-        isLoading,
-        login,
-        register,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  const value = {
+    user,
+    session,
+    isLoading,
+    signIn,
+    signUp,
+    signOut
+  };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

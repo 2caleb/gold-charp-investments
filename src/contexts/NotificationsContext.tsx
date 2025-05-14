@@ -38,6 +38,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         const { data, error } = await supabase
           .from('notifications')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -103,11 +104,13 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Mark all notifications as read
   const markAllAsRead = async () => {
+    if (!user) return;
+    
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .eq('is_read', false);
 
       if (error) throw error;

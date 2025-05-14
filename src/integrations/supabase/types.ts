@@ -9,6 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      branches: {
+        Row: {
+          address: string
+          created_at: string
+          email: string | null
+          id: string
+          location: string
+          manager_id: string | null
+          name: string
+          phone_number: string
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          location: string
+          manager_id?: string | null
+          name: string
+          phone_number: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          location?: string
+          manager_id?: string | null
+          name?: string
+          phone_number?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          address: string
+          created_at: string
+          email: string | null
+          employment_status: string
+          full_name: string
+          id: string
+          id_number: string
+          monthly_income: number
+          phone_number: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          email?: string | null
+          employment_status: string
+          full_name: string
+          id?: string
+          id_number: string
+          monthly_income: number
+          phone_number: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          email?: string | null
+          employment_status?: string
+          full_name?: string
+          id?: string
+          id_number?: string
+          monthly_income?: number
+          phone_number?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       loan_applications: {
         Row: {
           address: string
