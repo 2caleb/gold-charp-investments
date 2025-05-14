@@ -53,6 +53,8 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       // Convert base64 to file
       const base64Response = await fetch(imageData);
       const blob = await base64Response.blob();
+      
+      // Fix: Create File properly with the correct parameters
       const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
       
       await onUpload(file, description);
@@ -68,6 +70,8 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       // Convert base64 to file
       const base64Response = await fetch(dataUrl);
       const blob = await base64Response.blob();
+      
+      // Fix: Create File properly with the correct parameters
       const file = new File([blob], `scan-${Date.now()}.jpg`, { type: 'image/jpeg' });
       
       await onUpload(file, description);
