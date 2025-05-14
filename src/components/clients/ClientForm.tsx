@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import {
@@ -75,20 +74,29 @@ const ClientForm = () => {
       // Convert monthly_income from string to number
       const numericIncome = parseFloat(values.monthly_income.replace(/,/g, ''));
       
-      // Use the Supabase REST API directly since the typed client doesn't have our table
-      const { data: clientData, error: clientError } = await supabase.rpc('insert_client', {
-        p_full_name: values.full_name,
-        p_phone_number: values.phone_number,
-        p_email: values.email || null,
-        p_id_number: values.id_number,
-        p_address: values.address,
-        p_employment_status: values.employment_status,
-        p_monthly_income: numericIncome,
-        p_user_id: user.id
-      }).select('id').single();
+      // Use the Edge Function to insert client data
+      const response = await fetch('https://bjsxekgraxbfqzhbqjff.functions.supabase.co/insert-client', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`,
+        },
+        body: JSON.stringify({
+          p_full_name: values.full_name,
+          p_phone_number: values.phone_number,
+          p_email: values.email || null,
+          p_id_number: values.id_number,
+          p_address: values.address,
+          p_employment_status: values.employment_status,
+          p_monthly_income: numericIncome,
+          p_user_id: user.id
+        }),
+      });
 
-      if (clientError) {
-        throw clientError;
+      const result = await response.json();
+
+      if (result.error) {
+        throw new Error(result.error);
       }
 
       toast({

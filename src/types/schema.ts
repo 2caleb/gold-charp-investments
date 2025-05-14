@@ -29,3 +29,45 @@ export interface Loan {
   created_at: string;
   updated_at?: string;
 }
+
+export interface LoanApplication {
+  id: string;
+  client_id: string;
+  loan_type: string;
+  loan_amount: string;
+  purpose_of_loan: string;
+  application_date: string;
+  status: string;
+  rejection_reason?: string;
+  approval_date?: string;
+  approved_by?: string;
+  notes?: string;
+  created_by: string;
+  current_approver?: string;
+}
+
+export interface Repayment {
+  id: string;
+  loan_id: string;
+  amount_due: number;
+  amount_paid: number;
+  due_date: string;
+  payment_date?: string;
+  payment_method?: string;
+  transaction_reference?: string;
+  status: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Collateral {
+  id: string;
+  loan_id: string;
+  type: string;
+  description: string;
+  value: number;
+  document_urls: string[];
+  status: string;
+  created_at: string;
+  updated_at?: string;
+}

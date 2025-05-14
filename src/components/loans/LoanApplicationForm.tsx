@@ -4,7 +4,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import {
@@ -65,16 +64,21 @@ const LoanApplicationForm = () => {
     const fetchClients = async () => {
       setIsLoadingClients(true);
       try {
-        // Use raw REST API call since typed client doesn't know about the clients table
-        const { data, error } = await fetch(`https://bjsxekgraxbfqzhbqjff.supabase.co/rest/v1/clients?select=id,full_name`, {
+        // Use raw REST API call to fetch clients
+        const response = await fetch(`https://bjsxekgraxbfqzhbqjff.supabase.co/rest/v1/clients?select=id,full_name,phone_number,id_number,address,employment_status`, {
           headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqc3hla2dyYXhiZnF6aGJxamZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjMxNzUsImV4cCI6MjA2MjY5OTE3NX0.XdyZ0y4pGsaARlhHEYs3zj-shj0i3szpOkRZC_CQ18Y'
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqc3hla2dyYXhiZnF6aGJxamZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjMxNzUsImV4cCI6MjA2MjY5OTE3NX0.XdyZ0y4pGsaARlhHEYs3zj-shj0i3szpOkRZC_CQ18Y',
+            'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
           }
-        }).then(res => res.json());
-
-        if (error) throw error;
+        });
+        
+        if (!response.ok) {
+          throw new Error("Failed to fetch clients");
+        }
+        
+        const data = await response.json();
         setClients(data || []);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching clients:', error);
         toast({
           title: "Failed to load clients",
@@ -115,23 +119,33 @@ const LoanApplicationForm = () => {
       // Using current user for demo purposes
       const manager_id = user.id;
       
-      // Insert the loan application
-      const { data, error } = await supabase.from('loan_applications').insert({
-        client_name: selectedClient.full_name,
-        phone_number: "", // This would come from the client's record in a real app
-        id_number: "", // This would come from the client's record in a real app
-        address: "", // This would come from the client's record in a real app
-        loan_type: values.loan_type,
-        loan_amount: String(numericAmount), // Convert to string to match existing schema
-        purpose_of_loan: values.purpose_of_loan,
-        notes: values.notes,
-        created_by: user.id,
-        current_approver: manager_id,
-        employment_status: "" // This would come from the client's record in a real app
-      }).select('id').single();
+      // Insert the loan application using direct REST API call
+      const response = await fetch(`https://bjsxekgraxbfqzhbqjff.supabase.co/rest/v1/loan_applications`, {
+        method: 'POST',
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqc3hla2dyYXhiZnF6aGJxamZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjMxNzUsImV4cCI6MjA2MjY5OTE3NX0.XdyZ0y4pGsaARlhHEYs3zj-shj0i3szpOkRZC_CQ18Y',
+          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          client_name: selectedClient.full_name,
+          phone_number: selectedClient.phone_number,
+          id_number: selectedClient.id_number,
+          address: selectedClient.address,
+          loan_type: values.loan_type,
+          loan_amount: String(numericAmount),
+          purpose_of_loan: values.purpose_of_loan,
+          notes: values.notes,
+          created_by: user.id,
+          current_approver: manager_id,
+          employment_status: selectedClient.employment_status,
+          monthly_income: selectedClient.monthly_income.toString()
+        })
+      });
 
-      if (error) {
-        throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to submit loan application");
       }
 
       toast({
