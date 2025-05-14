@@ -5,7 +5,6 @@ import { User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationsDropdown from '@/components/notifications/NotificationsDropdown';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from '@/hooks/use-toast';
 
@@ -88,29 +87,14 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
     const fullName = profile?.full_name || 'User';
     const role = profile?.role || 'Client';
     
-    // Get initials for avatar
-    const initials = fullName
-      .split(' ')
-      .map(name => name[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
-    
     return (
       <div className="flex items-center gap-2">
         <NotificationsDropdown />
         
-        {/* User info display with avatar */}
-        <div className="hidden md:flex items-center gap-2">
-          <Avatar className="h-8 w-8 border border-purple-200">
-            <AvatarFallback className="bg-purple-100 text-purple-800 text-xs">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col items-start">
-            <span className="text-sm font-medium">{fullName}</span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">{role}</span>
-          </div>
+        {/* User info display without avatar */}
+        <div className="hidden md:flex flex-col items-start">
+          <span className="text-sm font-medium">{fullName}</span>
+          <span className="text-xs text-gray-500 dark:text-gray-400">{role}</span>
         </div>
         
         <Button
