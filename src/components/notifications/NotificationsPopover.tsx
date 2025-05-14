@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Popover,
   PopoverContent,
@@ -12,10 +12,22 @@ import NotificationList from './NotificationList';
 import { useNavigate } from 'react-router-dom';
 import { Notification } from '@/types/notification';
 
-const NotificationsPopover: React.FC = () => {
-  const [open, setOpen] = useState(false);
+interface NotificationsPopoverProps {
+  trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  notifications?: Notification[];
+}
+
+const NotificationsPopover: React.FC<NotificationsPopoverProps> = ({
+  trigger,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+  notifications: controlledNotifications
+}) => {
+  const [internalOpen, setInternalOpen] = React.useState(false);
   const { 
-    notifications, 
+    notifications: hookNotifications, 
     unreadCount, 
     isLoading, 
     markAsRead, 
@@ -23,6 +35,11 @@ const NotificationsPopover: React.FC = () => {
     deleteNotification 
   } = useNotifications();
   const navigate = useNavigate();
+
+  // Use either controlled props or internal state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = setControlledOpen || setInternalOpen;
+  const notifications = controlledNotifications || hookNotifications;
 
   const handleViewDetails = (notification: Notification) => {
     // Close the popover
@@ -47,14 +64,16 @@ const NotificationsPopover: React.FC = () => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </Button>
+        {trigger || (
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent 
         className="w-80 p-0 mr-4" 
@@ -68,7 +87,7 @@ const NotificationsPopover: React.FC = () => {
               variant="ghost" 
               size="sm" 
               className="text-xs h-8"
-              onClick={markAllAsRead}
+              onClick={() => markAllAsRead()}
             >
               Mark all as read
             </Button>

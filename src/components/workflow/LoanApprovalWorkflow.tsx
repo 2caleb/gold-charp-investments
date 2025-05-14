@@ -43,17 +43,15 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch workflow data directly from the table
+        // Use RPC function to fetch workflow data
         const { data: workflowData, error: workflowError } = await supabase
-          .from('loan_application_workflow')
-          .select('*')
-          .eq('loan_application_id', applicationId)
-          .single();
+          .rpc('get_loan_workflow', { application_id: applicationId });
 
         if (workflowError) throw workflowError;
         
-        if (workflowData) {
-          setWorkflow(workflowData as WorkflowData);
+        if (workflowData && workflowData.length > 0) {
+          // Since this is an RPC call that returns multiple rows, we want the first one
+          setWorkflow(workflowData[0] as unknown as WorkflowData);
         } else {
           throw new Error('No workflow data found');
         }
@@ -69,17 +67,18 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
         setApplication(applicationData);
 
         // Set initial notes based on current role
-        if (workflowData) {
-          if (isFieldOfficer && workflowData.current_stage === 'field_officer') {
-            setNotes(workflowData.field_officer_notes || '');
-          } else if (isManager && workflowData.current_stage === 'manager') {
-            setNotes(workflowData.manager_notes || '');
-          } else if (isDirector && workflowData.current_stage === 'director') {
-            setNotes(workflowData.director_notes || '');
-          } else if (isCEO && workflowData.current_stage === 'ceo') {
-            setNotes(workflowData.ceo_notes || '');
-          } else if (isChairperson && workflowData.current_stage === 'chairperson') {
-            setNotes(workflowData.chairperson_notes || '');
+        if (workflowData && workflowData.length > 0) {
+          const workflow = workflowData[0];
+          if (isFieldOfficer && workflow.current_stage === 'field_officer') {
+            setNotes(workflow.field_officer_notes || '');
+          } else if (isManager && workflow.current_stage === 'manager') {
+            setNotes(workflow.manager_notes || '');
+          } else if (isDirector && workflow.current_stage === 'director') {
+            setNotes(workflow.director_notes || '');
+          } else if (isCEO && workflow.current_stage === 'ceo') {
+            setNotes(workflow.ceo_notes || '');
+          } else if (isChairperson && workflow.current_stage === 'chairperson') {
+            setNotes(workflow.chairperson_notes || '');
           }
         }
 
@@ -103,7 +102,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     
     setIsSaving(true);
     try {
-      // Instead of using RPC, we'll interact with the database function through PostgreSQL functions
+      // Use RPC for advancing the workflow
       const { data, error } = await supabase.rpc('advance_loan_workflow', {
         _application_id: applicationId,
         _notes: notes,
@@ -121,13 +120,13 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
 
       // Refresh data
       const { data: updatedWorkflow, error: refreshError } = await supabase
-        .from('loan_application_workflow')
-        .select('*')
-        .eq('loan_application_id', applicationId)
-        .single();
+        .rpc('get_loan_workflow', { application_id: applicationId });
         
       if (refreshError) throw refreshError;
-      if (updatedWorkflow) setWorkflow(updatedWorkflow as WorkflowData);
+      
+      if (updatedWorkflow && updatedWorkflow.length > 0) {
+        setWorkflow(updatedWorkflow[0] as unknown as WorkflowData);
+      }
 
       const { data: updatedApplication, error: appError } = await supabase
         .from('loan_applications')
