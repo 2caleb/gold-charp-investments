@@ -17,7 +17,7 @@ import Loans from '@/pages/Loans';
 import Calculator from '@/pages/Calculator';
 import Contact from '@/pages/Contact';
 import About from '@/pages/About';
-import DataCollectionDashboard from '@/pages/staff/DataCollectionDashboard';
+import DataCollection from '@/pages/staff/DataCollection';
 import NewClient from '@/pages/NewClient';
 import ClientsList from '@/pages/ClientsList';
 
@@ -80,7 +80,7 @@ function App() {
         {/* Staff routes */}
         <Route path="/staff/data-collection" element={
           <PrivateRoute>
-            <DataCollectionDashboard />
+            <DataCollection />
           </PrivateRoute>
         } />
       </Routes>
