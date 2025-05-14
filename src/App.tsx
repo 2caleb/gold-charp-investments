@@ -11,11 +11,26 @@ import PublicRoute from '@/components/auth/PublicRoute';
 import { Toaster } from '@/components/ui/toaster';
 import Dashboard from '@/pages/Dashboard';
 import Notifications from '@/pages/Notifications';
+import Index from '@/pages/Index';
+import Properties from '@/pages/Properties';
+import Loans from '@/pages/Loans';
+import Calculator from '@/pages/Calculator';
+import Contact from '@/pages/Contact';
+import About from '@/pages/About';
 
 function App() {
   return (
     <AuthProvider>
       <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<Index />} />
+        <Route path="/properties" element={<Properties />} />
+        <Route path="/loans" element={<Loans />} />
+        <Route path="/calculator" element={<Calculator />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/about" element={<About />} />
+        
+        {/* Authentication routes */}
         <Route path="/login" element={
           <PublicRoute>
             <Login />
@@ -26,7 +41,9 @@ function App() {
             <Register />
           </PublicRoute>
         } />
-        <Route path="/" element={
+        
+        {/* Protected routes */}
+        <Route path="/dashboard" element={
           <PrivateRoute>
             <Dashboard />
           </PrivateRoute>
@@ -39,11 +56,6 @@ function App() {
         <Route path="/loan-applications/new" element={
           <PrivateRoute>
             <NewLoanApplication />
-          </PrivateRoute>
-        } />
-        <Route path="/dashboard" element={
-          <PrivateRoute>
-            <Dashboard />
           </PrivateRoute>
         } />
         <Route path="/notifications" element={
