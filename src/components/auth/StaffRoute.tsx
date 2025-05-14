@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,17 +14,23 @@ const StaffRoute = ({ children }: StaffRoleProps) => {
   const location = useLocation();
   const { toast } = useToast();
   
+  // Use useEffect to show the toast notification instead of doing it during render
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "You need to login to access this section.",
+        variant: "destructive",
+      });
+    }
+  }, [isAuthenticated, isLoading, toast]);
+  
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
   if (!isAuthenticated) {
     // Redirect to login page but save the location they tried to access
-    toast({
-      title: "Authentication Required",
-      description: "You need to login to access this section.",
-      variant: "destructive",
-    });
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
