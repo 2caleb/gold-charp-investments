@@ -54,10 +54,14 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       const base64Response = await fetch(imageData);
       const blob = await base64Response.blob();
       
-      // Fix: Create File properly with the correct parameters
-      const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      // Create file from blob with proper type information
+      const fileName = `capture-${Date.now()}.jpg`;
+      const fileOptions = { type: 'image/jpeg' };
+      const file = new Blob([blob], fileOptions) as any;
+      file.name = fileName;
+      file.lastModified = Date.now();
       
-      await onUpload(file, description);
+      await onUpload(file as File, description);
       setDescription('');
     } catch (error) {
       console.error('Error capturing image:', error);
@@ -71,10 +75,14 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       const base64Response = await fetch(dataUrl);
       const blob = await base64Response.blob();
       
-      // Fix: Create File properly with the correct parameters
-      const file = new File([blob], `scan-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      // Create file from blob with proper type information
+      const fileName = `scan-${Date.now()}.jpg`;
+      const fileOptions = { type: 'image/jpeg' };
+      const file = new Blob([blob], fileOptions) as any;
+      file.name = fileName;
+      file.lastModified = Date.now();
       
-      await onUpload(file, description);
+      await onUpload(file as File, description);
       setDescription('');
     } catch (error) {
       console.error('Error processing scanned document:', error);
