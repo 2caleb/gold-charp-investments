@@ -22,12 +22,14 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
   const { user, signOut, isLoading, session } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   // Fetch user profile from the profiles table when auth state changes
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user?.id) {
         try {
+          setLoadingProfile(true);
           const { data, error } = await supabase
             .from('profiles')
             .select('full_name, role')
@@ -42,6 +44,8 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
           }
         } catch (error) {
           console.error('Error in profile fetch:', error);
+        } finally {
+          setLoadingProfile(false);
         }
       }
     };
@@ -70,8 +74,13 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
     if (onActionComplete) onActionComplete();
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (isLoading || loadingProfile) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse"></div>
+        <div className="h-4 w-20 bg-gray-200 animate-pulse rounded"></div>
+      </div>
+    );
   }
 
   if (user) {
