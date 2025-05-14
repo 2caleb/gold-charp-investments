@@ -4,25 +4,32 @@ import { supabase } from '@/integrations/supabase/client';
 // Loan Performance Data
 export async function fetchLoanPerformanceData() {
   try {
+    console.log("Fetching loan performance data");
     const { data, error } = await supabase
       .from('loan_applications')
       .select('created_at, loan_amount, loan_type, status')
       .order('created_at', { ascending: false });
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching loan performance data:', error);
+      throw error;
+    }
     
+    console.log("Received loan data:", data?.length || 0, "records");
     // Process the data to get monthly aggregates
     const monthlyData = processLoanDataByMonth(data || []);
     return { data: monthlyData, error: null };
   } catch (error) {
     console.error('Error fetching loan performance data:', error);
-    return { data: null, error };
+    // Return mock data in case of error
+    return { data: getMockLoanPerformanceData(), error };
   }
 }
 
 // Property Sales Data - Using mock data only
 export async function fetchPropertyInsightsData() {
   try {
+    console.log("Using mock property insights data");
     // Since property_sales table doesn't exist, we'll use mock data
     const mockTypeData = [
       { name: 'Residential', value: 65, color: '#8884d8' },
@@ -62,6 +69,7 @@ export async function fetchPropertyInsightsData() {
 // Field Officer Activity Data - Using mock data only
 export async function fetchFieldOfficerActivityData() {
   try {
+    console.log("Using mock field officer activity data");
     // Since field_officer_activities table doesn't exist, we'll use mock data
     const mockActivityData = [
       { date: '05/01', visits: 12, applications: 8, approvals: 4 },
@@ -105,13 +113,14 @@ export async function fetchFieldOfficerActivityData() {
 // Risk Profile Data - Using mock data only
 export async function fetchRiskProfileData() {
   try {
+    console.log("Using mock risk profile data");
     // Since risk_profiles table doesn't exist, we'll use mock data
     const mockRiskData = [
-      { region: 'Central', district: 'Kampala', risk_score: 78, total_loans: 2450, default_rate: 4.2, average_loan_size: 12500000 },
-      { region: 'Eastern', district: 'Jinja', risk_score: 65, total_loans: 1876, default_rate: 3.8, average_loan_size: 8750000 },
-      { region: 'Northern', district: 'Gulu', risk_score: 82, total_loans: 1234, default_rate: 5.1, average_loan_size: 7500000 },
-      { region: 'Western', district: 'Mbarara', risk_score: 58, total_loans: 1567, default_rate: 2.9, average_loan_size: 9250000 },
-      { region: 'Central', district: 'Entebbe', risk_score: 71, total_loans: 987, default_rate: 3.5, average_loan_size: 11000000 },
+      { region: 'Central', district: 'Kampala', riskScore: 3.2, totalLoans: 456, defaultRate: 4.2, averageLoanSize: 12500000 },
+      { region: 'Eastern', district: 'Jinja', riskScore: 4.5, totalLoans: 287, defaultRate: 7.6, averageLoanSize: 7600000 },
+      { region: 'Northern', district: 'Gulu', riskScore: 4.8, totalLoans: 187, defaultRate: 7.9, averageLoanSize: 5800000 },
+      { region: 'Western', district: 'Mbarara', riskScore: 3.6, totalLoans: 276, defaultRate: 5.4, averageLoanSize: 8200000 },
+      { region: 'Central', district: 'Entebbe', riskScore: 2.8, totalLoans: 321, defaultRate: 3.8, averageLoanSize: 9800000 },
     ];
     
     return { data: mockRiskData, error: null };
@@ -123,6 +132,7 @@ export async function fetchRiskProfileData() {
 
 // Helper functions for data processing
 function processLoanDataByMonth(loanData: any[]) {
+  console.log("Processing loan data by month, records:", loanData.length);
   // Group by month and calculate aggregates
   const monthMap = new Map();
   
@@ -158,6 +168,7 @@ function processLoanDataByMonth(loanData: any[]) {
   
   // If no data from database, use mock data
   if (monthMap.size === 0) {
+    console.log("No processed data, using mock data");
     return getMockLoanPerformanceData();
   }
   
@@ -172,6 +183,7 @@ function processLoanDataByMonth(loanData: any[]) {
 
 // Function to use when no data is available yet
 export function getMockLoanPerformanceData() {
+  console.log("Using mock loan performance data");
   return [
     { month: 'Jan', disbursed: 4000, repaid: 2400, defaulted: 240 },
     { month: 'Feb', disbursed: 3000, repaid: 1398, defaulted: 210 },

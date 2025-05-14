@@ -25,11 +25,13 @@ interface LoanPerformanceData {
 }
 
 export const LoanPerformanceChart = () => {
+  console.log("LoanPerformanceChart component rendering");
   const [data, setData] = useState<LoanPerformanceData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("LoanPerformanceChart useEffect running");
     const loadLoanPerformance = async () => {
       setIsLoading(true);
       try {
@@ -39,7 +41,7 @@ export const LoanPerformanceChart = () => {
           .select('*', { count: 'exact', head: true });
 
         if (tableCheckError) {
-          console.log('Using mock data - loan_applications table not available');
+          console.log('Using mock data - loan_applications table not available', tableCheckError);
           // Use mock data if table doesn't exist
           setData(getMockLoanPerformanceData());
           return;
@@ -58,6 +60,7 @@ export const LoanPerformanceChart = () => {
         if (error) throw error;
         
         if (loanData && loanData.length > 0) {
+          console.log("Setting real loan data:", loanData.length, "items");
           setData(loanData);
         } else {
           // No data processed, use mock data
@@ -81,6 +84,8 @@ export const LoanPerformanceChart = () => {
 
     loadLoanPerformance();
   }, []);
+
+  console.log("LoanPerformanceChart render state:", { isLoading, dataLength: data.length, error });
 
   if (isLoading) {
     return (

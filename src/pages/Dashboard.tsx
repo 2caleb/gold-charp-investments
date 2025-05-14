@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { showDatabaseNotAvailableToast } from '@/components/ui/notification-toast';
 
 const Dashboard = () => {
+  console.log("Dashboard component rendering");
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -29,20 +30,23 @@ const Dashboard = () => {
 
   // Check for required tables
   useEffect(() => {
+    console.log("Dashboard useEffect running");
     const checkTables = async () => {
       setCheckingTables(true);
       try {
+        console.log("Checking loan_applications table");
         // Check loan_applications table
         const { count: loanCount, error: loanError } = await supabase
           .from('loan_applications')
           .select('*', { count: 'exact', head: true });
           
         if (loanError) {
-          console.log('loan_applications table not found');
+          console.log('loan_applications table not found', loanError);
           setTablesExist(false);
           setUsingMockData(true);
           showDatabaseNotAvailableToast();
         } else {
+          console.log('loan_applications table exists, count:', loanCount);
           setTablesExist(true);
           // We're still using mock data for other tables that don't exist yet
           setUsingMockData(true);
@@ -61,6 +65,7 @@ const Dashboard = () => {
 
   // Authentication check
   useEffect(() => {
+    console.log("Auth check running, user:", user);
     if (!user) {
       toast({
         title: "Authentication required",
@@ -72,10 +77,12 @@ const Dashboard = () => {
   }, [user, navigate, toast]);
 
   if (!user) {
+    console.log("No user, returning null");
     return null;
   }
 
   if (checkingTables) {
+    console.log("Checking tables, showing loader");
     return (
       <Layout>
         <div className="flex justify-center items-center min-h-[50vh]">
@@ -86,6 +93,7 @@ const Dashboard = () => {
     );
   }
 
+  console.log("Rendering dashboard content");
   return (
     <Layout>
       <section className="bg-gray-50 dark:bg-gray-900 py-8 md:py-16">
