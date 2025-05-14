@@ -1,135 +1,75 @@
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, User, Settings } from 'lucide-react';
+
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Badge } from "@/components/ui/badge";
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { UserIcon } from 'lucide-react';
+import NotificationsDropdown from '../notifications/NotificationsDropdown';
 
-interface UserSectionProps {
-  onActionComplete?: () => void;
-}
+export default function UserSection() {
+  const { user, logout, loading } = useAuth();
 
-const getRoleBadgeColor = (role: string) => {
-  const roleColors = {
-    'field_officer': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-    'manager': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-    'director': 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300',
-    'ceo': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-    'user': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300',
-  };
-  
-  return roleColors[role] || roleColors['user'];
-};
-
-const formatRoleTitle = (role: string) => {
-  return role
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
-
-const UserSection = ({ onActionComplete }: UserSectionProps = {}) => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
-  
-  // Fetch user profile data when authenticated
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (isAuthenticated && user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-          
-        if (!error && data) {
-          setProfile(data);
-        }
-      }
-    };
-    
-    fetchUserProfile();
-  }, [isAuthenticated, user]);
-  
-  const userInitials = profile?.full_name 
-    ? profile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase() 
-    : user?.email?.slice(0, 2).toUpperCase() || 'U';
-    
-  const displayName = profile?.full_name || user?.email || 'User';
-  const userRole = profile?.role || 'user';
-
-  const handleLogout = () => {
-    logout();
-    if (onActionComplete) {
-      onActionComplete();
-    }
+  const handleLogout = async () => {
+    await logout();
   };
 
-  const handleNavigation = () => {
-    if (onActionComplete) {
-      onActionComplete();
-    }
-  };
+  // If auth is still loading, show a placeholder
+  if (loading) {
+    return <div className="h-9 w-9 rounded-full bg-gray-200 animate-pulse"></div>;
+  }
 
-  if (!isAuthenticated) {
+  // If user is not logged in, show login and register buttons
+  if (!user) {
     return (
-      <div className="flex items-center gap-4">
-        <Link to="/login" onClick={handleNavigation}>
-          <Button variant="ghost" size="sm">Log in</Button>
-        </Link>
+      <div className="flex space-x-2">
+        <Button variant="outline" asChild>
+          <Link to="/login">Log in</Link>
+        </Button>
+        <Button className="bg-purple-700 hover:bg-purple-800" asChild>
+          <Link to="/register">Register</Link>
+        </Button>
       </div>
     );
   }
 
+  // If user is logged in, show the profile menu
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full flex items-center justify-center">
-          <Avatar className="h-10 w-10 border-2 border-primary/10">
-            <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${userInitials}`} alt={displayName} />
-            <AvatarFallback>{userInitials}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel>
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayName}</p>
-            <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-            <div className="mt-2">
-              <Badge 
-                variant="outline" 
-                className={`mt-2 ${getRoleBadgeColor(userRole)}`}
-              >
-                {formatRoleTitle(userRole)}
-              </Badge>
-            </div>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/profile" className="cursor-pointer flex w-full items-center" onClick={handleNavigation}>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/settings" className="cursor-pointer flex w-full items-center" onClick={handleNavigation}>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex items-center space-x-4">
+      <NotificationsDropdown />
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+            <Avatar className="h-10 w-10 border border-gray-200">
+              <AvatarFallback className="bg-purple-100 text-purple-800">
+                <UserIcon className="h-5 w-5" />
+              </AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/profile">Profile</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/settings">Settings</Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleLogout} className="text-red-500">
+            Log out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
-};
-
-export default UserSection;
+}

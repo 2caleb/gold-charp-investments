@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { NotificationsProvider } from "@/contexts/NotificationsContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import StaffRoute from "@/components/auth/StaffRoute";
 
@@ -32,51 +33,53 @@ const App = () => (
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/calculator" element={<Calculator />} />
-              <Route path="/properties" element={<Properties />} />
-              <Route path="/loans" element={<Loans />} />
-              
-              {/* Protected routes */}
-              <Route path="/clients" element={
-                <StaffRoute>
-                  <ClientsList />
-                </StaffRoute>
-              } />
-              <Route path="/clients/new" element={
-                <StaffRoute>
-                  <NewClient />
-                </StaffRoute>
-              } />
-              <Route path="/clients/:id" element={
-                <StaffRoute>
-                  <ClientDetail />
-                </StaffRoute>
-              } />
-              <Route path="/loan-applications/new" element={
-                <StaffRoute>
-                  <NewLoanApplication />
-                </StaffRoute>
-              } />
-              
-              {/* Staff-only routes */}
-              <Route path="/staff/data-collection" element={
-                <StaffRoute>
-                  <DataCollectionDashboard />
-                </StaffRoute>
-              } />
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <NotificationsProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                {/* Public routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/calculator" element={<Calculator />} />
+                <Route path="/properties" element={<Properties />} />
+                <Route path="/loans" element={<Loans />} />
+                
+                {/* Protected routes */}
+                <Route path="/clients" element={
+                  <StaffRoute>
+                    <ClientsList />
+                  </StaffRoute>
+                } />
+                <Route path="/clients/new" element={
+                  <StaffRoute>
+                    <NewClient />
+                  </StaffRoute>
+                } />
+                <Route path="/clients/:id" element={
+                  <StaffRoute>
+                    <ClientDetail />
+                  </StaffRoute>
+                } />
+                <Route path="/loan-applications/new" element={
+                  <StaffRoute>
+                    <NewLoanApplication />
+                  </StaffRoute>
+                } />
+                
+                {/* Staff-only routes */}
+                <Route path="/staff/data-collection" element={
+                  <StaffRoute>
+                    <DataCollectionDashboard />
+                  </StaffRoute>
+                } />
+                
+                {/* Catch-all route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </NotificationsProvider>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

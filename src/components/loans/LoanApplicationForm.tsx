@@ -1,11 +1,11 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from "@/components/ui/button";
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -14,20 +14,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Separator } from '@/components/ui/separator';
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
-import { Client } from '@/types/schema';
+import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import RealTimeUpdates from './RealTimeUpdates';
 
 const loanApplicationSchema = z.object({
   client_id: z.string().uuid("Please select a client"),
@@ -48,6 +47,7 @@ const LoanApplicationForm = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(false);
   const preselectedClientId = searchParams.get('client');
+  const [realtimeUpdate, setRealtimeUpdate] = useState<string | null>(null);
 
   const form = useForm<LoanApplicationValues>({
     resolver: zodResolver(loanApplicationSchema),
@@ -168,132 +168,151 @@ const LoanApplicationForm = () => {
     }
   };
 
+  // Handle realtime updates
+  const handleLoanUpdate = (payload: any) => {
+    if (payload.eventType === 'INSERT') {
+      setRealtimeUpdate('New loan application has been submitted.');
+    } else if (payload.eventType === 'UPDATE') {
+      setRealtimeUpdate(`Loan application ${payload.new.id} was updated.`);
+    }
+  };
+
   return (
-    <div className="max-w-2xl mx-auto">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Loan Application Details</h3>
-            <Separator />
-            
-            <FormField
-              control={form.control}
-              name="client_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Client</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    defaultValue={field.value}
-                    disabled={isLoadingClients || !!preselectedClientId}
-                  >
+    <>
+      <RealTimeUpdates onLoanUpdate={handleLoanUpdate} />
+      
+      {realtimeUpdate && (
+        <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-md border border-blue-200">
+          {realtimeUpdate}
+        </div>
+      )}
+      
+      <div className="max-w-2xl mx-auto">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Loan Application Details</h3>
+              <Separator />
+              
+              <FormField
+                control={form.control}
+                name="client_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                      disabled={isLoadingClients || !!preselectedClientId}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={isLoadingClients ? "Loading clients..." : "Select a client"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingClients ? (
+                          <div className="flex items-center justify-center p-2">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            <span>Loading...</span>
+                          </div>
+                        ) : (
+                          clients.map((client) => (
+                            <SelectItem key={client.id} value={client.id}>
+                              {client.full_name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="loan_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Loan Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select loan type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="mortgage">Mortgage Loan</SelectItem>
+                        <SelectItem value="business">Business Loan</SelectItem>
+                        <SelectItem value="personal">Personal Loan</SelectItem>
+                        <SelectItem value="education">Education Loan</SelectItem>
+                        <SelectItem value="auto">Auto Loan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="loan_amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Loan Amount (UGX)</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoadingClients ? "Loading clients..." : "Select a client"} />
-                      </SelectTrigger>
+                      <Input placeholder="e.g. 10,000,000" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      {isLoadingClients ? (
-                        <div className="flex items-center justify-center p-2">
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          <span>Loading...</span>
-                        </div>
-                      ) : (
-                        clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.full_name}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="loan_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Loan Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormField
+                control={form.control}
+                name="purpose_of_loan"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Purpose of Loan</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select loan type" />
-                      </SelectTrigger>
+                      <Textarea 
+                        placeholder="Explain why you're applying for this loan" 
+                        {...field} 
+                        className="min-h-[100px]"
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="mortgage">Mortgage Loan</SelectItem>
-                      <SelectItem value="business">Business Loan</SelectItem>
-                      <SelectItem value="personal">Personal Loan</SelectItem>
-                      <SelectItem value="education">Education Loan</SelectItem>
-                      <SelectItem value="auto">Auto Loan</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="loan_amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Loan Amount (UGX)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 10,000,000" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Additional Notes (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Any additional information about this application" 
+                        {...field} 
+                        className="min-h-[80px]"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-            <FormField
-              control={form.control}
-              name="purpose_of_loan"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Purpose of Loan</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Explain why you're applying for this loan" 
-                      {...field} 
-                      className="min-h-[100px]"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Additional Notes (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Any additional information about this application" 
-                      {...field} 
-                      className="min-h-[80px]"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <Button type="submit" className="w-full bg-purple-700 hover:bg-purple-800" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit Loan Application"}
-          </Button>
-        </form>
-      </Form>
-    </div>
+            <Button type="submit" className="w-full bg-purple-700 hover:bg-purple-800" disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit Loan Application"}
+            </Button>
+          </form>
+        </Form>
+      </div>
+    </>
   );
 };
 
