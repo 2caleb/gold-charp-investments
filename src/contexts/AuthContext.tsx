@@ -3,13 +3,12 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthSession, AuthUser } from '@supabase/supabase-js';
 import { toast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
 
 export interface AuthContextType {
   user: AuthUser | null;
   session: AuthSession | null;
   isLoading: boolean;
-  isAuthenticated: boolean; // Added missing property
+  isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, metadata?: any) => Promise<void>;
   signOut: () => Promise<void>;
@@ -35,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate(); // Fixed: Import navigate function
 
   useEffect(() => {
     // Set up the auth state listener first
@@ -82,9 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: 'Login Successful',
         description: 'Welcome back!',
       });
-
-      // Navigate to home page
-      navigate('/'); // Fixed: using imported navigate
     } catch (error: any) {
       toast({
         title: 'Login Failed',
@@ -130,9 +125,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: 'Registration Successful',
         description: `Welcome to Gold Charp Investments, ${metadata?.fullName}!`,
       });
-
-      // Navigate to home page
-      navigate('/'); // Fixed: using imported navigate
     } catch (error: any) {
       toast({
         title: 'Registration Failed',
@@ -147,7 +139,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      navigate('/login'); // Fixed: using imported navigate
     } catch (error: any) {
       toast({
         title: 'Logout Failed',
