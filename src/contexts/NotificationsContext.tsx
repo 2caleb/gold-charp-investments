@@ -42,7 +42,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        if (data) setNotifications(data as Notification[]);
+        if (data) setNotifications(data as unknown as Notification[]);
       } catch (error) {
         console.error('Error fetching notifications:', error);
       }
@@ -66,7 +66,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const newNotification = payload.new as Notification;
+          const newNotification = payload.new as unknown as Notification;
           setNotifications(prev => [newNotification, ...prev]);
           
           // Show toast notification

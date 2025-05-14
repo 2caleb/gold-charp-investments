@@ -150,6 +150,36 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          entity_id: string
+          id: string
+          is_read: boolean | null
+          message: string
+          related_to: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          related_to: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          related_to?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -185,7 +215,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_repayment_schedule: {
+        Args: {
+          p_principal: number
+          p_interest_rate: number
+          p_term_months: number
+          p_start_date: string
+        }
+        Returns: {
+          payment_number: number
+          payment_date: string
+          principal_payment: number
+          interest_payment: number
+          total_payment: number
+          remaining_balance: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

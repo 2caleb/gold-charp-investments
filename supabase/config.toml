@@ -6,3 +6,15 @@ verify_jwt = true
 
 [functions.insert-client]
 verify_jwt = true
+
+[functions.process-loan-application]
+verify_jwt = true
+
+[functions.loan-approval]
+verify_jwt = true
+
+[functions.calculate-repayment]
+verify_jwt = true
+
+[functions.send-notification]
+verify_jwt = true
