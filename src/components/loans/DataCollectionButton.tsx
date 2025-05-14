@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, FilePlus, IndianRupee } from "lucide-react";
+import { ClipboardList, FilePlus } from "lucide-react";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -490,17 +490,7 @@ const DataCollectionButton = () => {
                     <FormItem>
                       <FormLabel>Loan Amount (UGX)</FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <IndianRupee className="h-4 w-4 text-gray-500" />
-                          </div>
-                          <Input 
-                            type="number" 
-                            placeholder="Enter loan amount" 
-                            className="pl-10" 
-                            {...field} 
-                          />
-                        </div>
+                        <Input type="number" placeholder="Enter loan amount" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -616,17 +606,7 @@ const DataCollectionButton = () => {
                     <FormItem>
                       <FormLabel>Monthly Income (UGX)</FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <IndianRupee className="h-4 w-4 text-gray-500" />
-                          </div>
-                          <Input 
-                            type="number" 
-                            placeholder="Enter monthly income" 
-                            className="pl-10" 
-                            {...field} 
-                          />
-                        </div>
+                        <Input type="number" placeholder="Enter monthly income" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

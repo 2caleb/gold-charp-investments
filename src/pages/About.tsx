@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import { Award, Clock, Users, MapPin, Mail, Phone, CheckCircle } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 const About = () => {
   return (
@@ -120,11 +121,9 @@ const About = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="text-center">
               <div className="mb-4 relative">
-                <img 
-                  src="https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
-                  alt="CEO" 
-                  className="w-40 h-40 rounded-full mx-auto object-cover" 
-                />
+                <Avatar className="w-40 h-40 mx-auto">
+                  <AvatarFallback className="bg-purple-100 text-purple-700 text-4xl">CM</AvatarFallback>
+                </Avatar>
               </div>
               <h3 className="text-xl font-bold">Chris Mubiru</h3>
               <p className="text-purple-700 font-medium mb-2">Chief Executive Officer</p>
@@ -135,11 +134,9 @@ const About = () => {
 
             <div className="text-center">
               <div className="mb-4">
-                <img 
-                  src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
-                  alt="COO" 
-                  className="w-40 h-40 rounded-full mx-auto object-cover" 
-                />
+                <Avatar className="w-40 h-40 mx-auto">
+                  <AvatarFallback className="bg-purple-100 text-purple-700 text-4xl">GM</AvatarFallback>
+                </Avatar>
               </div>
               <h3 className="text-xl font-bold">Geofrey Mubiru</h3>
               <p className="text-purple-700 font-medium mb-2">Chief Operations Officer</p>
@@ -150,11 +147,9 @@ const About = () => {
 
             <div className="text-center">
               <div className="mb-4">
-                <img 
-                  src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
-                  alt="CFO" 
-                  className="w-40 h-40 rounded-full mx-auto object-cover" 
-                />
+                <Avatar className="w-40 h-40 mx-auto">
+                  <AvatarFallback className="bg-purple-100 text-purple-700 text-4xl">PM</AvatarFallback>
+                </Avatar>
               </div>
               <h3 className="text-xl font-bold">Paul Mubiru</h3>
               <p className="text-purple-700 font-medium mb-2">Chief Financial Officer</p>
