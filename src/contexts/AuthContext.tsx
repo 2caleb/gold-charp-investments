@@ -38,16 +38,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up the auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
         if (event === 'SIGNED_IN') {
-          const userName = currentSession?.user?.user_metadata?.full_name || 'User';
-          toast({
-            title: 'Welcome',
-            description: `You're now signed in as ${userName}`,
-          });
+          if (currentSession?.user?.id) {
+            try {
+              // Fetch profile data from the profiles table
+              const { data, error } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', currentSession.user.id)
+                .single();
+              
+              const userName = data?.full_name || 'User';
+              toast({
+                title: 'Welcome',
+                description: `You're now signed in as ${userName}`,
+              });
+            } catch (error) {
+              console.error('Error fetching profile for welcome message:', error);
+              // Fallback to metadata
+              const userName = currentSession?.user?.user_metadata?.full_name || 'User';
+              toast({
+                title: 'Welcome',
+                description: `You're now signed in as ${userName}`,
+              });
+            }
+          }
         } else if (event === 'SIGNED_OUT') {
           toast({
             title: 'Logged Out',

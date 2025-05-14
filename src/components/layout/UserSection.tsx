@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -13,11 +13,17 @@ interface UserSectionProps {
   onActionComplete?: () => void;
 }
 
+interface UserProfile {
+  full_name: string | null;
+  role: string | null;
+}
+
 const UserSection = ({ onActionComplete }: UserSectionProps) => {
   const { user, signOut, isLoading, session } = useAuth();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  // Fetch user profile when auth state changes
+  // Fetch user profile from the profiles table when auth state changes
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (user?.id) {
@@ -30,6 +36,9 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
 
           if (error) {
             console.error('Error fetching profile:', error);
+          } else if (data) {
+            setProfile(data);
+            console.log('Profile data fetched:', data);
           }
         } catch (error) {
           console.error('Error in profile fetch:', error);
@@ -66,10 +75,9 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
   }
 
   if (user) {
-    // Extract user information directly from auth user metadata
-    // This contains data that was set during registration
-    const fullName = user.user_metadata?.full_name || 'User';
-    const role = user.user_metadata?.role || 'Client';
+    // Get user information from the profiles table instead of auth metadata
+    const fullName = profile?.full_name || 'User';
+    const role = profile?.role || 'Client';
     
     // Get initials for avatar
     const initials = fullName
