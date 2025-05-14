@@ -28,11 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-
-interface Client {
-  id: string;
-  full_name: string;
-}
+import { Client } from '@/types/schema';
 
 const loanApplicationSchema = z.object({
   client_id: z.string().uuid("Please select a client"),
@@ -69,10 +65,12 @@ const LoanApplicationForm = () => {
     const fetchClients = async () => {
       setIsLoadingClients(true);
       try {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('id, full_name')
-          .order('full_name', { ascending: true });
+        // Use raw REST API call since typed client doesn't know about the clients table
+        const { data, error } = await fetch(`https://bjsxekgraxbfqzhbqjff.supabase.co/rest/v1/clients?select=id,full_name`, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqc3hla2dyYXhiZnF6aGJxamZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjMxNzUsImV4cCI6MjA2MjY5OTE3NX0.XdyZ0y4pGsaARlhHEYs3zj-shj0i3szpOkRZC_CQ18Y'
+          }
+        }).then(res => res.json());
 
         if (error) throw error;
         setClients(data || []);
@@ -107,28 +105,30 @@ const LoanApplicationForm = () => {
       // Convert loan_amount from string to number
       const numericAmount = parseFloat(values.loan_amount.replace(/,/g, ''));
       
+      // Get client data
+      const selectedClient = clients.find(c => c.id === values.client_id);
+      if (!selectedClient) {
+        throw new Error("Selected client not found");
+      }
+      
       // Get the manager's user ID (in a real app, you might fetch this from profiles table)
       // Using current user for demo purposes
       const manager_id = user.id;
       
       // Insert the loan application
-      const { data, error } = await supabase
-        .from('loan_applications')
-        .insert({
-          client_name: clients.find(c => c.id === values.client_id)?.full_name || "",
-          phone_number: "", // This would come from the client's record in a real app
-          id_number: "", // This would come from the client's record in a real app
-          address: "", // This would come from the client's record in a real app
-          loan_type: values.loan_type,
-          loan_amount: String(numericAmount), // Convert to string to match existing schema
-          purpose_of_loan: values.purpose_of_loan,
-          notes: values.notes,
-          created_by: user.id,
-          current_approver: manager_id,
-          employment_status: "" // This would come from the client's record in a real app
-        })
-        .select('id')
-        .single();
+      const { data, error } = await supabase.from('loan_applications').insert({
+        client_name: selectedClient.full_name,
+        phone_number: "", // This would come from the client's record in a real app
+        id_number: "", // This would come from the client's record in a real app
+        address: "", // This would come from the client's record in a real app
+        loan_type: values.loan_type,
+        loan_amount: String(numericAmount), // Convert to string to match existing schema
+        purpose_of_loan: values.purpose_of_loan,
+        notes: values.notes,
+        created_by: user.id,
+        current_approver: manager_id,
+        employment_status: "" // This would come from the client's record in a real app
+      }).select('id').single();
 
       if (error) {
         throw error;

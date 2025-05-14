@@ -75,16 +75,17 @@ const ClientForm = () => {
       // Convert monthly_income from string to number
       const numericIncome = parseFloat(values.monthly_income.replace(/,/g, ''));
       
-      // Insert the client record
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .insert({
-          ...values,
-          monthly_income: numericIncome,
-          user_id: user.id
-        })
-        .select('id')
-        .single();
+      // Use the Supabase REST API directly since the typed client doesn't have our table
+      const { data: clientData, error: clientError } = await supabase.rpc('insert_client', {
+        p_full_name: values.full_name,
+        p_phone_number: values.phone_number,
+        p_email: values.email || null,
+        p_id_number: values.id_number,
+        p_address: values.address,
+        p_employment_status: values.employment_status,
+        p_monthly_income: numericIncome,
+        p_user_id: user.id
+      }).select('id').single();
 
       if (clientError) {
         throw clientError;

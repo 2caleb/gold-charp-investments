@@ -3,3 +3,6 @@ project_id = "bjsxekgraxbfqzhbqjff"
 
 [functions.send-approval-email]
 verify_jwt = true
+
+[functions.insert-client]
+verify_jwt = true

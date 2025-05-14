@@ -1,7 +1,5 @@
 
 import React, { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/layout/Layout';
 import { Button } from "@/components/ui/button";
 import {
@@ -16,35 +14,39 @@ import { Link } from 'react-router-dom';
 import { formatCurrency } from '@/lib/utils';
 import { PlusCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-
-interface Client {
-  id: string;
-  full_name: string;
-  phone_number: string;
-  email: string;
-  id_number: string;
-  employment_status: string;
-  monthly_income: number;
-  created_at: string;
-}
+import { Client } from '@/types/schema';
 
 const ClientsList = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  const fetchClients = async () => {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('created_at', { ascending: false });
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await fetch(`https://bjsxekgraxbfqzhbqjff.supabase.co/rest/v1/clients?select=*&order=created_at.desc`, {
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqc3hla2dyYXhiZnF6aGJxamZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjMxNzUsImV4cCI6MjA2MjY5OTE3NX0.XdyZ0y4pGsaARlhHEYs3zj-shj0i3szpOkRZC_CQ18Y'
+          }
+        });
 
-    if (error) throw error;
-    return data as Client[];
-  };
+        if (!response.ok) {
+          throw new Error('Failed to fetch clients');
+        }
 
-  const { data: clients, isLoading, error } = useQuery({
-    queryKey: ['clients'],
-    queryFn: fetchClients,
-  });
+        const data = await response.json();
+        setClients(data);
+      } catch (err: any) {
+        console.error('Error fetching clients:', err);
+        setError(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchClients();
+  }, []);
 
   const filteredClients = clients?.filter(client => 
     client.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||

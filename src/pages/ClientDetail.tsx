@@ -2,7 +2,6 @@
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/layout/Layout';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,18 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from '@/lib/utils';
 import { ArrowLeft, Loader2, FileCheck, PenLine, FilePlus } from 'lucide-react';
 import { format } from 'date-fns';
-
-interface Client {
-  id: string;
-  full_name: string;
-  phone_number: string;
-  email: string;
-  id_number: string;
-  address: string;
-  employment_status: string;
-  monthly_income: number;
-  created_at: string;
-}
+import { Client } from '@/types/schema';
 
 const ClientDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,26 +18,39 @@ const ClientDetail = () => {
   const fetchClientDetail = async () => {
     if (!id) throw new Error("Client ID is required");
     
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) throw error;
-    return data as Client;
+    // Use raw fetch instead of supabase client due to typing issues
+    const response = await fetch(`https://bjsxekgraxbfqzhbqjff.supabase.co/rest/v1/clients?id=eq.${id}&select=*`, {
+      headers: {
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqc3hla2dyYXhiZnF6aGJxamZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjMxNzUsImV4cCI6MjA2MjY5OTE3NX0.XdyZ0y4pGsaARlhHEYs3zj-shj0i3szpOkRZC_CQ18Y'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error("Failed to fetch client");
+    }
+    
+    const data = await response.json();
+    if (!data || data.length === 0) {
+      throw new Error("Client not found");
+    }
+    
+    return data[0] as Client;
   };
 
   const fetchClientLoans = async () => {
     if (!id) throw new Error("Client ID is required");
     
-    const { data, error } = await supabase
-      .from('loans')
-      .select('*')
-      .eq('client_id', id);
+    const response = await fetch(`https://bjsxekgraxbfqzhbqjff.supabase.co/rest/v1/loans?client_id=eq.${id}&select=*`, {
+      headers: {
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqc3hla2dyYXhiZnF6aGJxamZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjMxNzUsImV4cCI6MjA2MjY5OTE3NX0.XdyZ0y4pGsaARlhHEYs3zj-shj0i3szpOkRZC_CQ18Y'
+      }
+    });
 
-    if (error) throw error;
-    return data || [];
+    if (!response.ok) {
+      throw new Error("Failed to fetch loans");
+    }
+    
+    return await response.json() || [];
   };
 
   const { data: client, isLoading, error } = useQuery({
