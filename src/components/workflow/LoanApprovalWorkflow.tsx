@@ -43,9 +43,12 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch workflow data using PostgreSQL function to handle TypeScript type issues
+        // Fetch workflow data directly from the table
         const { data: workflowData, error: workflowError } = await supabase
-          .rpc('get_loan_workflow', { application_id: applicationId });
+          .from('loan_application_workflow')
+          .select('*')
+          .eq('loan_application_id', applicationId)
+          .single();
 
         if (workflowError) throw workflowError;
         
@@ -100,7 +103,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     
     setIsSaving(true);
     try {
-      // Call the database function to advance the workflow
+      // Instead of using RPC, we'll interact with the database function through PostgreSQL functions
       const { data, error } = await supabase.rpc('advance_loan_workflow', {
         _application_id: applicationId,
         _notes: notes,
@@ -117,17 +120,22 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
       });
 
       // Refresh data
-      const { data: updatedWorkflow } = await supabase
-        .rpc('get_loan_workflow', { application_id: applicationId });
+      const { data: updatedWorkflow, error: refreshError } = await supabase
+        .from('loan_application_workflow')
+        .select('*')
+        .eq('loan_application_id', applicationId)
+        .single();
         
+      if (refreshError) throw refreshError;
       if (updatedWorkflow) setWorkflow(updatedWorkflow as WorkflowData);
 
-      const { data: updatedApplication } = await supabase
+      const { data: updatedApplication, error: appError } = await supabase
         .from('loan_applications')
         .select('id, client_name, loan_amount, loan_type, purpose_of_loan, status')
         .eq('id', applicationId)
         .single();
         
+      if (appError) throw appError;
       if (updatedApplication) setApplication(updatedApplication);
 
     } catch (error: any) {
