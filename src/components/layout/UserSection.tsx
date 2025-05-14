@@ -76,7 +76,6 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
   if (isLoading || loadingProfile) {
     return (
       <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse"></div>
         <div className="h-4 w-20 bg-gray-200 animate-pulse rounded"></div>
       </div>
     );
@@ -91,7 +90,6 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
       <div className="flex items-center gap-2">
         <NotificationsDropdown />
         
-        {/* User info display without avatar */}
         <div className="hidden md:flex flex-col items-start">
           <span className="text-sm font-medium">{fullName}</span>
           <span className="text-xs text-gray-500 dark:text-gray-400">{role}</span>
