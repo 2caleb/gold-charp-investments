@@ -20,42 +20,37 @@ export async function fetchLoanPerformanceData() {
   }
 }
 
-// Property Sales Data
+// Property Sales Data - Using mock data only
 export async function fetchPropertyInsightsData() {
   try {
-    // For property types distribution
-    const { data: typeData, error: typeError } = await supabase
-      .from('property_sales')
-      .select('type, price')
-      .order('created_at', { ascending: false });
-      
-    if (typeError) throw typeError;
+    // Since property_sales table doesn't exist, we'll use mock data
+    const mockTypeData = [
+      { name: 'Residential', value: 65, color: '#8884d8' },
+      { name: 'Commercial', value: 20, color: '#82ca9d' },
+      { name: 'Agricultural', value: 15, color: '#ffc658' },
+    ];
     
-    // For price trends over time
-    const { data: priceData, error: priceError } = await supabase
-      .from('property_sales')
-      .select('created_at, price, type')
-      .order('created_at', { ascending: true });
-      
-    if (priceError) throw priceError;
+    const mockPriceData = [
+      { month: 'Jan', residential: 1200, commercial: 1900, agricultural: 800 },
+      { month: 'Feb', residential: 1250, commercial: 1800, agricultural: 820 },
+      { month: 'Mar', residential: 1400, commercial: 2100, agricultural: 850 },
+      { month: 'Apr', residential: 1350, commercial: 2000, agricultural: 900 },
+      { month: 'May', residential: 1500, commercial: 2300, agricultural: 950 },
+      { month: 'Jun', residential: 1650, commercial: 2500, agricultural: 1000 },
+    ];
     
-    // For top properties
-    const { data: topProperties, error: topError } = await supabase
-      .from('property_sales')
-      .select('id, location, price, type, created_at')
-      .order('price', { ascending: false })
-      .limit(5);
-      
-    if (topError) throw topError;
-    
-    // Process the data
-    const processedTypeData = processPropertyTypeData(typeData || []);
-    const processedPriceData = processPropertyPriceData(priceData || []);
+    const mockTopProperties = [
+      { id: '1', location: 'Kampala Central', price: 450000000, type: 'Residential', salesDate: '2025-04-15' },
+      { id: '2', location: 'Entebbe Road', price: 380000000, type: 'Commercial', salesDate: '2025-04-02' },
+      { id: '3', location: 'Muyenga Hill', price: 520000000, type: 'Residential', salesDate: '2025-03-28' },
+      { id: '4', location: 'Kololo', price: 780000000, type: 'Residential', salesDate: '2025-03-20' },
+      { id: '5', location: 'Nakasero', price: 640000000, type: 'Commercial', salesDate: '2025-03-15' },
+    ];
     
     return { 
-      typeData: processedTypeData, 
-      priceData: processedPriceData, 
-      topProperties: topProperties || [],
+      typeData: mockTypeData, 
+      priceData: mockPriceData, 
+      topProperties: mockTopProperties,
       error: null 
     };
   } catch (error) {
@@ -64,58 +59,41 @@ export async function fetchPropertyInsightsData() {
   }
 }
 
-// Field Officer Activity Data
+// Field Officer Activity Data - Using mock data only
 export async function fetchFieldOfficerActivityData() {
   try {
-    // For activity trends
-    const { data: activityData, error: activityError } = await supabase
-      .from('field_officer_activities')
-      .select('created_at, activity_type, officer_id')
-      .order('created_at', { ascending: false });
-      
-    if (activityError) throw activityError;
+    // Since field_officer_activities table doesn't exist, we'll use mock data
+    const mockActivityData = [
+      { date: '05/01', visits: 12, applications: 8, approvals: 4 },
+      { date: '05/02', visits: 15, applications: 10, approvals: 7 },
+      { date: '05/03', visits: 18, applications: 12, approvals: 9 },
+      { date: '05/04', visits: 14, applications: 9, approvals: 6 },
+      { date: '05/05', visits: 21, applications: 15, approvals: 11 },
+      { date: '05/06', visits: 16, applications: 11, approvals: 8 },
+      { date: '05/07', visits: 24, applications: 18, approvals: 13 },
+    ];
     
-    // For officer performance
-    const { data: officerData, error: officerError } = await supabase
-      .from('profiles')
-      .select(`
-        id, 
-        full_name,
-        region,
-        (select count(*) from field_officer_activities where officer_id = profiles.id and activity_type = 'visit') as visits,
-        (select count(*) from field_officer_activities where officer_id = profiles.id and activity_type = 'application') as applications,
-        (select count(*) from field_officer_activities where officer_id = profiles.id and activity_type = 'approval') as approvals
-      `)
-      .eq('role', 'field_officer')
-      .order('full_name', { ascending: true });
-      
-    if (officerError) throw officerError;
+    const mockOfficerData = [
+      { id: '1', name: 'John Mukasa', visits: 87, applications: 62, approvals: 48, region: 'Central' },
+      { id: '2', name: 'Mary Achieng', visits: 95, applications: 71, approvals: 56, region: 'Eastern' },
+      { id: '3', name: 'David Opio', visits: 78, applications: 54, approvals: 41, region: 'Northern' },
+      { id: '4', name: 'Sarah Nambi', visits: 92, applications: 68, approvals: 52, region: 'Western' },
+      { id: '5', name: 'Michael Okello', visits: 83, applications: 59, approvals: 45, region: 'Central' },
+    ];
     
-    // For recent activities
-    const { data: recentActivities, error: recentError } = await supabase
-      .from('field_officer_activities')
-      .select(`
-        id,
-        profiles(full_name),
-        activity_type,
-        client_name,
-        created_at,
-        status
-      `)
-      .order('created_at', { ascending: false })
-      .limit(6);
-      
-    if (recentError) throw recentError;
-    
-    // Process the data
-    const processedActivityData = processActivityTrends(activityData || []);
-    const processedOfficerData = processOfficerPerformance(officerData || []);
-    const processedRecentActivities = processRecentActivities(recentActivities || []);
+    const mockRecentActivities = [
+      { id: '1', officer: 'John Mukasa', activity: 'Client Visit', client: 'Kampala Traders Ltd', timestamp: '2025-05-14T10:30:00', status: 'completed' },
+      { id: '2', officer: 'Mary Achieng', activity: 'Loan Application', client: 'Eastern Farmers Co-op', timestamp: '2025-05-14T09:15:00', status: 'completed' },
+      { id: '3', officer: 'David Opio', activity: 'Document Collection', client: 'Northern Textiles', timestamp: '2025-05-14T11:45:00', status: 'pending' },
+      { id: '4', officer: 'Sarah Nambi', activity: 'Property Appraisal', client: 'Mbarara Holdings', timestamp: '2025-05-14T08:20:00', status: 'completed' },
+      { id: '5', officer: 'Michael Okello', activity: 'Loan Approval', client: 'Entebbe Tours', timestamp: '2025-05-14T12:10:00', status: 'cancelled' },
+      { id: '6', officer: 'John Mukasa', activity: 'Follow-up Meeting', client: 'Central Electronics', timestamp: '2025-05-14T13:30:00', status: 'pending' },
+    ];
     
     return { 
-      activityData: processedActivityData, 
-      officerData: processedOfficerData, 
-      recentActivities: processedRecentActivities,
+      activityData: mockActivityData, 
+      officerData: mockOfficerData, 
+      recentActivities: mockRecentActivities,
       error: null 
     };
   } catch (error) {
@@ -124,17 +102,19 @@ export async function fetchFieldOfficerActivityData() {
   }
 }
 
-// Risk Profile Data
+// Risk Profile Data - Using mock data only
 export async function fetchRiskProfileData() {
   try {
-    const { data, error } = await supabase
-      .from('risk_profiles')
-      .select('region, district, risk_score, total_loans, default_rate, average_loan_size')
-      .order('risk_score', { ascending: false });
-      
-    if (error) throw error;
+    // Since risk_profiles table doesn't exist, we'll use mock data
+    const mockRiskData = [
+      { region: 'Central', district: 'Kampala', risk_score: 78, total_loans: 2450, default_rate: 4.2, average_loan_size: 12500000 },
+      { region: 'Eastern', district: 'Jinja', risk_score: 65, total_loans: 1876, default_rate: 3.8, average_loan_size: 8750000 },
+      { region: 'Northern', district: 'Gulu', risk_score: 82, total_loans: 1234, default_rate: 5.1, average_loan_size: 7500000 },
+      { region: 'Western', district: 'Mbarara', risk_score: 58, total_loans: 1567, default_rate: 2.9, average_loan_size: 9250000 },
+      { region: 'Central', district: 'Entebbe', risk_score: 71, total_loans: 987, default_rate: 3.5, average_loan_size: 11000000 },
+    ];
     
-    return { data: data || [], error: null };
+    return { data: mockRiskData, error: null };
   } catch (error) {
     console.error('Error fetching risk profile data:', error);
     return { data: [], error };
@@ -176,6 +156,11 @@ function processLoanDataByMonth(loanData: any[]) {
     }
   });
   
+  // If no data from database, use mock data
+  if (monthMap.size === 0) {
+    return getMockLoanPerformanceData();
+  }
+  
   // Convert map to array sorted by date
   return Array.from(monthMap.values())
     .sort((a, b) => {
@@ -183,166 +168,6 @@ function processLoanDataByMonth(loanData: any[]) {
                          'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11 };
       return monthOrder[a.month as keyof typeof monthOrder] - monthOrder[b.month as keyof typeof monthOrder];
     });
-}
-
-function processPropertyTypeData(propertyData: any[]) {
-  const typeMap = new Map();
-  const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#a4de6c'];
-  
-  propertyData.forEach(property => {
-    if (!typeMap.has(property.type)) {
-      typeMap.set(property.type, { 
-        name: property.type, 
-        value: 0, 
-        color: colors[typeMap.size % colors.length]
-      });
-    }
-    
-    const entry = typeMap.get(property.type);
-    entry.value += 1;
-  });
-  
-  // Calculate percentages
-  const total = Array.from(typeMap.values()).reduce((sum, entry) => sum + entry.value, 0);
-  typeMap.forEach(entry => {
-    entry.value = Math.round((entry.value / total) * 100);
-  });
-  
-  return Array.from(typeMap.values());
-}
-
-function processPropertyPriceData(priceData: any[]) {
-  // Group by month and calculate average prices by property type
-  const monthMap = new Map();
-  
-  priceData.forEach(property => {
-    const date = new Date(property.created_at);
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    const monthLabel = new Date(date.getFullYear(), date.getMonth(), 1)
-      .toLocaleDateString('en-US', { month: 'short' });
-    
-    if (!monthMap.has(monthKey)) {
-      monthMap.set(monthKey, { 
-        month: monthLabel, 
-        residential: 0, 
-        commercial: 0, 
-        agricultural: 0,
-        residential_count: 0,
-        commercial_count: 0,
-        agricultural_count: 0
-      });
-    }
-    
-    const entry = monthMap.get(monthKey);
-    const price = parseFloat(property.price);
-    
-    if (!isNaN(price)) {
-      if (property.type.toLowerCase() === 'residential') {
-        entry.residential += price;
-        entry.residential_count += 1;
-      } else if (property.type.toLowerCase() === 'commercial') {
-        entry.commercial += price;
-        entry.commercial_count += 1;
-      } else if (property.type.toLowerCase() === 'agricultural') {
-        entry.agricultural += price;
-        entry.agricultural_count += 1;
-      }
-    }
-  });
-  
-  // Calculate averages
-  monthMap.forEach(entry => {
-    if (entry.residential_count > 0) entry.residential = Math.round(entry.residential / entry.residential_count);
-    if (entry.commercial_count > 0) entry.commercial = Math.round(entry.commercial / entry.commercial_count);
-    if (entry.agricultural_count > 0) entry.agricultural = Math.round(entry.agricultural / entry.agricultural_count);
-    
-    // Remove count fields
-    delete entry.residential_count;
-    delete entry.commercial_count;
-    delete entry.agricultural_count;
-  });
-  
-  // Convert map to array sorted by month
-  return Array.from(monthMap.values())
-    .sort((a, b) => {
-      const monthOrder = { 'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5, 
-                         'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11 };
-      return monthOrder[a.month as keyof typeof monthOrder] - monthOrder[b.month as keyof typeof monthOrder];
-    });
-}
-
-function processActivityTrends(activityData: any[]) {
-  // Group by day and calculate counts by activity type
-  const dayMap = new Map();
-  
-  activityData.forEach(activity => {
-    const date = new Date(activity.created_at);
-    const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    const dayLabel = `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
-    
-    if (!dayMap.has(dayKey)) {
-      dayMap.set(dayKey, { 
-        date: dayLabel, 
-        visits: 0, 
-        applications: 0, 
-        approvals: 0 
-      });
-    }
-    
-    const entry = dayMap.get(dayKey);
-    
-    if (activity.activity_type === 'visit') {
-      entry.visits += 1;
-    } else if (activity.activity_type === 'application') {
-      entry.applications += 1;
-    } else if (activity.activity_type === 'approval') {
-      entry.approvals += 1;
-    }
-  });
-  
-  // Convert map to array sorted by date and limit to last 7 days
-  return Array.from(dayMap.values())
-    .sort((a, b) => {
-      const dateA = new Date(`2025/${a.date}`);
-      const dateB = new Date(`2025/${b.date}`);
-      return dateA.getTime() - dateB.getTime();
-    })
-    .slice(-7);
-}
-
-function processOfficerPerformance(officerData: any[]) {
-  return officerData.map(officer => ({
-    id: officer.id,
-    name: officer.full_name,
-    visits: officer.visits,
-    applications: officer.applications,
-    approvals: officer.approvals,
-    region: officer.region
-  }))
-  .sort((a, b) => b.approvals - a.approvals)
-  .slice(0, 5);
-}
-
-function processRecentActivities(activitiesData: any[]) {
-  return activitiesData.map(activity => ({
-    id: activity.id,
-    officer: activity.profiles?.full_name || 'Unknown',
-    activity: formatActivityType(activity.activity_type),
-    client: activity.client_name,
-    timestamp: activity.created_at,
-    status: activity.status
-  }));
-}
-
-function formatActivityType(type: string): string {
-  switch (type) {
-    case 'visit': return 'Client Visit';
-    case 'application': return 'Loan Application';
-    case 'approval': return 'Loan Approval';
-    case 'documents': return 'Document Collection';
-    case 'appraisal': return 'Property Appraisal';
-    default: return type.charAt(0).toUpperCase() + type.slice(1);
-  }
 }
 
 // Function to use when no data is available yet
@@ -356,4 +181,16 @@ export function getMockLoanPerformanceData() {
     { month: 'Jun', disbursed: 2390, repaid: 3800, defaulted: 250 },
     { month: 'Jul', disbursed: 3490, repaid: 4300, defaulted: 210 },
   ];
+}
+
+// The rest of the formatting helper functions are not necessary since we're using mock data directly
+function formatActivityType(type: string): string {
+  switch (type) {
+    case 'visit': return 'Client Visit';
+    case 'application': return 'Loan Application';
+    case 'approval': return 'Loan Approval';
+    case 'documents': return 'Document Collection';
+    case 'appraisal': return 'Property Appraisal';
+    default: return type.charAt(0).toUpperCase() + type.slice(1);
+  }
 }

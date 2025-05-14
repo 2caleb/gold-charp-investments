@@ -12,7 +12,7 @@ import { PropertyInsights } from '@/components/dashboard/PropertyInsights';
 import { FieldOfficerActivity } from '@/components/dashboard/FieldOfficerActivity';
 import { RiskProfileMap } from '@/components/dashboard/RiskProfileMap';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, InfoIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { showDatabaseNotAvailableToast } from '@/components/ui/notification-toast';
@@ -25,6 +25,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('loan-performance');
   const [tablesExist, setTablesExist] = useState(true);
   const [checkingTables, setCheckingTables] = useState(true);
+  const [usingMockData, setUsingMockData] = useState(true);
 
   // Check for required tables
   useEffect(() => {
@@ -39,11 +40,17 @@ const Dashboard = () => {
         if (loanError) {
           console.log('loan_applications table not found');
           setTablesExist(false);
+          setUsingMockData(true);
           showDatabaseNotAvailableToast();
+        } else {
+          setTablesExist(true);
+          // We're still using mock data for other tables that don't exist yet
+          setUsingMockData(true);
         }
       } catch (err) {
         console.error('Error checking tables:', err);
         setTablesExist(false);
+        setUsingMockData(true);
       } finally {
         setCheckingTables(false);
       }
@@ -106,6 +113,18 @@ const Dashboard = () => {
                 >
                   Open Supabase Console
                 </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {tablesExist && usingMockData && (
+            <Alert className="mb-6 border-blue-500 bg-blue-50 dark:bg-blue-900/20">
+              <InfoIcon className="h-4 w-4" />
+              <AlertTitle>Some tables are missing</AlertTitle>
+              <AlertDescription>
+                <p className="mb-2">
+                  While some basic tables exist, additional tables are needed for complete dashboard functionality. Currently displaying mock data for some sections.
+                </p>
               </AlertDescription>
             </Alert>
           )}
