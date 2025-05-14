@@ -1,18 +1,49 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from '@/contexts/AuthContext';
 import NotificationsDropdown from '@/components/notifications/NotificationsDropdown';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from '@/hooks/use-toast';
 
 interface UserSectionProps {
   onActionComplete?: () => void;
 }
 
 const UserSection = ({ onActionComplete }: UserSectionProps) => {
-  const { user, signOut, isLoading } = useAuth();
+  const { user, signOut, isLoading, session } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch user profile when auth state changes
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('full_name, role')
+            .eq('id', user.id)
+            .single();
+
+          if (error) {
+            console.error('Error fetching profile:', error);
+          }
+        } catch (error) {
+          console.error('Error in profile fetch:', error);
+        }
+      }
+    };
+
+    if (user?.id) {
+      // Use setTimeout to avoid Supabase auth deadlock
+      setTimeout(() => {
+        fetchUserProfile();
+      }, 0);
+    }
+  }, [user?.id]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -35,18 +66,34 @@ const UserSection = ({ onActionComplete }: UserSectionProps) => {
   }
 
   if (user) {
-    // Extract user information
+    // Extract user information directly from auth user metadata
+    // This contains data that was set during registration
     const fullName = user.user_metadata?.full_name || 'User';
     const role = user.user_metadata?.role || 'Client';
+    
+    // Get initials for avatar
+    const initials = fullName
+      .split(' ')
+      .map(name => name[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
     
     return (
       <div className="flex items-center gap-2">
         <NotificationsDropdown />
         
-        {/* User info display */}
-        <div className="hidden md:flex flex-col items-end mr-2">
-          <span className="text-sm font-medium">{fullName}</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">{role}</span>
+        {/* User info display with avatar */}
+        <div className="hidden md:flex items-center gap-2">
+          <Avatar className="h-8 w-8 border border-purple-200">
+            <AvatarFallback className="bg-purple-100 text-purple-800 text-xs">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-medium">{fullName}</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{role}</span>
+          </div>
         </div>
         
         <Button

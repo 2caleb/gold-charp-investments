@@ -42,7 +42,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_IN') {
+          const userName = currentSession?.user?.user_metadata?.full_name || 'User';
+          toast({
+            title: 'Welcome',
+            description: `You're now signed in as ${userName}`,
+          });
+        } else if (event === 'SIGNED_OUT') {
           toast({
             title: 'Logged Out',
             description: 'You have been successfully logged out.',
@@ -75,11 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
 
-      // Show success toast
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back!',
-      });
+      // Toast notification is handled by onAuthStateChange
     } catch (error: any) {
       toast({
         title: 'Login Failed',
