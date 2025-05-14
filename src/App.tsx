@@ -9,6 +9,7 @@ import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
 import { Toast } from '@/components/ui/toast';
 import Dashboard from '@/pages/Dashboard';
+import Notifications from '@/pages/Notifications';
 
 function App() {
   return (
@@ -32,6 +33,11 @@ function App() {
         <Route path="/dashboard" element={
           <PrivateRoute>
             <Dashboard />
+          </PrivateRoute>
+        } />
+        <Route path="/notifications" element={
+          <PrivateRoute>
+            <Notifications />
           </PrivateRoute>
         } />
       </Routes>
