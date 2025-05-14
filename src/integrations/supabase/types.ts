@@ -87,6 +87,48 @@ export type Database = {
         }
         Relationships: []
       }
+      document_metadata: {
+        Row: {
+          content_type: string
+          description: string | null
+          document_type: string
+          file_name: string
+          file_size: number
+          id: string
+          loan_application_id: string | null
+          storage_path: string
+          tags: string[] | null
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          content_type: string
+          description?: string | null
+          document_type: string
+          file_name: string
+          file_size: number
+          id?: string
+          loan_application_id?: string | null
+          storage_path: string
+          tags?: string[] | null
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          content_type?: string
+          description?: string | null
+          document_type?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          loan_application_id?: string | null
+          storage_path?: string
+          tags?: string[] | null
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       loan_applications: {
         Row: {
           address: string

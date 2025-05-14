@@ -6,12 +6,12 @@ import LoanApplicationForm from '@/components/loans/LoanApplicationForm';
 const NewLoanApplication = () => {
   return (
     <Layout>
-      <section className="bg-gray-50 dark:bg-gray-900 py-16">
+      <section className="bg-gray-50 dark:bg-gray-900 py-8 md:py-16">
         <div className="container mx-auto px-4">
-          <div className="mb-10">
-            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-4 dark:text-white">New Loan Application</h1>
-            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
-              Fill out the form below to submit a new loan application.
+          <div className="mb-8 md:mb-10">
+            <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4 dark:text-white">New Loan Application</h1>
+            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
+              Fill out the form below to submit a new loan application. You'll be able to add supporting documents after submission.
             </p>
           </div>
 
