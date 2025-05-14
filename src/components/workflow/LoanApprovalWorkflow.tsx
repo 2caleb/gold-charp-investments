@@ -20,6 +20,25 @@ interface LoanApplication {
   status: string;
 }
 
+// Define the structure of the workflow data returned from the database
+interface WorkflowResponse {
+  id: string;
+  loan_application_id: string;
+  current_stage: string;
+  field_officer_approved: boolean;
+  manager_approved: boolean;
+  director_approved: boolean;
+  ceo_approved: boolean;
+  chairperson_approved: boolean;
+  field_officer_notes: string | null;
+  manager_notes: string | null;
+  director_notes: string | null;
+  ceo_notes: string | null;
+  chairperson_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
   const { toast } = useToast();
   const { 
@@ -34,7 +53,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [notes, setNotes] = useState('');
-  const [workflow, setWorkflow] = useState<WorkflowData | null>(null);
+  const [workflow, setWorkflow] = useState<WorkflowResponse | null>(null);
   const [application, setApplication] = useState<LoanApplication | null>(null);
 
   useEffect(() => {
@@ -43,15 +62,17 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Use RPC function to fetch workflow data
+        // Fetch workflow data directly from the table
         const { data: workflowData, error: workflowError } = await supabase
-          .rpc('get_loan_workflow', { application_id: applicationId });
+          .from('loan_application_workflow')
+          .select('*')
+          .eq('loan_application_id', applicationId)
+          .single();
 
         if (workflowError) throw workflowError;
         
-        if (workflowData && workflowData.length > 0) {
-          // Since this is an RPC call that returns multiple rows, we want the first one
-          setWorkflow(workflowData[0] as unknown as WorkflowData);
+        if (workflowData) {
+          setWorkflow(workflowData as WorkflowResponse);
         } else {
           throw new Error('No workflow data found');
         }
@@ -67,18 +88,17 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
         setApplication(applicationData);
 
         // Set initial notes based on current role
-        if (workflowData && workflowData.length > 0) {
-          const workflow = workflowData[0];
-          if (isFieldOfficer && workflow.current_stage === 'field_officer') {
-            setNotes(workflow.field_officer_notes || '');
-          } else if (isManager && workflow.current_stage === 'manager') {
-            setNotes(workflow.manager_notes || '');
-          } else if (isDirector && workflow.current_stage === 'director') {
-            setNotes(workflow.director_notes || '');
-          } else if (isCEO && workflow.current_stage === 'ceo') {
-            setNotes(workflow.ceo_notes || '');
-          } else if (isChairperson && workflow.current_stage === 'chairperson') {
-            setNotes(workflow.chairperson_notes || '');
+        if (workflowData) {
+          if (isFieldOfficer && workflowData.current_stage === 'field_officer') {
+            setNotes(workflowData.field_officer_notes || '');
+          } else if (isManager && workflowData.current_stage === 'manager') {
+            setNotes(workflowData.manager_notes || '');
+          } else if (isDirector && workflowData.current_stage === 'director') {
+            setNotes(workflowData.director_notes || '');
+          } else if (isCEO && workflowData.current_stage === 'ceo') {
+            setNotes(workflowData.ceo_notes || '');
+          } else if (isChairperson && workflowData.current_stage === 'chairperson') {
+            setNotes(workflowData.chairperson_notes || '');
           }
         }
 
@@ -102,14 +122,53 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     
     setIsSaving(true);
     try {
-      // Use RPC for advancing the workflow
-      const { data, error } = await supabase.rpc('advance_loan_workflow', {
-        _application_id: applicationId,
-        _notes: notes,
-        _approved: approve
-      });
+      // Update the workflow directly in the database
+      const updateData: Record<string, any> = {
+        updated_at: new Date().toISOString()
+      };
 
-      if (error) throw error;
+      // Set the appropriate fields based on current stage
+      if (workflow.current_stage === 'field_officer') {
+        updateData.field_officer_approved = approve;
+        updateData.field_officer_notes = notes;
+        updateData.current_stage = approve ? 'manager' : 'rejected';
+      } else if (workflow.current_stage === 'manager') {
+        updateData.manager_approved = approve;
+        updateData.manager_notes = notes;
+        updateData.current_stage = approve ? 'director' : 'rejected';
+      } else if (workflow.current_stage === 'director') {
+        updateData.director_approved = approve;
+        updateData.director_notes = notes;
+        updateData.current_stage = approve ? 'ceo' : 'rejected';
+      } else if (workflow.current_stage === 'ceo') {
+        updateData.ceo_approved = approve;
+        updateData.ceo_notes = notes;
+        updateData.current_stage = approve ? 'chairperson' : 'rejected';
+      } else if (workflow.current_stage === 'chairperson') {
+        updateData.chairperson_approved = approve;
+        updateData.chairperson_notes = notes;
+        updateData.current_stage = approve ? 'completed' : 'rejected';
+      }
+
+      // Update workflow record
+      const { error: updateError } = await supabase
+        .from('loan_application_workflow')
+        .update(updateData)
+        .eq('id', workflow.id);
+
+      if (updateError) throw updateError;
+
+      // Update loan application status
+      const appStatus = approve 
+        ? (workflow.current_stage === 'chairperson' ? 'approved' : `pending_${updateData.current_stage}`)
+        : 'rejected';
+        
+      const { error: appError } = await supabase
+        .from('loan_applications')
+        .update({ status: appStatus })
+        .eq('id', applicationId);
+        
+      if (appError) throw appError;
 
       // Show success message
       const actionText = approve ? 'approved' : 'rejected';
@@ -118,23 +177,27 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
         description: `The loan application has been successfully ${actionText}.`,
       });
 
-      // Refresh data
-      const { data: updatedWorkflow, error: refreshError } = await supabase
-        .rpc('get_loan_workflow', { application_id: applicationId });
+      // Refresh workflow data
+      const { data: refreshedWorkflow, error: refreshError } = await supabase
+        .from('loan_application_workflow')
+        .select('*')
+        .eq('loan_application_id', applicationId)
+        .single();
         
       if (refreshError) throw refreshError;
       
-      if (updatedWorkflow && updatedWorkflow.length > 0) {
-        setWorkflow(updatedWorkflow[0] as unknown as WorkflowData);
+      if (refreshedWorkflow) {
+        setWorkflow(refreshedWorkflow as WorkflowResponse);
       }
 
-      const { data: updatedApplication, error: appError } = await supabase
+      // Refresh application data
+      const { data: updatedApplication, error: appFetchError } = await supabase
         .from('loan_applications')
         .select('id, client_name, loan_amount, loan_type, purpose_of_loan, status')
         .eq('id', applicationId)
         .single();
         
-      if (appError) throw appError;
+      if (appFetchError) throw appFetchError;
       if (updatedApplication) setApplication(updatedApplication);
 
     } catch (error: any) {
