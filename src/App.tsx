@@ -19,6 +19,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import DataCollectionDashboard from "./pages/staff/DataCollectionDashboard";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
+import ClientsList from "./pages/ClientsList";
+import NewClient from "./pages/NewClient";
+import ClientDetail from "./pages/ClientDetail";
+import NewLoanApplication from "./pages/NewLoanApplication";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +44,28 @@ const App = () => (
               <Route path="/calculator" element={<Calculator />} />
               <Route path="/properties" element={<Properties />} />
               <Route path="/loans" element={<Loans />} />
+              
+              {/* Protected routes */}
+              <Route path="/clients" element={
+                <StaffRoute>
+                  <ClientsList />
+                </StaffRoute>
+              } />
+              <Route path="/clients/new" element={
+                <StaffRoute>
+                  <NewClient />
+                </StaffRoute>
+              } />
+              <Route path="/clients/:id" element={
+                <StaffRoute>
+                  <ClientDetail />
+                </StaffRoute>
+              } />
+              <Route path="/loan-applications/new" element={
+                <StaffRoute>
+                  <NewLoanApplication />
+                </StaffRoute>
+              } />
               
               {/* Staff-only routes */}
               <Route path="/staff/data-collection" element={
