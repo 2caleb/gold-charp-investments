@@ -85,6 +85,7 @@ const NotificationsDropdown = () => {
         .map(n => n.id);
         
       if (unreadIds.length > 0) {
+        // Use then/catch handling rather than promise.catch
         supabase
           .from('notifications')
           .update({ is_read: true })

@@ -62,12 +62,12 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch workflow data directly from the table
+        // Use the edge function to get workflow data
         const { data: workflowData, error: workflowError } = await supabase
-          .from('loan_application_workflow')
-          .select('*')
-          .eq('loan_application_id', applicationId)
-          .single();
+          .functions
+          .invoke('get_loan_workflow', {
+            body: { application_id: applicationId }
+          });
 
         if (workflowError) throw workflowError;
         
@@ -122,53 +122,20 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     
     setIsSaving(true);
     try {
-      // Update the workflow directly in the database
-      const updateData: Record<string, any> = {
-        updated_at: new Date().toISOString()
-      };
+      // Use loan-approval edge function instead of direct update
+      const { data: updatedWorkflow, error } = await supabase
+        .functions
+        .invoke('loan-approval', {
+          body: {
+            workflowId: workflow.id,
+            applicationId,
+            stage: workflow.current_stage,
+            approved: approve,
+            notes,
+          }
+        });
 
-      // Set the appropriate fields based on current stage
-      if (workflow.current_stage === 'field_officer') {
-        updateData.field_officer_approved = approve;
-        updateData.field_officer_notes = notes;
-        updateData.current_stage = approve ? 'manager' : 'rejected';
-      } else if (workflow.current_stage === 'manager') {
-        updateData.manager_approved = approve;
-        updateData.manager_notes = notes;
-        updateData.current_stage = approve ? 'director' : 'rejected';
-      } else if (workflow.current_stage === 'director') {
-        updateData.director_approved = approve;
-        updateData.director_notes = notes;
-        updateData.current_stage = approve ? 'ceo' : 'rejected';
-      } else if (workflow.current_stage === 'ceo') {
-        updateData.ceo_approved = approve;
-        updateData.ceo_notes = notes;
-        updateData.current_stage = approve ? 'chairperson' : 'rejected';
-      } else if (workflow.current_stage === 'chairperson') {
-        updateData.chairperson_approved = approve;
-        updateData.chairperson_notes = notes;
-        updateData.current_stage = approve ? 'completed' : 'rejected';
-      }
-
-      // Update workflow record
-      const { error: updateError } = await supabase
-        .from('loan_application_workflow')
-        .update(updateData)
-        .eq('id', workflow.id);
-
-      if (updateError) throw updateError;
-
-      // Update loan application status
-      const appStatus = approve 
-        ? (workflow.current_stage === 'chairperson' ? 'approved' : `pending_${updateData.current_stage}`)
-        : 'rejected';
-        
-      const { error: appError } = await supabase
-        .from('loan_applications')
-        .update({ status: appStatus })
-        .eq('id', applicationId);
-        
-      if (appError) throw appError;
+      if (error) throw error;
 
       // Show success message
       const actionText = approve ? 'approved' : 'rejected';
@@ -177,17 +144,9 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
         description: `The loan application has been successfully ${actionText}.`,
       });
 
-      // Refresh workflow data
-      const { data: refreshedWorkflow, error: refreshError } = await supabase
-        .from('loan_application_workflow')
-        .select('*')
-        .eq('loan_application_id', applicationId)
-        .single();
-        
-      if (refreshError) throw refreshError;
-      
-      if (refreshedWorkflow) {
-        setWorkflow(refreshedWorkflow as WorkflowResponse);
+      // Update local state with the response data
+      if (updatedWorkflow) {
+        setWorkflow(updatedWorkflow as WorkflowResponse);
       }
 
       // Refresh application data
