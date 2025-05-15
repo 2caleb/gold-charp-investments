@@ -23,7 +23,7 @@ const calculateInterest = (
   durationValue: number,
   durationType: LoanDuration
 ): LoanCalculation => {
-  // Annual interest rate of 18%
+  // Fixed annual interest rate of 18% if not specified
   const annualRate = rate / 100;
   
   // Convert duration to relevant period
@@ -74,11 +74,14 @@ const calculateInterest = (
   };
 };
 
+// Default interest rate as a constant
+export const DEFAULT_INTEREST_RATE = 18; // 18% annual interest rate
+
 export const useLoanCalculator = (
   initialAmount: number = 0,
   durationValue: number = 1,
   durationType: LoanDuration = 'monthly',
-  interestRate: number = 18 // Default 18% annual interest rate
+  interestRate: number = DEFAULT_INTEREST_RATE // Default 18% annual interest rate
 ) => {
   const [amount, setAmount] = useState(initialAmount);
   const [duration, setDuration] = useState(durationValue);

@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, FilePlus } from "lucide-react";
+import { ClipboardList, FilePlus, Camera, ScanLine } from "lucide-react";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -65,10 +65,19 @@ const clientFormSchema = z.object({
 
 type ClientFormValues = z.infer<typeof clientFormSchema>;
 
+// Define specific media capture types
+type CaptureType = 'photo' | 'document' | 'idCard';
+
 const DataCollectionButton = () => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeCaptureType, setActiveCaptureType] = useState<CaptureType | null>(null);
+  
+  // Initialize media capture hook
   const { captureImage, captureVideo, scanDocument, MediaCaptureUI } = useMediaCapture();
+  
+  // Fixed interest rate
+  const FIXED_INTEREST_RATE = 18; // 18% annual interest rate
 
   // Initialize the form
   const form = useForm<ClientFormValues>({
@@ -134,12 +143,12 @@ const DataCollectionButton = () => {
   const loanDuration = form.watch('loanDuration');
   const durationType = form.watch('durationType');
   
-  // Use the loan calculator hook
+  // Use the loan calculator hook with the fixed 18% rate
   const { calculation } = useLoanCalculator(
     parseFloat(loanAmount || '0'),
     parseInt(loanDuration || '1'),
     durationType,
-    18 // 18% annual interest rate
+    FIXED_INTEREST_RATE // Use the fixed 18% interest rate
   );
   
   // Handle form submission
@@ -160,14 +169,17 @@ const DataCollectionButton = () => {
     }, 1500);
   };
 
-  // Handle capturing photos
-  const handleCapturePhoto = async () => {
+  // Handle capturing client photo
+  const handleCaptureClientPhoto = async () => {
+    setActiveCaptureType('photo');
     try {
-      await captureImage();
+      const imageData = await captureImage();
       toast({
         title: 'Photo captured',
         description: 'Client photo has been successfully captured.',
       });
+      // Here you could store the image or associate it with the client data
+      // For example: form.setValue('clientPhotoData', imageData);
     } catch (error) {
       console.error('Error capturing photo:', error);
       toast({
@@ -175,35 +187,45 @@ const DataCollectionButton = () => {
         description: 'Failed to capture photo. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setActiveCaptureType(null);
     }
   };
 
-  // Handle capturing videos
-  const handleCaptureVideo = async () => {
+  // Handle ID card scanning
+  const handleScanIDCard = async () => {
+    setActiveCaptureType('idCard');
     try {
-      await captureVideo();
+      const documentData = await scanDocument();
       toast({
-        title: 'Video captured',
-        description: 'Client video has been successfully recorded.',
+        title: 'ID Scanned',
+        description: 'ID card has been successfully scanned.',
       });
+      
+      // Here you could implement OCR to extract ID number and other info
+      // or just store the scanned document
     } catch (error) {
-      console.error('Error capturing video:', error);
+      console.error('Error scanning ID:', error);
       toast({
         title: 'Error',
-        description: 'Failed to record video. Please try again.',
+        description: 'Failed to scan ID card. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setActiveCaptureType(null);
     }
   };
 
-  // Handle document scanning
+  // Handle other document scanning
   const handleScanDocument = async () => {
+    setActiveCaptureType('document');
     try {
-      await scanDocument();
+      const documentData = await scanDocument();
       toast({
         title: 'Document scanned',
         description: 'Client document has been successfully scanned.',
       });
+      // Here you could store the document or associate it with the client data
     } catch (error) {
       console.error('Error scanning document:', error);
       toast({
@@ -211,6 +233,8 @@ const DataCollectionButton = () => {
         description: 'Failed to scan document. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setActiveCaptureType(null);
     }
   };
 
@@ -266,7 +290,7 @@ const DataCollectionButton = () => {
           
           ${calculationData ? `
           <div class="section">
-            <div class="section-title">Loan Calculation (18% Annual Interest Rate)</div>
+            <div class="section-title">Loan Calculation (Fixed 18% Annual Interest)</div>
             <div class="field"><span class="label">Principal Amount:</span> <span class="value">${calculationData.principal.toLocaleString('en-UG')}</span></div>
             <div class="field"><span class="label">Total Interest:</span> <span class="value">${calculationData.totalInterest.toLocaleString('en-UG')}</span></div>
             <div class="field"><span class="label">Total Repayment:</span> <span class="value">${calculationData.totalAmount.toLocaleString('en-UG')}</span></div>
@@ -368,6 +392,7 @@ const DataCollectionButton = () => {
           <DialogTitle>Client Data Collection</DialogTitle>
           <DialogDescription>
             Enter the client's information below to collect data for loan processing.
+            All calculations use a fixed 18% annual interest rate.
           </DialogDescription>
         </DialogHeader>
         
@@ -435,19 +460,34 @@ const DataCollectionButton = () => {
                 />
               </div>
               
-              {/* Media Capture Buttons */}
+              {/* Enhanced Media Capture Buttons with status indicators */}
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" onClick={handleCapturePhoto}>
-                  <FilePlus className="mr-2 h-4 w-4" />
-                  Capture Photo
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleCaptureClientPhoto}
+                  disabled={activeCaptureType !== null}
+                >
+                  <Camera className="mr-2 h-4 w-4" />
+                  {activeCaptureType === 'photo' ? 'Capturing...' : 'Capture Photo'}
                 </Button>
-                <Button type="button" variant="outline" onClick={handleCaptureVideo}>
-                  <FilePlus className="mr-2 h-4 w-4" />
-                  Record Video
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleScanIDCard}
+                  disabled={activeCaptureType !== null}
+                >
+                  <ScanLine className="mr-2 h-4 w-4" />
+                  {activeCaptureType === 'idCard' ? 'Scanning...' : 'Scan ID Card'}
                 </Button>
-                <Button type="button" variant="outline" onClick={handleScanDocument}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleScanDocument}
+                  disabled={activeCaptureType !== null}
+                >
                   <FilePlus className="mr-2 h-4 w-4" />
-                  Scan Document
+                  {activeCaptureType === 'document' ? 'Scanning...' : 'Scan Document'}
                 </Button>
               </div>
               
@@ -566,11 +606,13 @@ const DataCollectionButton = () => {
                 />
               </div>
               
-              {/* Display loan calculation */}
+              {/* Display loan calculation with fixed 18% rate */}
               {calculation && (
                 <Card className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                   <CardContent className="pt-4">
-                    <h3 className="text-lg font-medium mb-2">Loan Calculation (18% Annual Interest)</h3>
+                    <h3 className="text-lg font-medium mb-2">
+                      Loan Calculation (Fixed 18% Annual Interest)
+                    </h3>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                       <div>
