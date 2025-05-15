@@ -1,393 +1,59 @@
 
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from '@/integrations/supabase/client';
 import RealTimeUpdates from './RealTimeUpdates';
-import { Loader2, AlertCircle } from 'lucide-react';
-import { Client } from '@/types/schema';
-import { useDocumentUpload, UploadedDocument } from '@/hooks/use-document-upload';
-import { DocumentUpload } from '@/components/documents/DocumentUpload';
-import { DocumentList } from '@/components/documents/DocumentList';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-const loanApplicationSchema = z.object({
-  client_id: z.string().uuid("Please select a client"),
-  loan_type: z.string().min(1, "Please select a loan type"),
-  loan_amount: z.string().min(1, "Loan amount is required"),
-  purpose_of_loan: z.string().min(5, "Please provide the purpose of the loan"),
-  notes: z.string().optional(),
-});
-
-type LoanApplicationValues = z.infer<typeof loanApplicationSchema>;
+import { LoanDetailsForm } from './LoanDetailsForm';
+import { DocumentsUploadSection } from './DocumentsUploadSection';
+import { RealtimeUpdateNotification } from './RealtimeUpdateNotification';
+import { useLoanApplicationForm } from '@/hooks/use-loan-application-form';
 
 const LoanApplicationForm = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isLoadingClients, setIsLoadingClients] = useState(false);
-  const preselectedClientId = searchParams.get('client');
-  const [realtimeUpdate, setRealtimeUpdate] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("details");
-  const [loanApplicationId, setLoanApplicationId] = useState<string | null>(null);
-  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
-  
-  // Document upload hooks
   const {
-    isUploading: isUploadingId,
-    uploadDocument: uploadIdDocument,
-    uploadedDocuments: idDocuments,
-    getDocumentUrl: getIdDocumentUrl,
-    deleteDocument: deleteIdDocument,
-    setUploadedDocuments: setIdDocuments
-  } = useDocumentUpload();
-  
-  const {
-    isUploading: isUploadingCollateral,
-    uploadDocument: uploadCollateralPhoto,
-    uploadedDocuments: collateralPhotos,
-    getDocumentUrl: getCollateralPhotoUrl,
-    deleteDocument: deleteCollateralPhoto,
-    setUploadedDocuments: setCollateralPhotos
-  } = useDocumentUpload();
-  
-  const {
-    isUploading: isUploadingProperty,
-    uploadDocument: uploadPropertyDocument,
-    uploadedDocuments: propertyDocuments,
-    getDocumentUrl: getPropertyDocumentUrl,
-    deleteDocument: deletePropertyDocument,
-    setUploadedDocuments: setPropertyDocuments
-  } = useDocumentUpload();
-  
-  const {
-    isUploading: isUploadingLoan,
-    uploadDocument: uploadLoanAgreement,
-    uploadedDocuments: loanAgreements,
-    getDocumentUrl: getLoanAgreementUrl,
-    deleteDocument: deleteLoanAgreement,
-    setUploadedDocuments: setLoanAgreements
-  } = useDocumentUpload();
-
-  const form = useForm<LoanApplicationValues>({
-    resolver: zodResolver(loanApplicationSchema),
-    defaultValues: {
-      client_id: preselectedClientId || "",
-      loan_type: "",
-      loan_amount: "",
-      purpose_of_loan: "",
-      notes: "",
-    },
-  });
-
-  useEffect(() => {
-    const fetchClients = async () => {
-      setIsLoadingClients(true);
-      try {
-        const { data, error } = await supabase
-          .from('clients')
-          .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income, created_at, updated_at, user_id, email');
-        
-        if (error) throw error;
-        
-        // Ensure the data matches the Client type
-        const typedClients: Client[] = data.map(client => ({
-          id: client.id,
-          full_name: client.full_name,
-          phone_number: client.phone_number,
-          id_number: client.id_number,
-          address: client.address,
-          employment_status: client.employment_status,
-          monthly_income: client.monthly_income,
-          created_at: client.created_at,
-          updated_at: client.updated_at || undefined,
-          user_id: client.user_id || undefined,
-          email: client.email || null
-        }));
-        
-        setClients(typedClients);
-      } catch (error: any) {
-        console.error('Error fetching clients:', error);
-        toast({
-          title: "Failed to load clients",
-          description: "Could not load client list. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingClients(false);
-      }
-    };
-
-    fetchClients();
-  }, [toast]);
-
-  useEffect(() => {
-    // Load documents if loan application ID exists
-    if (loanApplicationId) {
-      fetchDocuments();
-    }
-  }, [loanApplicationId]);
-
-  const fetchDocuments = async () => {
-    if (!loanApplicationId) return;
-
-    setIsLoadingDocuments(true);
-    try {
-      // Fetch document metadata from the database
-      const { data, error } = await supabase
-        .from('document_metadata')
-        .select('*')
-        .eq('loan_application_id', loanApplicationId);
-
-      if (error) throw error;
-
-      if (data) {
-        // Group documents by type
-        const idDocs: UploadedDocument[] = [];
-        const collateralDocs: UploadedDocument[] = [];
-        const propertyDocs: UploadedDocument[] = [];
-        const loanDocs: UploadedDocument[] = [];
-
-        data.forEach(doc => {
-          const formattedDoc: UploadedDocument = {
-            id: doc.id,
-            fileName: doc.file_name,
-            fileSize: doc.file_size,
-            fileType: doc.content_type,
-            documentType: doc.document_type as any,
-            description: doc.description || undefined,
-            tags: doc.tags || undefined
-          };
-
-          if (doc.document_type === 'id_document') {
-            idDocs.push(formattedDoc);
-          } else if (doc.document_type === 'collateral_photo') {
-            collateralDocs.push(formattedDoc);
-          } else if (doc.document_type === 'property_document') {
-            propertyDocs.push(formattedDoc);
-          } else if (doc.document_type === 'loan_agreement') {
-            loanDocs.push(formattedDoc);
-          }
-        });
-
-        setIdDocuments(idDocs);
-        setCollateralPhotos(collateralDocs);
-        setPropertyDocuments(propertyDocs);
-        setLoanAgreements(loanDocs);
-      }
-    } catch (error: any) {
-      console.error('Error fetching documents:', error);
-      toast({
-        title: "Failed to load documents",
-        description: error.message || "Could not load documents. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingDocuments(false);
-    }
-  };
-
-  const onSubmit = async (values: LoanApplicationValues) => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "You must be logged in to submit a loan application",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    setSubmissionError(null);
-
-    try {
-      // Convert loan_amount from string to number
-      const numericAmount = parseFloat(values.loan_amount.replace(/,/g, ''));
-      
-      // Get client data
-      const selectedClient = clients.find(c => c.id === values.client_id);
-      if (!selectedClient) {
-        throw new Error("Selected client not found");
-      }
-      
-      // Get the manager's user ID (in a real app, you might fetch this from profiles table)
-      // Using current user for demo purposes
-      const manager_id = user.id;
-      
-      // Insert the loan application
-      const { data, error } = await supabase
-        .from('loan_applications')
-        .insert({
-          client_name: selectedClient.full_name,
-          phone_number: selectedClient.phone_number,
-          id_number: selectedClient.id_number,
-          address: selectedClient.address,
-          loan_type: values.loan_type,
-          loan_amount: String(numericAmount),
-          purpose_of_loan: values.purpose_of_loan,
-          notes: values.notes,
-          created_by: user.id,
-          current_approver: manager_id,
-          employment_status: selectedClient.employment_status,
-          monthly_income: selectedClient.monthly_income.toString()
-        })
-        .select();
-
-      if (error) throw error;
-
-      // Get the loan application ID
-      if (data && data[0] && data[0].id) {
-        setLoanApplicationId(data[0].id);
-        
-        // Switch to documents tab after successful submission
-        setActiveTab("documents");
-        
-        toast({
-          title: "Loan application submitted",
-          description: "Your loan application has been submitted successfully. You can now upload supporting documents.",
-          variant: "default",
-        });
-      } else {
-        throw new Error("Failed to get loan application ID");
-      }
-    } catch (error: any) {
-      console.error('Error submitting loan application:', error);
-      setSubmissionError(error.message || "An unexpected error occurred");
-      toast({
-        title: "Failed to submit application",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleUploadIdDocument = async (file: File, description?: string, tags?: string[]) => {
-    if (!loanApplicationId) {
-      toast({
-        title: "Submit application first",
-        description: "Please submit the loan application before uploading documents",
-        variant: "destructive",
-      });
-      return;
-    }
+    // State
+    isSubmitting,
+    clients,
+    isLoadingClients,
+    preselectedClientId,
+    realtimeUpdate,
+    activeTab,
+    setActiveTab,
+    loanApplicationId,
+    isLoadingDocuments,
+    submissionError,
     
-    await uploadIdDocument(file, 'id_document', loanApplicationId, description, tags);
-  };
-
-  const handleUploadCollateralPhoto = async (file: File, description?: string, tags?: string[]) => {
-    if (!loanApplicationId) {
-      toast({
-        title: "Submit application first",
-        description: "Please submit the loan application before uploading documents",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Document states
+    idDocuments,
+    isUploadingId,
+    collateralPhotos,
+    isUploadingCollateral,
+    propertyDocuments,
+    isUploadingProperty,
+    loanAgreements,
+    isUploadingLoan,
     
-    await uploadCollateralPhoto(file, 'collateral_photo', loanApplicationId, description, tags);
-  };
-
-  const handleUploadPropertyDocument = async (file: File, description?: string, tags?: string[]) => {
-    if (!loanApplicationId) {
-      toast({
-        title: "Submit application first",
-        description: "Please submit the loan application before uploading documents",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    await uploadPropertyDocument(file, 'property_document', loanApplicationId, description, tags);
-  };
-
-  const handleUploadLoanAgreement = async (file: File, description?: string, tags?: string[]) => {
-    if (!loanApplicationId) {
-      toast({
-        title: "Submit application first",
-        description: "Please submit the loan application before uploading documents",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    await uploadLoanAgreement(file, 'loan_agreement', loanApplicationId, description, tags);
-  };
-
-  const handleDeleteIdDocument = async (id: string) => {
-    await deleteIdDocument(id);
-  };
-
-  const handleDeleteCollateralPhoto = async (id: string) => {
-    await deleteCollateralPhoto(id);
-  };
-
-  const handleDeletePropertyDocument = async (id: string) => {
-    await deletePropertyDocument(id);
-  };
-
-  const handleDeleteLoanAgreement = async (id: string) => {
-    await deleteLoanAgreement(id);
-  };
-
-  // Handle realtime updates
-  const handleLoanUpdate = (payload: any) => {
-    if (payload.eventType === 'INSERT') {
-      setRealtimeUpdate('New loan application has been submitted.');
-    } else if (payload.eventType === 'UPDATE') {
-      setRealtimeUpdate(`Loan application ${payload.new.id} was updated.`);
-    }
-  };
-
-  const handleFinish = () => {
-    // Navigate to the loan applications list or another appropriate page
-    navigate('/loan-applications');
-    
-    toast({
-      title: "Process complete",
-      description: "Your loan application and documents have been submitted successfully",
-    });
-  };
+    // Methods
+    handleSubmit,
+    handleLoanUpdate,
+    handleFinish,
+    handleUploadIdDocument,
+    handleUploadCollateralPhoto,
+    handleUploadPropertyDocument,
+    handleUploadLoanAgreement,
+    handleDeleteIdDocument,
+    handleDeleteCollateralPhoto,
+    handleDeletePropertyDocument,
+    handleDeleteLoanAgreement,
+    getIdDocumentUrl,
+    getCollateralPhotoUrl,
+    getPropertyDocumentUrl,
+    getLoanAgreementUrl
+  } = useLoanApplicationForm();
 
   return (
     <>
       <RealTimeUpdates onLoanUpdate={handleLoanUpdate} />
       
-      {realtimeUpdate && (
-        <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-md border border-blue-200">
-          {realtimeUpdate}
-        </div>
-      )}
+      <RealtimeUpdateNotification update={realtimeUpdate} />
       
       <div className="max-w-4xl mx-auto">
         <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
@@ -403,261 +69,47 @@ const LoanApplicationForm = () => {
           </TabsList>
           
           <TabsContent value="details">
-            {submissionError && (
-              <Alert variant="destructive" className="mb-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{submissionError}</AlertDescription>
-              </Alert>
-            )}
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Loan Application Details</h3>
-                  <Separator />
-                  
-                  <FormField
-                    control={form.control}
-                    name="client_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                          disabled={isLoadingClients || !!preselectedClientId}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-white dark:bg-gray-950">
-                              <SelectValue placeholder={isLoadingClients ? "Loading clients..." : "Select a client"} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {isLoadingClients ? (
-                              <div className="flex items-center justify-center p-2">
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                <span>Loading...</span>
-                              </div>
-                            ) : clients.length > 0 ? (
-                              clients.map((client) => (
-                                <SelectItem key={client.id} value={client.id}>
-                                  {client.full_name}
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <div className="p-2 text-center text-gray-500">No clients found</div>
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="loan_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Loan Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="bg-white dark:bg-gray-950">
-                              <SelectValue placeholder="Select loan type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="mortgage">Mortgage Loan</SelectItem>
-                            <SelectItem value="business">Business Loan</SelectItem>
-                            <SelectItem value="personal">Personal Loan</SelectItem>
-                            <SelectItem value="education">Education Loan</SelectItem>
-                            <SelectItem value="auto">Auto Loan</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="loan_amount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Loan Amount (UGX)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. 10,000,000" {...field} className="bg-white dark:bg-gray-950" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="purpose_of_loan"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Purpose of Loan</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Explain why you're applying for this loan" 
-                            {...field} 
-                            className="min-h-[100px] bg-white dark:bg-gray-950"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Additional Notes (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Any additional information about this application" 
-                            {...field} 
-                            className="min-h-[80px] bg-white dark:bg-gray-950"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <Button 
-                  type="submit" 
-                  className="w-full bg-purple-700 hover:bg-purple-800" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    "Submit Loan Application"
-                  )}
-                </Button>
-                
-                {loanApplicationId && (
-                  <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md border border-green-200">
-                    <p className="font-medium">Application submitted successfully!</p>
-                    <p className="text-sm mt-1">Click the "Supporting Documents" tab above to upload required documents.</p>
-                  </div>
-                )}
-              </form>
-            </Form>
+            <LoanDetailsForm 
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              clients={clients}
+              isLoadingClients={isLoadingClients}
+              preselectedClientId={preselectedClientId}
+              submissionError={submissionError}
+              loanApplicationId={loanApplicationId}
+            />
           </TabsContent>
           
           <TabsContent value="documents">
-            {!loanApplicationId && (
-              <Alert className="mb-6">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No application submitted</AlertTitle>
-                <AlertDescription>
-                  Please submit a loan application first before uploading supporting documents.
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {loanApplicationId && isLoadingDocuments ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin mr-3" />
-                <p>Loading documents...</p>
-              </div>
-            ) : loanApplicationId && (
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium">Supporting Documents</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Upload the required documents to support your loan application. All documents are securely stored and only accessible to authorized personnel.
-                </p>
-                
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-6">
-                    <DocumentUpload 
-                      title="National ID"
-                      documentType="id_document"
-                      onUpload={handleUploadIdDocument}
-                      isUploading={isUploadingId}
-                      iconType="id"
-                    />
-                    
-                    <DocumentUpload 
-                      title="Collateral Photos"
-                      documentType="collateral_photo"
-                      onUpload={handleUploadCollateralPhoto}
-                      isUploading={isUploadingCollateral}
-                      iconType="photo"
-                    />
-                  </div>
-                  
-                  <div className="space-y-6">
-                    <DocumentUpload 
-                      title="Property Documents"
-                      documentType="property_document"
-                      onUpload={handleUploadPropertyDocument}
-                      isUploading={isUploadingProperty}
-                      iconType="property"
-                    />
-                    
-                    <DocumentUpload 
-                      title="Loan Agreement"
-                      documentType="loan_agreement"
-                      onUpload={handleUploadLoanAgreement}
-                      isUploading={isUploadingLoan}
-                      iconType="document"
-                    />
-                  </div>
-                </div>
-                
-                <Separator className="my-6" />
-                
-                <div className="space-y-6">
-                  <h3 className="text-lg font-medium">Uploaded Documents</h3>
-                  
-                  <DocumentList
-                    title="National ID Documents"
-                    documents={idDocuments}
-                    onDelete={handleDeleteIdDocument}
-                    onPreview={getIdDocumentUrl}
-                  />
-                  
-                  <DocumentList
-                    title="Collateral Photos"
-                    documents={collateralPhotos}
-                    onDelete={handleDeleteCollateralPhoto}
-                    onPreview={getCollateralPhotoUrl}
-                  />
-                  
-                  <DocumentList
-                    title="Property Documents"
-                    documents={propertyDocuments}
-                    onDelete={handleDeletePropertyDocument}
-                    onPreview={getPropertyDocumentUrl}
-                  />
-                  
-                  <DocumentList
-                    title="Loan Agreements"
-                    documents={loanAgreements}
-                    onDelete={handleDeleteLoanAgreement}
-                    onPreview={getLoanAgreementUrl}
-                  />
-                </div>
-                
-                <div className="flex justify-end mt-8">
-                  <Button onClick={handleFinish} className="bg-purple-700 hover:bg-purple-800">
-                    Complete Application
-                  </Button>
-                </div>
-              </div>
-            )}
+            <DocumentsUploadSection
+              loanApplicationId={loanApplicationId}
+              isLoadingDocuments={isLoadingDocuments}
+              onFinish={handleFinish}
+              // ID Documents
+              idDocuments={idDocuments}
+              isUploadingId={isUploadingId}
+              handleUploadIdDocument={handleUploadIdDocument}
+              handleDeleteIdDocument={handleDeleteIdDocument}
+              getIdDocumentUrl={getIdDocumentUrl}
+              // Collateral Photos
+              collateralPhotos={collateralPhotos}
+              isUploadingCollateral={isUploadingCollateral}
+              handleUploadCollateralPhoto={handleUploadCollateralPhoto}
+              handleDeleteCollateralPhoto={handleDeleteCollateralPhoto}
+              getCollateralPhotoUrl={getCollateralPhotoUrl}
+              // Property Documents
+              propertyDocuments={propertyDocuments}
+              isUploadingProperty={isUploadingProperty}
+              handleUploadPropertyDocument={handleUploadPropertyDocument}
+              handleDeletePropertyDocument={handleDeletePropertyDocument}
+              getPropertyDocumentUrl={getPropertyDocumentUrl}
+              // Loan Agreements
+              loanAgreements={loanAgreements}
+              isUploadingLoan={isUploadingLoan}
+              handleUploadLoanAgreement={handleUploadLoanAgreement}
+              handleDeleteLoanAgreement={handleDeleteLoanAgreement}
+              getLoanAgreementUrl={getLoanAgreementUrl}
+            />
           </TabsContent>
         </Tabs>
       </div>
