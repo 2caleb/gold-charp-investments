@@ -20,6 +20,8 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({ type, onCapture, onC
   const [countdown, setCountdown] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [facing, setFacing] = useState<'user' | 'environment'>('environment');
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingInterval, setRecordingInterval] = useState<number | null>(null);
   
   // Initialize camera
   useEffect(() => {
@@ -73,6 +75,10 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({ type, onCapture, onC
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
+      
+      if (recordingInterval) {
+        clearInterval(recordingInterval);
+      }
     };
   }, [type, facing]);
   
@@ -112,6 +118,13 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({ type, onCapture, onC
     chunksRef.current = [];
     mediaRecorderRef.current.start();
     setIsRecording(true);
+    
+    // Set up timer to display recording duration
+    setRecordingDuration(0);
+    const interval = window.setInterval(() => {
+      setRecordingDuration(prev => prev + 1);
+    }, 1000);
+    setRecordingInterval(interval);
   };
   
   const stopRecording = () => {
@@ -119,6 +132,12 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({ type, onCapture, onC
     
     mediaRecorderRef.current.stop();
     setIsRecording(false);
+    
+    // Clear the recording timer
+    if (recordingInterval) {
+      clearInterval(recordingInterval);
+      setRecordingInterval(null);
+    }
   };
   
   const switchCamera = () => {
@@ -137,6 +156,12 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({ type, onCapture, onC
     if (previewUrl) {
       onCapture(previewUrl);
     }
+  };
+  
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
   
   return (
@@ -171,7 +196,7 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({ type, onCapture, onC
               {isRecording && (
                 <div className="absolute top-4 left-4 flex items-center bg-red-500 text-white px-3 py-1 rounded-full">
                   <span className="h-3 w-3 bg-white rounded-full mr-2 animate-pulse"></span>
-                  Recording...
+                  Recording... {formatDuration(recordingDuration)}
                 </div>
               )}
             </>

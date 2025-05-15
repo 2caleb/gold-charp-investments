@@ -5,16 +5,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, X, FileText, Camera, Home, File } from 'lucide-react';
+import { Loader2, Upload, X, FileText, Camera, Home, File, Video } from 'lucide-react';
 import { useMediaCapture } from '@/hooks/use-media-capture';
 import { DocumentScanner } from '@/components/media/DocumentScanner';
 
 interface DocumentUploadProps {
   title: string;
-  documentType: 'id_document' | 'collateral_photo' | 'property_document' | 'loan_agreement';
+  documentType: 'id_document' | 'collateral_photo' | 'property_document' | 'loan_agreement' | 'video_evidence';
   onUpload: (file: File, description?: string, tags?: string[]) => Promise<void>;
   isUploading: boolean;
-  iconType?: 'id' | 'photo' | 'property' | 'document';
+  iconType?: 'id' | 'photo' | 'property' | 'document' | 'video';
 }
 
 export const DocumentUpload: React.FC<DocumentUploadProps> = ({
@@ -27,13 +27,14 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const [description, setDescription] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { captureImage, MediaCaptureUI } = useMediaCapture();
+  const { captureImage, captureVideo, MediaCaptureUI } = useMediaCapture();
   
   const icons = {
     id: <FileText className="h-6 w-6" />,
     photo: <Camera className="h-6 w-6" />,
     property: <Home className="h-6 w-6" />,
-    document: <File className="h-6 w-6" />
+    document: <File className="h-6 w-6" />,
+    video: <Video className="h-6 w-6" />
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,6 +66,27 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       setDescription('');
     } catch (error) {
       console.error('Error capturing image:', error);
+    }
+  };
+
+  const handleCaptureVideo = async () => {
+    try {
+      const videoData = await captureVideo();
+      // Convert base64 to file
+      const base64Response = await fetch(videoData);
+      const blob = await base64Response.blob();
+      
+      // Create file from blob with proper type information
+      const fileName = `video-${Date.now()}.webm`;
+      const fileOptions = { type: 'video/webm' };
+      const file = new Blob([blob], fileOptions) as any;
+      file.name = fileName;
+      file.lastModified = Date.now();
+      
+      await onUpload(file as File, description);
+      setDescription('');
+    } catch (error) {
+      console.error('Error capturing video:', error);
     }
   };
 
@@ -124,6 +146,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                   onChange={handleFileChange}
                   className="hidden"
                   id={`file-upload-${documentType}`}
+                  accept={documentType === 'video_evidence' ? 'video/*' : 'image/*,.pdf,.doc,.docx'}
                 />
                 
                 <div className="flex flex-wrap gap-2">
@@ -159,6 +182,17 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                     >
                       <Camera className="h-4 w-4 mr-2" />
                       Take Photo
+                    </Button>
+                  )}
+                  
+                  {(documentType === 'video_evidence') && (
+                    <Button 
+                      onClick={handleCaptureVideo}
+                      disabled={isUploading}
+                      variant="outline"
+                    >
+                      <Video className="h-4 w-4 mr-2" />
+                      Record Video
                     </Button>
                   )}
                 </div>

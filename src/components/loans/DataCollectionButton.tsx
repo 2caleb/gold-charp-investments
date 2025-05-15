@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, FilePlus, Camera, ScanLine } from "lucide-react";
+import { ClipboardList, FilePlus, Camera, ScanLine, Video } from "lucide-react";
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -66,7 +66,7 @@ const clientFormSchema = z.object({
 type ClientFormValues = z.infer<typeof clientFormSchema>;
 
 // Define specific media capture types
-type CaptureType = 'photo' | 'document' | 'idCard';
+type CaptureType = 'photo' | 'video' | 'document' | 'idCard';
 
 const DataCollectionButton = () => {
   const [open, setOpen] = useState(false);
@@ -185,6 +185,29 @@ const DataCollectionButton = () => {
       toast({
         title: 'Error',
         description: 'Failed to capture photo. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setActiveCaptureType(null);
+    }
+  };
+
+  // Handle recording client video
+  const handleRecordClientVideo = async () => {
+    setActiveCaptureType('video');
+    try {
+      const videoData = await captureVideo();
+      toast({
+        title: 'Video recorded',
+        description: 'Client video has been successfully recorded.',
+      });
+      // Here you could store the video or associate it with the client data
+      // For example: form.setValue('clientVideoData', videoData);
+    } catch (error) {
+      console.error('Error recording video:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to record video. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -470,6 +493,15 @@ const DataCollectionButton = () => {
                 >
                   <Camera className="mr-2 h-4 w-4" />
                   {activeCaptureType === 'photo' ? 'Capturing...' : 'Capture Photo'}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleRecordClientVideo}
+                  disabled={activeCaptureType !== null}
+                >
+                  <Video className="mr-2 h-4 w-4" />
+                  {activeCaptureType === 'video' ? 'Recording...' : 'Record Video'}
                 </Button>
                 <Button 
                   type="button" 
