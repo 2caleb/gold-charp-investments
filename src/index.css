@@ -72,8 +72,12 @@
     @apply border-border;
   }
 
+  html {
+    @apply overflow-x-hidden;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-x-hidden w-full max-w-[100vw];
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
@@ -101,5 +105,9 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+  
+  .container {
+    @apply px-4 sm:px-6 lg:px-8 max-w-full;
   }
 }

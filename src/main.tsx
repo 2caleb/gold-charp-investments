@@ -7,7 +7,9 @@ import { Toaster } from '@/components/ui/toaster';
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
-    <App />
-    <Toaster />
+    <div className="w-full overflow-x-hidden">
+      <App />
+      <Toaster />
+    </div>
   </BrowserRouter>
 );
