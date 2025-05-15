@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -204,8 +203,13 @@ export function useLoanApplicationForm() {
           address: selectedClient.address,
           loan_type: values.loan_type,
           loan_amount: String(numericAmount),
+          loan_term: values.loan_term,
           purpose_of_loan: values.purpose_of_loan,
+          applicant_name: values.applicant_name,
+          has_collateral: values.has_collateral,
+          collateral_description: values.collateral_description,
           notes: values.notes,
+          terms_accepted: values.terms_accepted,
           created_by: user.id,
           current_approver: manager_id,
           employment_status: selectedClient.employment_status,
