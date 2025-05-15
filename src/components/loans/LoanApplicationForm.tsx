@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -111,19 +110,12 @@ const LoanApplicationForm = () => {
     const fetchClients = async () => {
       setIsLoadingClients(true);
       try {
-        // Use raw REST API call to fetch clients
-        const response = await fetch(`https://bjsxekgraxbfqzhbqjff.supabase.co/rest/v1/clients?select=id,full_name,phone_number,id_number,address,employment_status`, {
-          headers: {
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqc3hla2dyYXhiZnF6aGJxamZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjMxNzUsImV4cCI6MjA2MjY5OTE3NX0.XdyZ0y4pGsaARlhHEYs3zj-shj0i3szpOkRZC_CQ18Y',
-            'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`
-          }
-        });
+        const { data, error } = await supabase
+          .from('clients')
+          .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income');
         
-        if (!response.ok) {
-          throw new Error("Failed to fetch clients");
-        }
+        if (error) throw error;
         
-        const data = await response.json();
         setClients(data || []);
       } catch (error: any) {
         console.error('Error fetching clients:', error);
@@ -417,18 +409,20 @@ const LoanApplicationForm = () => {
                               <SelectValue placeholder={isLoadingClients ? "Loading clients..." : "Select a client"} />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent className="bg-white">
                             {isLoadingClients ? (
                               <div className="flex items-center justify-center p-2">
                                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                 <span>Loading...</span>
                               </div>
-                            ) : (
+                            ) : clients.length > 0 ? (
                               clients.map((client) => (
                                 <SelectItem key={client.id} value={client.id}>
                                   {client.full_name}
                                 </SelectItem>
                               ))
+                            ) : (
+                              <div className="p-2 text-center text-gray-500">No clients found</div>
                             )}
                           </SelectContent>
                         </Select>
