@@ -29,11 +29,12 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from '@/integrations/supabase/client';
 import RealTimeUpdates from './RealTimeUpdates';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { Client } from '@/types/schema';
 import { useDocumentUpload, UploadedDocument } from '@/hooks/use-document-upload';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { DocumentList } from '@/components/documents/DocumentList';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const loanApplicationSchema = z.object({
   client_id: z.string().uuid("Please select a client"),
@@ -58,6 +59,7 @@ const LoanApplicationForm = () => {
   const [activeTab, setActiveTab] = useState("details");
   const [loanApplicationId, setLoanApplicationId] = useState<string | null>(null);
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   
   // Document upload hooks
   const {
@@ -225,6 +227,7 @@ const LoanApplicationForm = () => {
     }
 
     setIsSubmitting(true);
+    setSubmissionError(null);
 
     try {
       // Convert loan_amount from string to number
@@ -240,16 +243,10 @@ const LoanApplicationForm = () => {
       // Using current user for demo purposes
       const manager_id = user.id;
       
-      // Insert the loan application using direct REST API call
-      const response = await fetch(`https://bjsxekgraxbfqzhbqjff.supabase.co/rest/v1/loan_applications`, {
-        method: 'POST',
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqc3hla2dyYXhiZnF6aGJxamZmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMjMxNzUsImV4cCI6MjA2MjY5OTE3NX0.XdyZ0y4pGsaARlhHEYs3zj-shj0i3szpOkRZC_CQ18Y',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        },
-        body: JSON.stringify({
+      // Insert the loan application
+      const { data, error } = await supabase
+        .from('loan_applications')
+        .insert({
           client_name: selectedClient.full_name,
           phone_number: selectedClient.phone_number,
           id_number: selectedClient.id_number,
@@ -263,14 +260,10 @@ const LoanApplicationForm = () => {
           employment_status: selectedClient.employment_status,
           monthly_income: selectedClient.monthly_income.toString()
         })
-      });
+        .select();
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to submit loan application");
-      }
+      if (error) throw error;
 
-      const data = await response.json();
       // Get the loan application ID
       if (data && data[0] && data[0].id) {
         setLoanApplicationId(data[0].id);
@@ -288,6 +281,7 @@ const LoanApplicationForm = () => {
       }
     } catch (error: any) {
       console.error('Error submitting loan application:', error);
+      setSubmissionError(error.message || "An unexpected error occurred");
       toast({
         title: "Failed to submit application",
         description: error.message || "An unexpected error occurred",
@@ -398,11 +392,25 @@ const LoanApplicationForm = () => {
       <div className="max-w-4xl mx-auto">
         <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="details">Application Details</TabsTrigger>
-            <TabsTrigger value="documents" disabled={!loanApplicationId}>Supporting Documents</TabsTrigger>
+            <TabsTrigger value="details" className="text-base py-3">Application Details</TabsTrigger>
+            <TabsTrigger 
+              value="documents" 
+              className="text-base py-3"
+              disabled={!loanApplicationId}
+            >
+              Supporting Documents
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="details">
+            {submissionError && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{submissionError}</AlertDescription>
+              </Alert>
+            )}
+            
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <div className="space-y-4">
@@ -421,11 +429,11 @@ const LoanApplicationForm = () => {
                           disabled={isLoadingClients || !!preselectedClientId}
                         >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-white dark:bg-gray-950">
                               <SelectValue placeholder={isLoadingClients ? "Loading clients..." : "Select a client"} />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent className="bg-white">
+                          <SelectContent>
                             {isLoadingClients ? (
                               <div className="flex items-center justify-center p-2">
                                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -455,7 +463,7 @@ const LoanApplicationForm = () => {
                         <FormLabel>Loan Type</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-white dark:bg-gray-950">
                               <SelectValue placeholder="Select loan type" />
                             </SelectTrigger>
                           </FormControl>
@@ -479,7 +487,7 @@ const LoanApplicationForm = () => {
                       <FormItem>
                         <FormLabel>Loan Amount (UGX)</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g. 10,000,000" {...field} />
+                          <Input placeholder="e.g. 10,000,000" {...field} className="bg-white dark:bg-gray-950" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -496,7 +504,7 @@ const LoanApplicationForm = () => {
                           <Textarea 
                             placeholder="Explain why you're applying for this loan" 
                             {...field} 
-                            className="min-h-[100px]"
+                            className="min-h-[100px] bg-white dark:bg-gray-950"
                           />
                         </FormControl>
                         <FormMessage />
@@ -514,7 +522,7 @@ const LoanApplicationForm = () => {
                           <Textarea 
                             placeholder="Any additional information about this application" 
                             {...field} 
-                            className="min-h-[80px]"
+                            className="min-h-[80px] bg-white dark:bg-gray-950"
                           />
                         </FormControl>
                         <FormMessage />
@@ -523,20 +531,48 @@ const LoanApplicationForm = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full bg-purple-700 hover:bg-purple-800" disabled={isSubmitting}>
-                  {isSubmitting ? "Submitting..." : "Submit Loan Application"}
+                <Button 
+                  type="submit" 
+                  className="w-full bg-purple-700 hover:bg-purple-800" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Loan Application"
+                  )}
                 </Button>
+                
+                {loanApplicationId && (
+                  <div className="mt-4 p-3 bg-green-50 text-green-700 rounded-md border border-green-200">
+                    <p className="font-medium">Application submitted successfully!</p>
+                    <p className="text-sm mt-1">Click the "Supporting Documents" tab above to upload required documents.</p>
+                  </div>
+                )}
               </form>
             </Form>
           </TabsContent>
           
           <TabsContent value="documents">
-            {isLoadingDocuments ? (
+            {!loanApplicationId && (
+              <Alert className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>No application submitted</AlertTitle>
+                <AlertDescription>
+                  Please submit a loan application first before uploading supporting documents.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {loanApplicationId && isLoadingDocuments ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin mr-3" />
                 <p>Loading documents...</p>
               </div>
-            ) : (
+            ) : loanApplicationId && (
               <div className="space-y-6">
                 <h3 className="text-lg font-medium">Supporting Documents</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
