@@ -47,10 +47,10 @@ function App() {
           </PublicRoute>
         } />
         
-        {/* Dashboard routes - restrict to staff with full interface access */}
+        {/* Admin/Dashboard routes - restrict to staff roles */}
         <Route path="/dashboard" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['ceo', 'chairperson', 'it_personnel']}>
+            <RoleBasedRoute allowedRoles={['manager', 'director', 'ceo', 'chairperson', 'it_personnel']}>
               <Dashboard />
             </RoleBasedRoute>
           </PrivateRoute>
@@ -59,7 +59,7 @@ function App() {
         {/* Field Officer Routes */}
         <Route path="/staff/data-collection" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['field_officer', 'ceo', 'chairperson', 'it_personnel']}>
+            <RoleBasedRoute allowedRoles={['field_officer', 'it_personnel']}>
               <DataCollection />
             </RoleBasedRoute>
           </PrivateRoute>
@@ -68,14 +68,12 @@ function App() {
         {/* Client management routes */}
         <Route path="/clients" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['manager', 'director', 'ceo', 'chairperson', 'it_personnel']}>
-              <ClientsList />
-            </RoleBasedRoute>
+            <ClientsList />
           </PrivateRoute>
         } />
         <Route path="/clients/new" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['field_officer', 'ceo', 'chairperson', 'it_personnel']}>
+            <RoleBasedRoute allowedRoles={['field_officer', 'manager', 'it_personnel']}>
               <NewClient />
             </RoleBasedRoute>
           </PrivateRoute>
@@ -84,14 +82,12 @@ function App() {
         {/* Loan application routes */}
         <Route path="/loan-applications" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['manager', 'director', 'ceo', 'chairperson', 'it_personnel']}>
-              <LoanApplicationsList />
-            </RoleBasedRoute>
+            <LoanApplicationsList />
           </PrivateRoute>
         } />
         <Route path="/loan-applications/new" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['field_officer', 'ceo', 'chairperson', 'it_personnel']}>
+            <RoleBasedRoute allowedRoles={['field_officer', 'it_personnel']}>
               <NewLoanApplication />
             </RoleBasedRoute>
           </PrivateRoute>
@@ -105,9 +101,7 @@ function App() {
         {/* Notification route */}
         <Route path="/notifications" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['field_officer', 'manager', 'director', 'ceo', 'chairperson', 'it_personnel']}>
-              <Notifications />
-            </RoleBasedRoute>
+            <Notifications />
           </PrivateRoute>
         } />
       </Routes>

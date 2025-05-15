@@ -19,7 +19,6 @@ export function useRolePermissions() {
   const [canFinalizeApproval, setCanFinalizeApproval] = useState(false);
   const [canViewAllApplications, setCanViewAllApplications] = useState(false);
   const [canAccessDashboard, setCanAccessDashboard] = useState(false);
-  const [canAccessFullInterface, setCanAccessFullInterface] = useState(false);
 
   // Map workflow stages to roles
   const [currentWorkflowStage, setCurrentWorkflowStage] = useState<string | null>(null);
@@ -64,19 +63,16 @@ export function useRolePermissions() {
             setCanViewAllApplications(true);
             setCurrentWorkflowStage('ceo');
             setCanAccessDashboard(true);
-            setCanAccessFullInterface(true); // CEO can access the full interface
             break;
           case 'chairperson':
             setCanFinalizeApproval(true);
             setCanViewAllApplications(true);
             setCurrentWorkflowStage('chairperson');
             setCanAccessDashboard(true);
-            setCanAccessFullInterface(true); // Chairperson can access the full interface
             break;
           case 'it_personnel':
             setCanViewAllApplications(true);
             setCanAccessDashboard(true);
-            setCanAccessFullInterface(true); // IT personnel can access the full interface
             break;
           case 'client':
             // Client can only see their own data
@@ -110,7 +106,6 @@ export function useRolePermissions() {
     canFinalizeApproval,
     canViewAllApplications,
     canAccessDashboard,
-    canAccessFullInterface,
     // Role checks
     isFieldOfficer: userRole === 'field_officer',
     isManager: userRole === 'manager',
