@@ -1,99 +1,118 @@
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/hooks/use-user';
 import { useToast } from '@/hooks/use-toast';
 
-type Role = 'field_officer' | 'manager' | 'director' | 'ceo' | 'chairperson' | 'client';
+export type Role = 'field_officer' | 'manager' | 'director' | 'ceo' | 'chairperson' | 'client' | 'it_personnel';
 
 export function useRolePermissions() {
-  const { user } = useAuth();
+  const { userProfile, isLoading: isUserLoading } = useUser();
   const { toast } = useToast();
   const [userRole, setUserRole] = useState<Role | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Role-based permissions
   const [canCollectData, setCanCollectData] = useState(false);
   const [canReviewApplications, setCanReviewApplications] = useState(false);
   const [canAssessRisk, setCanAssessRisk] = useState(false);
   const [canApprove, setCanApprove] = useState(false);
+  const [canFinalizeApproval, setCanFinalizeApproval] = useState(false);
   const [canViewAllApplications, setCanViewAllApplications] = useState(false);
+  const [canAccessDashboard, setCanAccessDashboard] = useState(false);
 
-  // Fetch user role from profiles table
+  // Map workflow stages to roles
+  const [currentWorkflowStage, setCurrentWorkflowStage] = useState<string | null>(null);
+  const roleToStage: Record<string, string> = {
+    'field_officer': 'field_officer',
+    'manager': 'manager',
+    'director': 'director',
+    'ceo': 'ceo',
+    'chairperson': 'chairperson'
+  };
+
   useEffect(() => {
-    const getUserRole = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
+    if (isUserLoading) {
+      return;
+    }
 
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user role:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to fetch user role information',
-            variant: 'destructive',
-          });
-          setIsLoading(false);
-          return;
+    try {
+      if (userProfile?.role) {
+        const role = userProfile.role as Role;
+        setUserRole(role);
+        
+        // Set permissions based on role
+        switch(role) {
+          case 'field_officer':
+            setCanCollectData(true);
+            setCurrentWorkflowStage('field_officer');
+            break;
+          case 'manager':
+            setCanReviewApplications(true);
+            setCanViewAllApplications(true);
+            setCurrentWorkflowStage('manager');
+            setCanAccessDashboard(true);
+            break;
+          case 'director':
+            setCanAssessRisk(true);
+            setCanViewAllApplications(true);
+            setCurrentWorkflowStage('director');
+            setCanAccessDashboard(true);
+            break;
+          case 'ceo':
+            setCanApprove(true);
+            setCanViewAllApplications(true);
+            setCurrentWorkflowStage('ceo');
+            setCanAccessDashboard(true);
+            break;
+          case 'chairperson':
+            setCanFinalizeApproval(true);
+            setCanViewAllApplications(true);
+            setCurrentWorkflowStage('chairperson');
+            setCanAccessDashboard(true);
+            break;
+          case 'it_personnel':
+            setCanViewAllApplications(true);
+            setCanAccessDashboard(true);
+            break;
+          case 'client':
+            // Client can only see their own data
+            break;
+          default:
+            console.warn(`Unknown role: ${role}`);
+            break;
         }
-
-        if (data) {
-          setUserRole(data.role as Role);
-          
-          // Set permissions based on role
-          switch(data.role) {
-            case 'field_officer':
-              setCanCollectData(true);
-              break;
-            case 'manager':
-              setCanReviewApplications(true);
-              setCanViewAllApplications(true);
-              break;
-            case 'director':
-              setCanAssessRisk(true);
-              setCanViewAllApplications(true);
-              break;
-            case 'ceo':
-            case 'chairperson':
-              setCanApprove(true);
-              setCanViewAllApplications(true);
-              break;
-            case 'client':
-              // Client can only see their own data
-              break;
-            default:
-              break;
-          }
-        }
-      } catch (err) {
-        console.error('Error in role permissions hook:', err);
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    getUserRole();
-  }, [user, toast]);
+    } catch (err) {
+      console.error('Error in role permissions hook:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to load user permissions',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userProfile, isUserLoading, toast]);
 
   return {
     userRole,
     isLoading,
+    currentWorkflowStage,
+    // Access permissions
     canCollectData,
     canReviewApplications,
     canAssessRisk,
     canApprove,
+    canFinalizeApproval,
     canViewAllApplications,
+    canAccessDashboard,
+    // Role checks
     isFieldOfficer: userRole === 'field_officer',
     isManager: userRole === 'manager',
     isDirector: userRole === 'director',
     isCEO: userRole === 'ceo',
     isChairperson: userRole === 'chairperson',
+    isITPersonnel: userRole === 'it_personnel',
     isClient: userRole === 'client'
   };
 }

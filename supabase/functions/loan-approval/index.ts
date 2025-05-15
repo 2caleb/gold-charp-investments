@@ -1,148 +1,163 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.1"
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.1";
 
+// CORS headers for browser requests
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
-interface LoanApprovalRequest {
-  loan_id: string;
-  action: 'approve' | 'reject';
-  notes: string;
-  approver_id: string;
-}
+// Define workflow stages in order
+const WORKFLOW_STAGES = ['field_officer', 'manager', 'director', 'ceo', 'chairperson'];
 
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get authorization token from request
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
+    // Create Supabase client using environment variables
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Parse request body
+    const { 
+      workflowId, 
+      applicationId, 
+      stage, 
+      approved, 
+      notes
+    } = await req.json();
+
+    if (!workflowId || !applicationId || !stage) {
       return new Response(
-        JSON.stringify({ error: 'No authorization header provided' }),
-        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-      )
+        JSON.stringify({ 
+          error: "Missing required parameters. Required: workflowId, applicationId, stage" 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
     }
 
-    // Create Supabase client
-    const supabase = createClient(
-      'https://bjsxekgraxbfqzhbqjff.supabase.co',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { 
-        global: { headers: { Authorization: authHeader } },
-        auth: { persistSession: false }
+    // Get current workflow stage
+    const currentStageIndex = WORKFLOW_STAGES.indexOf(stage);
+    if (currentStageIndex === -1) {
+      return new Response(
+        JSON.stringify({ error: `Invalid stage: ${stage}` }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    // Determine next stage
+    let nextStage = null;
+    let applicationStatus = null;
+    
+    if (approved) {
+      // If approved, move to next stage
+      if (currentStageIndex < WORKFLOW_STAGES.length - 1) {
+        nextStage = WORKFLOW_STAGES[currentStageIndex + 1];
+        applicationStatus = `pending_${nextStage}`; 
+      } else {
+        // Final approval
+        applicationStatus = 'approved';
       }
-    )
-
-    // Get the request body
-    const { loan_id, action, notes, approver_id } = await req.json() as LoanApprovalRequest
-
-    console.log(`Processing loan ${action} for application ${loan_id}`)
-    
-    // Get the loan application details
-    const { data: loanApp, error: fetchError } = await supabase
-      .from('loan_applications')
-      .select('*')
-      .eq('id', loan_id)
-      .single()
-    
-    if (fetchError) throw fetchError
-    if (!loanApp) throw new Error('Loan application not found')
-    
-    // Update the loan application status
-    const updateData: Record<string, any> = {
-      last_updated: new Date().toISOString()
-    }
-    
-    if (action === 'approve') {
-      updateData.status = 'approved'
-      updateData.approval_notes = notes
-      updateData.approved_by = approver_id
     } else {
-      updateData.status = 'rejected'
-      updateData.rejection_reason = notes
+      // If rejected, set status to rejected
+      applicationStatus = 'rejected';
     }
-    
-    const { error: updateError } = await supabase
-      .from('loan_applications')
-      .update(updateData)
-      .eq('id', loan_id)
-    
-    if (updateError) throw updateError
-    
-    // Create a notification for the loan applicant
-    const notificationMessage = action === 'approve' 
-      ? `Your loan application of ${loanApp.loan_amount} UGX has been approved!` 
-      : `Your loan application has been declined. Reason: ${notes}`
-    
-    await createNotification(
-      supabase,
-      loanApp.created_by, // Notify the creator
-      notificationMessage,
-      'loan_application',
-      loan_id
-    )
-    
-    // If approved, also create a notification for the finance department
-    if (action === 'approve') {
-      // This would be a real user ID in production
-      const financeManagerId = loanApp.current_approver
-      
-      await createNotification(
-        supabase,
-        financeManagerId,
-        `Loan application for ${loanApp.client_name} has been approved and is ready for disbursement`,
-        'loan_application',
-        loan_id
-      )
-    }
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: `Loan application ${action === 'approve' ? 'approved' : 'rejected'} successfully` 
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    )
-    
-  } catch (error) {
-    console.error('Error processing loan approval:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
-    )
-  }
-})
 
-// Helper function to create notifications
-async function createNotification(
-  supabase: any,
-  userId: string, 
-  message: string, 
-  relatedTo: string, 
-  entityId: string
-) {
-  try {
-    const { data, error } = await supabase
+    // Update the workflow record with approval/rejection
+    const updateObject: Record<string, any> = {
+      [`${stage}_approved`]: approved,
+      [`${stage}_notes`]: notes
+    };
+    
+    // Only update next stage if moving forward
+    if (nextStage) {
+      updateObject.current_stage = nextStage;
+    }
+    
+    // Update workflow
+    const { data: updatedWorkflow, error: workflowError } = await supabaseClient
+      .from('loan_application_workflow')
+      .update(updateObject)
+      .eq('id', workflowId)
+      .select('*')
+      .single();
+
+    if (workflowError) {
+      throw workflowError;
+    }
+
+    // Update application status
+    const { data: updatedApplication, error: applicationError } = await supabaseClient
+      .from('loan_applications')
+      .update({ 
+        status: applicationStatus,
+        ...(approved ? {} : { rejection_reason: notes }),
+        last_updated: new Date().toISOString()
+      })
+      .eq('id', applicationId)
+      .select('*')
+      .single();
+
+    if (applicationError) {
+      throw applicationError;
+    }
+
+    // Create notification for application status change
+    let notificationMessage = '';
+    
+    if (approved) {
+      if (nextStage) {
+        notificationMessage = `Loan application was approved at ${stage} stage and moved to ${nextStage} stage.`;
+      } else {
+        notificationMessage = `Loan application has been fully approved!`;
+      }
+    } else {
+      notificationMessage = `Loan application was rejected at ${stage} stage.`;
+    }
+    
+    await supabaseClient
       .from('notifications')
       .insert({
-        user_id: userId,
-        message: message,
-        related_to: relatedTo,
-        entity_id: entityId,
-        is_read: false
-      })
-    
-    if (error) throw error
-    return data
+        user_id: updatedApplication.created_by,
+        message: notificationMessage,
+        related_to: 'loan_application',
+        entity_id: applicationId
+      });
+
+    // Return success response
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        workflow: updatedWorkflow,
+        application: updatedApplication,
+        message: `Workflow ${approved ? 'approved' : 'rejected'} successfully`
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
   } catch (error) {
-    console.error('Error creating notification:', error)
-    throw error
+    console.error("Error processing approval action:", error);
+    
+    return new Response(
+      JSON.stringify({ error: error.message || "An unknown error occurred" }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
   }
-}
+});

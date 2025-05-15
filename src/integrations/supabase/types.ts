@@ -129,6 +129,68 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_application_workflow: {
+        Row: {
+          ceo_approved: boolean | null
+          ceo_notes: string | null
+          chairperson_approved: boolean | null
+          chairperson_notes: string | null
+          created_at: string
+          current_stage: string
+          director_approved: boolean | null
+          director_notes: string | null
+          field_officer_approved: boolean | null
+          field_officer_notes: string | null
+          id: string
+          loan_application_id: string | null
+          manager_approved: boolean | null
+          manager_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          ceo_approved?: boolean | null
+          ceo_notes?: string | null
+          chairperson_approved?: boolean | null
+          chairperson_notes?: string | null
+          created_at?: string
+          current_stage?: string
+          director_approved?: boolean | null
+          director_notes?: string | null
+          field_officer_approved?: boolean | null
+          field_officer_notes?: string | null
+          id?: string
+          loan_application_id?: string | null
+          manager_approved?: boolean | null
+          manager_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ceo_approved?: boolean | null
+          ceo_notes?: string | null
+          chairperson_approved?: boolean | null
+          chairperson_notes?: string | null
+          created_at?: string
+          current_stage?: string
+          director_approved?: boolean | null
+          director_notes?: string | null
+          field_officer_approved?: boolean | null
+          field_officer_notes?: string | null
+          id?: string
+          loan_application_id?: string | null
+          manager_approved?: boolean | null
+          manager_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_application_workflow_loan_application_id_fkey"
+            columns: ["loan_application_id"]
+            isOneToOne: false
+            referencedRelation: "loan_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_applications: {
         Row: {
           address: string
@@ -271,6 +333,26 @@ export type Database = {
           interest_payment: number
           total_payment: number
           remaining_balance: number
+        }[]
+      }
+      get_loan_workflow: {
+        Args: { application_id: string }
+        Returns: {
+          id: string
+          loan_application_id: string
+          current_stage: string
+          field_officer_approved: boolean
+          manager_approved: boolean
+          director_approved: boolean
+          ceo_approved: boolean
+          chairperson_approved: boolean
+          field_officer_notes: string
+          manager_notes: string
+          director_notes: string
+          ceo_notes: string
+          chairperson_notes: string
+          created_at: string
+          updated_at: string
         }[]
       }
     }
