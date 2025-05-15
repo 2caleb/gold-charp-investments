@@ -9,7 +9,6 @@ import LoanApplicationsList from '@/pages/LoanApplicationsList';
 import LoanApprovalPage from '@/pages/LoanApprovalPage';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
-import RoleBasedRoute from '@/components/auth/RoleBasedRoute';
 import { Toaster } from '@/components/ui/toaster';
 import Dashboard from '@/pages/Dashboard';
 import Notifications from '@/pages/Notifications';
@@ -47,53 +46,41 @@ function App() {
           </PublicRoute>
         } />
         
-        {/* Dashboard routes - restrict to staff with full interface access */}
+        {/* Dashboard routes - accessible to all authenticated users now */}
         <Route path="/dashboard" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['ceo', 'chairperson', 'it_personnel']}>
-              <Dashboard />
-            </RoleBasedRoute>
+            <Dashboard />
           </PrivateRoute>
         } />
         
-        {/* Field Officer Routes */}
+        {/* All staff routes accessible to all authenticated users */}
         <Route path="/staff/data-collection" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['field_officer', 'ceo', 'chairperson', 'it_personnel']}>
-              <DataCollection />
-            </RoleBasedRoute>
+            <DataCollection />
           </PrivateRoute>
         } />
         
         {/* Client management routes */}
         <Route path="/clients" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['manager', 'director', 'ceo', 'chairperson', 'it_personnel']}>
-              <ClientsList />
-            </RoleBasedRoute>
+            <ClientsList />
           </PrivateRoute>
         } />
         <Route path="/clients/new" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['field_officer', 'ceo', 'chairperson', 'it_personnel']}>
-              <NewClient />
-            </RoleBasedRoute>
+            <NewClient />
           </PrivateRoute>
         } />
         
         {/* Loan application routes */}
         <Route path="/loan-applications" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['manager', 'director', 'ceo', 'chairperson', 'it_personnel']}>
-              <LoanApplicationsList />
-            </RoleBasedRoute>
+            <LoanApplicationsList />
           </PrivateRoute>
         } />
         <Route path="/loan-applications/new" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['field_officer', 'ceo', 'chairperson', 'it_personnel']}>
-              <NewLoanApplication />
-            </RoleBasedRoute>
+            <NewLoanApplication />
           </PrivateRoute>
         } />
         <Route path="/loan-applications/:id" element={
@@ -105,9 +92,7 @@ function App() {
         {/* Notification route */}
         <Route path="/notifications" element={
           <PrivateRoute>
-            <RoleBasedRoute allowedRoles={['field_officer', 'manager', 'director', 'ceo', 'chairperson', 'it_personnel']}>
-              <Notifications />
-            </RoleBasedRoute>
+            <Notifications />
           </PrivateRoute>
         } />
       </Routes>

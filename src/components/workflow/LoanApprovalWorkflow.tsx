@@ -41,14 +41,7 @@ interface WorkflowResponse {
 
 const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
   const { toast } = useToast();
-  const { 
-    userRole, 
-    isFieldOfficer, 
-    isManager, 
-    isDirector, 
-    isCEO, 
-    isChairperson 
-  } = useRolePermissions();
+  const { userRole } = useRolePermissions();
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -89,17 +82,8 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
 
         // Set initial notes based on current role
         if (workflowData) {
-          if (isFieldOfficer && workflowData.current_stage === 'field_officer') {
-            setNotes(workflowData.field_officer_notes || '');
-          } else if (isManager && workflowData.current_stage === 'manager') {
-            setNotes(workflowData.manager_notes || '');
-          } else if (isDirector && workflowData.current_stage === 'director') {
-            setNotes(workflowData.director_notes || '');
-          } else if (isCEO && workflowData.current_stage === 'ceo') {
-            setNotes(workflowData.ceo_notes || '');
-          } else if (isChairperson && workflowData.current_stage === 'chairperson') {
-            setNotes(workflowData.chairperson_notes || '');
-          }
+          // Just set notes from the current stage
+          setNotes(workflowData[`${workflowData.current_stage}_notes`] || '');
         }
 
       } catch (error: any) {
@@ -115,7 +99,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     };
 
     fetchData();
-  }, [applicationId, toast, isFieldOfficer, isManager, isDirector, isCEO, isChairperson]);
+  }, [applicationId, toast]);
 
   const handleAction = async (approve: boolean) => {
     if (!workflow || !application) return;
@@ -188,14 +172,8 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     );
   }
 
-  // Determine if current user can take action on this application
-  const canTakeAction = (
-    (isFieldOfficer && workflow.current_stage === 'field_officer') ||
-    (isManager && workflow.current_stage === 'manager') ||
-    (isDirector && workflow.current_stage === 'director') ||
-    (isCEO && workflow.current_stage === 'ceo') ||
-    (isChairperson && workflow.current_stage === 'chairperson')
-  );
+  // All authenticated users can take action now
+  const canTakeAction = true;
 
   return (
     <Card className="w-full">
@@ -298,7 +276,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
             </div>
           </div>
 
-          {/* Action section for authorized users */}
+          {/* Action section for all users */}
           {canTakeAction && (
             <div className="mt-6">
               <h3 className="text-lg font-medium">Take Action</h3>

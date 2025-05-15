@@ -1,28 +1,28 @@
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useUser } from '@/hooks/use-user';
-import { useToast } from '@/hooks/use-toast';
 
 export type Role = 'field_officer' | 'manager' | 'director' | 'ceo' | 'chairperson' | 'client' | 'it_personnel';
 
 export function useRolePermissions() {
-  const { userProfile, isLoading: isUserLoading } = useUser();
-  const { toast } = useToast();
-  const [userRole, setUserRole] = useState<Role | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { userProfile } = useUser();
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Role-based permissions
-  const [canCollectData, setCanCollectData] = useState(false);
-  const [canReviewApplications, setCanReviewApplications] = useState(false);
-  const [canAssessRisk, setCanAssessRisk] = useState(false);
-  const [canApprove, setCanApprove] = useState(false);
-  const [canFinalizeApproval, setCanFinalizeApproval] = useState(false);
-  const [canViewAllApplications, setCanViewAllApplications] = useState(false);
-  const [canAccessDashboard, setCanAccessDashboard] = useState(false);
-  const [canAccessFullInterface, setCanAccessFullInterface] = useState(false);
+  // Get the actual user role from profile, but don't restrict permissions based on it
+  const userRole = userProfile?.role as Role | null;
+  
+  // Grant all permissions to all authenticated users
+  const canCollectData = true;
+  const canReviewApplications = true;
+  const canAssessRisk = true;
+  const canApprove = true;
+  const canFinalizeApproval = true;
+  const canViewAllApplications = true;
+  const canAccessDashboard = true;
+  const canAccessFullInterface = true;
 
-  // Map workflow stages to roles
-  const [currentWorkflowStage, setCurrentWorkflowStage] = useState<string | null>(null);
+  // Map workflow stages to roles - kept for compatibility
+  const currentWorkflowStage = userRole ? roleToStage[userRole] : null;
   const roleToStage: Record<string, string> = {
     'field_officer': 'field_officer',
     'manager': 'manager',
@@ -31,78 +31,11 @@ export function useRolePermissions() {
     'chairperson': 'chairperson'
   };
 
-  useEffect(() => {
-    if (isUserLoading) {
-      return;
-    }
-
-    try {
-      if (userProfile?.role) {
-        const role = userProfile.role as Role;
-        setUserRole(role);
-        
-        // Set permissions based on role
-        switch(role) {
-          case 'field_officer':
-            setCanCollectData(true);
-            setCurrentWorkflowStage('field_officer');
-            break;
-          case 'manager':
-            setCanReviewApplications(true);
-            setCanViewAllApplications(true);
-            setCurrentWorkflowStage('manager');
-            setCanAccessDashboard(true);
-            break;
-          case 'director':
-            setCanAssessRisk(true);
-            setCanViewAllApplications(true);
-            setCurrentWorkflowStage('director');
-            setCanAccessDashboard(true);
-            break;
-          case 'ceo':
-            setCanApprove(true);
-            setCanViewAllApplications(true);
-            setCurrentWorkflowStage('ceo');
-            setCanAccessDashboard(true);
-            setCanAccessFullInterface(true); // CEO can access the full interface
-            break;
-          case 'chairperson':
-            setCanFinalizeApproval(true);
-            setCanViewAllApplications(true);
-            setCurrentWorkflowStage('chairperson');
-            setCanAccessDashboard(true);
-            setCanAccessFullInterface(true); // Chairperson can access the full interface
-            break;
-          case 'it_personnel':
-            setCanViewAllApplications(true);
-            setCanAccessDashboard(true);
-            setCanAccessFullInterface(true); // IT personnel can access the full interface
-            break;
-          case 'client':
-            // Client can only see their own data
-            break;
-          default:
-            console.warn(`Unknown role: ${role}`);
-            break;
-        }
-      }
-    } catch (err) {
-      console.error('Error in role permissions hook:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to load user permissions',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userProfile, isUserLoading, toast]);
-
   return {
     userRole,
     isLoading,
     currentWorkflowStage,
-    // Access permissions
+    // Access permissions - all set to true
     canCollectData,
     canReviewApplications,
     canAssessRisk,
@@ -111,7 +44,7 @@ export function useRolePermissions() {
     canViewAllApplications,
     canAccessDashboard,
     canAccessFullInterface,
-    // Role checks
+    // Role checks - still based on actual role for display purposes
     isFieldOfficer: userRole === 'field_officer',
     isManager: userRole === 'manager',
     isDirector: userRole === 'director',

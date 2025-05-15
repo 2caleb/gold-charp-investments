@@ -26,7 +26,7 @@ const NoActionRequired: React.FC<NoActionRequiredProps> = ({
           {message}
         </p>
         <p className="text-center text-sm text-gray-500">
-          You'll be notified when there are tasks requiring your attention.
+          You can access all features of the application now.
         </p>
       </CardContent>
     </Card>

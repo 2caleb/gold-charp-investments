@@ -5,13 +5,11 @@ import { FileText } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useRolePermissions } from '@/hooks/use-role-permissions';
 import NavLinks from './NavLinks';
 import UserSection from './UserSection';
 
 const DesktopNav = () => {
   const { isAuthenticated } = useAuth();
-  const { canAccessFullInterface, canCollectData } = useRolePermissions();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -30,13 +28,11 @@ const DesktopNav = () => {
 
   return (
     <nav className="hidden md:flex items-center space-x-8">
-      {/* Only show full navigation to users with full interface access */}
-      {(!isAuthenticated || canAccessFullInterface) ? (
-        <NavLinks className="flex items-center space-x-8" />
-      ) : null}
+      {/* Show full navigation to all users */}
+      <NavLinks className="flex items-center space-x-8" />
       
-      {/* Show Data Collection button only for authenticated users with appropriate permissions */}
-      {isAuthenticated && (canCollectData || canAccessFullInterface) && (
+      {/* Show Data Collection button to all authenticated users */}
+      {isAuthenticated && (
         <Button
           onClick={handleDataCollectionClick}
           variant="ghost"
