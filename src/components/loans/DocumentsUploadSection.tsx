@@ -16,25 +16,25 @@ interface DocumentsUploadSectionProps {
   idDocuments: UploadedDocument[];
   isUploadingId: boolean;
   handleUploadIdDocument: (file: File, description?: string, tags?: string[]) => Promise<void>;
-  handleDeleteIdDocument: (id: string) => Promise<void>;
+  handleDeleteIdDocument: (id: string) => Promise<boolean>;
   getIdDocumentUrl: (id: string) => Promise<string | null>;
   // Collateral Photos
   collateralPhotos: UploadedDocument[];
   isUploadingCollateral: boolean;
   handleUploadCollateralPhoto: (file: File, description?: string, tags?: string[]) => Promise<void>;
-  handleDeleteCollateralPhoto: (id: string) => Promise<void>;
+  handleDeleteCollateralPhoto: (id: string) => Promise<boolean>;
   getCollateralPhotoUrl: (id: string) => Promise<string | null>;
   // Property Documents
   propertyDocuments: UploadedDocument[];
   isUploadingProperty: boolean;
   handleUploadPropertyDocument: (file: File, description?: string, tags?: string[]) => Promise<void>;
-  handleDeletePropertyDocument: (id: string) => Promise<void>;
+  handleDeletePropertyDocument: (id: string) => Promise<boolean>;
   getPropertyDocumentUrl: (id: string) => Promise<string | null>;
   // Loan Agreements
   loanAgreements: UploadedDocument[];
   isUploadingLoan: boolean;
   handleUploadLoanAgreement: (file: File, description?: string, tags?: string[]) => Promise<void>;
-  handleDeleteLoanAgreement: (id: string) => Promise<void>;
+  handleDeleteLoanAgreement: (id: string) => Promise<boolean>;
   getLoanAgreementUrl: (id: string) => Promise<string | null>;
 }
 
