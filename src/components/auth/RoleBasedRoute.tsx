@@ -16,7 +16,7 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   allowedRoles,
   redirectTo = '/' 
 }) => {
-  const { userRole, isLoading } = useRolePermissions();
+  const { userRole, isLoading, canAccessFullInterface } = useRolePermissions();
 
   if (isLoading) {
     return (
@@ -25,6 +25,12 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
         <p className="text-gray-600 text-lg">Loading permissions...</p>
       </div>
     );
+  }
+
+  // Special case: if user has full interface access (CEO, Chairperson, IT personnel),
+  // allow them to access any route regardless of specific role
+  if (canAccessFullInterface) {
+    return <>{children}</>;
   }
 
   if (!userRole || !allowedRoles.includes(userRole)) {
