@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   DropdownMenu,
@@ -8,20 +9,21 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Bell, Loader2, CheckCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useUser } from '@/hooks/use-user';
+import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
+import { Notification } from '@/types/notification';
 
-interface Notification {
+interface DatabaseNotification {
   id: string;
   created_at: string;
   user_id: string;
-  type: string;
   message: string;
   is_read: boolean;
-  link: string | null;
+  related_to: string;
+  entity_id: string;
 }
 
 const NotificationsDropdown = () => {
@@ -29,7 +31,7 @@ const NotificationsDropdown = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isMarkingAsRead, setIsMarkingAsRead] = useState(false);
   const dropdownRef = useRef(null);
-  const { user } = useUser();
+  const { user } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -54,7 +56,20 @@ const NotificationsDropdown = () => {
         }
 
         if (data) {
-          setNotifications(data);
+          // Transform database notifications to match our Notification type
+          const typedNotifications: Notification[] = data.map((item: DatabaseNotification) => ({
+            id: item.id,
+            user_id: item.user_id,
+            message: item.message,
+            related_to: item.related_to,
+            entity_id: item.entity_id,
+            is_read: item.is_read,
+            created_at: item.created_at,
+            // Add missing fields required by the Notification type
+            type: item.related_to,
+            link: `/notifications/${item.id}`
+          }));
+          setNotifications(typedNotifications);
         }
       } finally {
         setIsLoading(false);
@@ -90,7 +105,7 @@ const NotificationsDropdown = () => {
     setIsMarkingAsRead(true);
     const unreadIds = unreadNotifications.map(notification => notification.id);
 
-    // Inside the component where the error occurs:
+    // Fix the promise chain with proper catch handling
     if (unreadIds.length > 0) {
       supabase
         .from('notifications')
@@ -188,6 +203,9 @@ const NotificationsDropdown = () => {
                           setNotifications(notifications.map(n =>
                             n.id === notification.id ? { ...n, is_read: true } : n
                           ));
+                        })
+                        .catch(error => {
+                          console.error('Error marking notification as read:', error);
                         });
                     }
                   }}
