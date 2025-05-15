@@ -67,6 +67,23 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
   handleDeleteLoanAgreement,
   getLoanAgreementUrl,
 }) => {
+  // Create wrapper functions that return Promise<void> for each delete handler
+  const handleIdDocumentDelete = async (id: string): Promise<void> => {
+    await handleDeleteIdDocument(id);
+  };
+  
+  const handleCollateralPhotoDelete = async (id: string): Promise<void> => {
+    await handleDeleteCollateralPhoto(id);
+  };
+  
+  const handlePropertyDocumentDelete = async (id: string): Promise<void> => {
+    await handleDeletePropertyDocument(id);
+  };
+  
+  const handleLoanAgreementDelete = async (id: string): Promise<void> => {
+    await handleDeleteLoanAgreement(id);
+  };
+
   if (!loanApplicationId) {
     return (
       <Alert className="mb-6">
@@ -141,28 +158,28 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
         <DocumentList
           title="National ID Documents"
           documents={idDocuments}
-          onDelete={handleDeleteIdDocument}
+          onDelete={handleIdDocumentDelete}
           onPreview={getIdDocumentUrl}
         />
         
         <DocumentList
           title="Collateral Photos"
           documents={collateralPhotos}
-          onDelete={handleDeleteCollateralPhoto}
+          onDelete={handleCollateralPhotoDelete}
           onPreview={getCollateralPhotoUrl}
         />
         
         <DocumentList
           title="Property Documents"
           documents={propertyDocuments}
-          onDelete={handleDeletePropertyDocument}
+          onDelete={handlePropertyDocumentDelete}
           onPreview={getPropertyDocumentUrl}
         />
         
         <DocumentList
           title="Loan Agreements"
           documents={loanAgreements}
-          onDelete={handleDeleteLoanAgreement}
+          onDelete={handleLoanAgreementDelete}
           onPreview={getLoanAgreementUrl}
         />
       </div>
