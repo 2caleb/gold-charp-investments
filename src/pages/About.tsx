@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import { Award, Clock, Users, MapPin, Mail, Phone, CheckCircle } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const About = () => {
   return (
@@ -122,6 +122,7 @@ const About = () => {
             <div className="text-center">
               <div className="mb-4 relative">
                 <Avatar className="w-40 h-40 mx-auto">
+                  <AvatarImage src="/lovable-uploads/b84c30a3-778a-4b51-9c6d-063035a7ece9.png" alt="Chris Mubiru" className="object-cover" />
                   <AvatarFallback className="bg-purple-100 text-purple-700 text-4xl">CM</AvatarFallback>
                 </Avatar>
               </div>
