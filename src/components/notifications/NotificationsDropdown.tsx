@@ -65,9 +65,7 @@ const NotificationsDropdown = () => {
             entity_id: item.entity_id,
             is_read: item.is_read,
             created_at: item.created_at,
-            // Add missing fields required by the Notification type
-            type: item.related_to,
-            link: `/notifications/${item.id}`
+            // No need to add extra properties not in the Notification type
           }));
           setNotifications(typedNotifications);
         }
@@ -105,19 +103,17 @@ const NotificationsDropdown = () => {
     setIsMarkingAsRead(true);
     const unreadIds = unreadNotifications.map(notification => notification.id);
 
-    // Fix the promise chain with proper catch handling
+    // Fix the promise handling - use await instead of .then/.catch
     if (unreadIds.length > 0) {
-      supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .in('id', unreadIds)
-        .then(() => {
-          console.log('Notifications marked as read');
-          // Additional success handling if needed
-        })
-        .catch(error => {
-          console.error('Error marking notifications as read:', error);
-        });
+      try {
+        await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .in('id', unreadIds);
+        console.log('Notifications marked as read');
+      } catch (error) {
+        console.error('Error marking notifications as read:', error);
+      }
     }
 
     try {
@@ -193,20 +189,23 @@ const NotificationsDropdown = () => {
                 </Avatar>
                 <div>
                   <p className="text-gray-800 dark:text-gray-100">{notification.message}</p>
-                  <Link to={notification.link || '#'} onClick={() => {
+                  <Link to={`/notifications/${notification.id}`} onClick={() => {
                     if (!notification.is_read) {
-                      supabase
-                        .from('notifications')
-                        .update({ is_read: true })
-                        .eq('id', notification.id)
-                        .then(() => {
+                      // Fix promise handling with async/await in an IIFE
+                      (async () => {
+                        try {
+                          await supabase
+                            .from('notifications')
+                            .update({ is_read: true })
+                            .eq('id', notification.id);
+                          
                           setNotifications(notifications.map(n =>
                             n.id === notification.id ? { ...n, is_read: true } : n
                           ));
-                        })
-                        .catch(error => {
+                        } catch (error) {
                           console.error('Error marking notification as read:', error);
-                        });
+                        }
+                      })();
                     }
                   }}
                   >
