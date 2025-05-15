@@ -11,6 +11,18 @@ export function useRolePermissions() {
   // Get the actual user role from profile, but don't restrict permissions based on it
   const userRole = userProfile?.role as Role | null;
   
+  // Map workflow stages to roles - defined before use
+  const roleToStage: Record<string, string> = {
+    'field_officer': 'field_officer',
+    'manager': 'manager',
+    'director': 'director',
+    'ceo': 'ceo',
+    'chairperson': 'chairperson'
+  };
+  
+  // Now we can use roleToStage
+  const currentWorkflowStage = userRole ? roleToStage[userRole] : null;
+  
   // Grant all permissions to all authenticated users
   const canCollectData = true;
   const canReviewApplications = true;
@@ -20,16 +32,6 @@ export function useRolePermissions() {
   const canViewAllApplications = true;
   const canAccessDashboard = true;
   const canAccessFullInterface = true;
-
-  // Map workflow stages to roles - kept for compatibility
-  const currentWorkflowStage = userRole ? roleToStage[userRole] : null;
-  const roleToStage: Record<string, string> = {
-    'field_officer': 'field_officer',
-    'manager': 'manager',
-    'director': 'director',
-    'ceo': 'ceo',
-    'chairperson': 'chairperson'
-  };
 
   return {
     userRole,
