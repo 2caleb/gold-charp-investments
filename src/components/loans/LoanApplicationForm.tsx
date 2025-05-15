@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -112,11 +113,26 @@ const LoanApplicationForm = () => {
       try {
         const { data, error } = await supabase
           .from('clients')
-          .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income');
+          .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income, created_at, updated_at, user_id, email');
         
         if (error) throw error;
         
-        setClients(data || []);
+        // Ensure the data matches the Client type
+        const typedClients: Client[] = data.map(client => ({
+          id: client.id,
+          full_name: client.full_name,
+          phone_number: client.phone_number,
+          id_number: client.id_number,
+          address: client.address,
+          employment_status: client.employment_status,
+          monthly_income: client.monthly_income,
+          created_at: client.created_at,
+          updated_at: client.updated_at || undefined,
+          user_id: client.user_id || undefined,
+          email: client.email || null
+        }));
+        
+        setClients(typedClients);
       } catch (error: any) {
         console.error('Error fetching clients:', error);
         toast({
