@@ -10,22 +10,15 @@ import { Button } from '@/components/ui/button';
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const isMobile = useIsMobile();
   
-  // Add scroll event listener with enhanced effect
+  // Add scroll event listener to detect when user scrolls
   useEffect(() => {
     const handleScroll = () => {
-      // Calculate scroll percentage for gradual effect (max at 100px scroll)
-      const scrollY = window.scrollY;
-      const isScrolled = scrollY > 10;
-      const scrollPercentage = Math.min(scrollY / 100, 1);
-      
+      const isScrolled = window.scrollY > 10;
       if (isScrolled !== scrolled) {
         setScrolled(isScrolled);
       }
-      
-      setScrollProgress(scrollPercentage);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -34,21 +27,12 @@ const Navbar = () => {
     };
   }, [scrolled]);
 
-  // Calculate opacity based on scroll progress
-  const backdropOpacity = 0.6 + (scrollProgress * 0.3); // 60% to 90% opacity
-  const backdropBlur = 4 + (scrollProgress * 8); // 4px to 12px blur
-  const bgOpacity = 0.7 + (scrollProgress * 0.3); // 70% to 100% opacity
-
   return (
     <header 
-      className="w-full sticky top-0 z-50 transition-all duration-300 border-b border-gray-200 dark:border-gray-800"
-      style={{
-        backgroundColor: `rgba(255, 255, 255, ${bgOpacity})`,
-        backdropFilter: `blur(${backdropBlur}px)`,
-        WebkitBackdropFilter: `blur(${backdropBlur}px)`,
-      }}
+      className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 
+        ${scrolled ? 'glass-navbar shadow-md py-2' : 'bg-transparent py-4'}`}
     >
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <div className="container mx-auto px-4 flex items-center justify-between">
         <Link to="/" className="flex items-center group transition-transform duration-300 hover:scale-105">
           <span className="text-2xl font-serif font-bold text-purple-700 dark:text-purple-400">Gold<span className="text-amber-500">Charp</span></span>
         </Link>
