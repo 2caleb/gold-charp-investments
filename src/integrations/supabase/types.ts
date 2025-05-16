@@ -183,6 +183,7 @@ export type Database = {
           id_number: string
           last_updated: string | null
           loan_amount: string
+          loan_id: string | null
           loan_type: string
           monthly_income: string
           notes: string | null
@@ -203,6 +204,7 @@ export type Database = {
           id_number: string
           last_updated?: string | null
           loan_amount: string
+          loan_id?: string | null
           loan_type: string
           monthly_income: string
           notes?: string | null
@@ -223,6 +225,7 @@ export type Database = {
           id_number?: string
           last_updated?: string | null
           loan_amount?: string
+          loan_id?: string | null
           loan_type?: string
           monthly_income?: string
           notes?: string | null

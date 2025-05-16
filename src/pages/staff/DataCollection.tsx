@@ -43,18 +43,20 @@ const DataCollection = () => {
           
         if (error) throw error;
         
-        // Handle the data safely to avoid TypeScript errors
-        const safeData = data?.map(app => ({
-          id: app.id,
-          client_name: app.client_name,
-          loan_amount: app.loan_amount,
-          loan_type: app.loan_type,
-          status: app.status,
-          created_at: app.created_at,
-          loan_id: app.loan_id || 'No ID'
-        })) || [];
-        
-        setRecentApplications(safeData);
+        if (data && Array.isArray(data)) {
+          // Handle the data safely to avoid TypeScript errors
+          const safeData = data.map(app => ({
+            id: app.id || '',
+            client_name: app.client_name || '',
+            loan_amount: app.loan_amount || '',
+            loan_type: app.loan_type || '',
+            status: app.status || '',
+            created_at: app.created_at || '',
+            loan_id: app.loan_id || 'No ID'
+          }));
+          
+          setRecentApplications(safeData);
+        }
         
         // Fetch stats (for a real application, these would be separate queries)
         const { count: clientCount, error: clientError } = await supabase
@@ -83,6 +85,7 @@ const DataCollection = () => {
           description: error.message || 'Failed to load data',
           variant: 'destructive'
         });
+        setRecentApplications([]);
       } finally {
         setIsLoading(false);
       }

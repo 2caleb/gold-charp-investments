@@ -61,29 +61,31 @@ const LoanApplicationsList = () => {
       
       setIsLoading(true);
       try {
-        // Modify the query to handle the case where loan_id column might not exist yet
-        // This is a temporary solution until the SQL migration is applied
         const { data, error } = await supabase
           .from('loan_applications')
           .select('id, client_name, loan_amount, loan_type, status, created_at, loan_id, rejection_reason, approval_notes, original_amount');
 
         if (error) throw error;
         
-        // Ensure we handle the data properly even if some fields are missing
-        const safeData = data?.map(app => ({
-          id: app.id,
-          client_name: app.client_name,
-          loan_amount: app.loan_amount,
-          loan_type: app.loan_type,
-          status: app.status,
-          created_at: app.created_at,
-          loan_id: app.loan_id || 'No ID',
-          rejection_reason: app.rejection_reason,
-          approval_notes: app.approval_notes,
-          original_amount: app.original_amount
-        })) || [];
-        
-        setApplications(safeData);
+        if (data && Array.isArray(data)) {
+          // Ensure we handle the data properly even if some fields are missing
+          const safeData = data.map(app => ({
+            id: app.id || '',
+            client_name: app.client_name || '',
+            loan_amount: app.loan_amount || '',
+            loan_type: app.loan_type || '',
+            status: app.status || '',
+            created_at: app.created_at || '',
+            loan_id: app.loan_id || 'No ID',
+            rejection_reason: app.rejection_reason,
+            approval_notes: app.approval_notes,
+            original_amount: app.original_amount
+          }));
+          
+          setApplications(safeData);
+        } else {
+          setApplications([]);
+        }
       } catch (error: any) {
         console.error('Error fetching loan applications:', error);
         toast({
