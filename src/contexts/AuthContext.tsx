@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthSession, AuthUser } from '@supabase/supabase-js';
@@ -30,7 +29,7 @@ export const useAuth = () => {
 };
 
 // Provider component that wraps your app and makes auth object available to any child component that calls useAuth().
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -208,11 +207,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     session,
     isLoading,
-    isAuthenticated: !!user, // Add this computed property
+    isAuthenticated: !!user,
     signIn,
     signUp,
     signOut,
-    // Add aliases
     login,
     register
   };
