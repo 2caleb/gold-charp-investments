@@ -1,159 +1,770 @@
+import React, { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DocumentUpload } from '@/components/loans/DocumentUpload';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
 
-import React, { useEffect, useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import RealTimeUpdates from './RealTimeUpdates';
-import { LoanDetailsForm } from './LoanDetailsForm';
-import { DocumentsUploadSection } from './DocumentsUploadSection';
-import { RealtimeUpdateNotification } from './RealtimeUpdateNotification';
-import { useLoanApplicationForm } from '@/hooks/use-loan-application-form';
-import { supabase } from '@/integrations/supabase/client';
+const loanFormSchema = z.object({
+  // Personal Information
+  fullName: z.string().min(3, { message: 'Full name is required' }),
+  email: z.string().email({ message: 'Valid email is required' }),
+  phone: z.string().min(10, { message: 'Valid phone number is required' }),
+  nationalId: z.string().min(5, { message: 'National ID is required' }),
+  address: z.string().min(5, { message: 'Address is required' }),
+  
+  // Loan Details
+  loanType: z.string().min(1, { message: 'Loan type is required' }),
+  loanAmount: z.string().min(1, { message: 'Loan amount is required' }),
+  loanPurpose: z.string().min(5, { message: 'Loan purpose is required' }),
+  loanTerm: z.string().min(1, { message: 'Loan term is required' }),
+  
+  // Employment Details
+  employmentStatus: z.string().min(1, { message: 'Employment status is required' }),
+  employerName: z.string().optional(),
+  monthlyIncome: z.string().min(1, { message: 'Monthly income is required' }),
+  
+  // Collateral Information
+  hasCollateral: z.boolean().default(false),
+  collateralType: z.string().optional(),
+  collateralValue: z.string().optional(),
+  collateralDescription: z.string().optional(),
+  
+  // Terms and Conditions
+  agreeToTerms: z.boolean().refine(val => val === true, {
+    message: 'You must agree to the terms and conditions',
+  }),
+});
 
-// Define the correct type for document verification functions
-type DocumentVerifier = (id: string) => Promise<void>;
+type LoanFormValues = z.infer<typeof loanFormSchema>;
+
+// Mock document verification service
+const documentVerificationService = {
+  verifyNationalId: async (documentId: string): Promise<void> => {
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    // In a real app, this would return verification status
+    return;
+  },
+  
+  verifyLandTitle: async (documentId: string): Promise<void> => {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    return;
+  },
+  
+  verifyBusinessLicense: async (documentId: string): Promise<void> => {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    return;
+  },
+  
+  verifyBankStatement: async (documentId: string): Promise<void> => {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    return;
+  },
+};
 
 const LoanApplicationForm = () => {
-  const {
-    // State
-    isSubmitting,
-    clients,
-    isLoadingClients,
-    preselectedClientId,
-    realtimeUpdate,
-    activeTab,
-    setActiveTab,
-    loanApplicationId,
-    isLoadingDocuments,
-    submissionError,
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('personal');
+  
+  const form = useForm<LoanFormValues>({
+    resolver: zodResolver(loanFormSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      phone: '',
+      nationalId: '',
+      address: '',
+      loanType: '',
+      loanAmount: '',
+      loanPurpose: '',
+      loanTerm: '',
+      employmentStatus: '',
+      employerName: '',
+      monthlyIncome: '',
+      hasCollateral: false,
+      collateralType: '',
+      collateralValue: '',
+      collateralDescription: '',
+      agreeToTerms: false,
+    },
+  });
+  
+  const hasCollateral = form.watch('hasCollateral');
+  
+  const onSubmit = async (data: LoanFormValues) => {
+    setIsSubmitting(true);
     
-    // Document states
-    idDocuments,
-    isUploadingId,
-    collateralPhotos,
-    isUploadingCollateral,
-    propertyDocuments,
-    isUploadingProperty,
-    loanAgreements,
-    isUploadingLoan,
-    
-    // Methods
-    handleSubmit,
-    handleLoanUpdate,
-    handleFinish,
-    handleUploadIdDocument,
-    handleUploadCollateralPhoto,
-    handleUploadPropertyDocument,
-    handleUploadLoanAgreement,
-    handleDeleteIdDocument,
-    handleDeleteCollateralPhoto,
-    handleDeletePropertyDocument,
-    handleDeleteLoanAgreement,
-    getIdDocumentUrl,
-    getCollateralPhotoUrl,
-    getPropertyDocumentUrl,
-    getLoanAgreementUrl
-  } = useLoanApplicationForm();
-
-  // New state to track collateral selection
-  const [hasCollateral, setHasCollateral] = useState(false);
-
-  // Function to verify document using the verify-document Edge Function
-  const verifyDocument: DocumentVerifier = async (documentId: string): Promise<void> => {
     try {
-      // Call the Edge Function
-      const { data, error } = await supabase.functions.invoke('verify-document', {
-        body: { documentId, documentType: 'id_document' }
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      console.log('Form submitted:', data);
+      
+      toast({
+        title: "Application Submitted",
+        description: "Your loan application has been submitted successfully.",
       });
       
-      if (error) {
-        console.error('Error verifying document:', error);
-        return;
-      }
-      
-      console.log('Document verification result:', data);
-    } catch (err) {
-      console.error('Exception verifying document:', err);
+      // Reset form
+      form.reset();
+      setActiveTab('personal');
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your application. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
-  const verifyPropertyDoc: DocumentVerifier = async (documentId: string): Promise<void> => {
-    try {
-      // Call the Edge Function
-      const { data, error } = await supabase.functions.invoke('verify-document', {
-        body: { documentId, documentType: 'property_document' }
-      });
-      
-      if (error) {
-        console.error('Error verifying property document:', error);
-        return;
-      }
-      
-      console.log('Property document verification result:', data);
-    } catch (err) {
-      console.error('Exception verifying property document:', err);
+  const nextTab = (currentTab: string) => {
+    switch (currentTab) {
+      case 'personal':
+        setActiveTab('loan');
+        break;
+      case 'loan':
+        setActiveTab('employment');
+        break;
+      case 'employment':
+        setActiveTab('collateral');
+        break;
+      case 'collateral':
+        setActiveTab('documents');
+        break;
+      case 'documents':
+        setActiveTab('review');
+        break;
+      default:
+        break;
     }
   };
-
-  // Handle collateral checkbox change from the form
-  const handleCollateralChange = (hasCollateral: boolean) => {
-    setHasCollateral(hasCollateral);
+  
+  const prevTab = (currentTab: string) => {
+    switch (currentTab) {
+      case 'loan':
+        setActiveTab('personal');
+        break;
+      case 'employment':
+        setActiveTab('loan');
+        break;
+      case 'collateral':
+        setActiveTab('employment');
+        break;
+      case 'documents':
+        setActiveTab('collateral');
+        break;
+      case 'review':
+        setActiveTab('documents');
+        break;
+      default:
+        break;
+    }
   };
-
+  
   return (
-    <>
-      <RealTimeUpdates onLoanUpdate={handleLoanUpdate} />
-      
-      <RealtimeUpdateNotification update={realtimeUpdate} />
-      
-      <div className="max-w-4xl mx-auto">
-        <LoanDetailsForm 
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          clients={clients}
-          isLoadingClients={isLoadingClients}
-          preselectedClientId={preselectedClientId}
-          submissionError={submissionError}
-          loanApplicationId={loanApplicationId}
-          onCollateralChange={handleCollateralChange}
-        />
-        
-        {hasCollateral && loanApplicationId && (
-          <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8">
-            <h2 className="text-xl font-semibold mb-6">Supporting Documents</h2>
-            <DocumentsUploadSection
-              loanApplicationId={loanApplicationId}
-              isLoadingDocuments={isLoadingDocuments}
-              onFinish={handleFinish}
-              // ID Documents
-              idDocuments={idDocuments}
-              isUploadingId={isUploadingId}
-              handleUploadIdDocument={handleUploadIdDocument}
-              handleDeleteIdDocument={handleDeleteIdDocument}
-              getIdDocumentUrl={getIdDocumentUrl}
-              verifyDocument={verifyDocument}
-              // Collateral Photos
-              collateralPhotos={collateralPhotos}
-              isUploadingCollateral={isUploadingCollateral}
-              handleUploadCollateralPhoto={handleUploadCollateralPhoto}
-              handleDeleteCollateralPhoto={handleDeleteCollateralPhoto}
-              getCollateralPhotoUrl={getCollateralPhotoUrl}
-              // Property Documents
-              propertyDocuments={propertyDocuments}
-              isUploadingProperty={isUploadingProperty}
-              handleUploadPropertyDocument={handleUploadPropertyDocument}
-              handleDeletePropertyDocument={handleDeletePropertyDocument}
-              getPropertyDocumentUrl={getPropertyDocumentUrl}
-              verifyPropertyDocument={verifyPropertyDoc}
-              // Loan Agreements
-              loanAgreements={loanAgreements}
-              isUploadingLoan={isUploadingLoan}
-              handleUploadLoanAgreement={handleUploadLoanAgreement}
-              handleDeleteLoanAgreement={handleDeleteLoanAgreement}
-              getLoanAgreementUrl={getLoanAgreementUrl}
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-6 mb-8">
+            <TabsTrigger value="personal">Personal</TabsTrigger>
+            <TabsTrigger value="loan">Loan Details</TabsTrigger>
+            <TabsTrigger value="employment">Employment</TabsTrigger>
+            <TabsTrigger value="collateral">Collateral</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="review">Review</TabsTrigger>
+          </TabsList>
+          
+          {/* Personal Information Tab */}
+          <TabsContent value="personal" className="space-y-4 p-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">Personal Information</h2>
+              <p className="text-gray-500 mb-6">Please provide your personal details for the loan application.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="john@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+256 700 000000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="nationalId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>National ID Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="CM12345678" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Residential Address</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter your full address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="flex justify-end mt-6">
+              <Button type="button" onClick={() => nextTab('personal')}>
+                Next Step
+              </Button>
+            </div>
+          </TabsContent>
+          
+          {/* Loan Details Tab */}
+          <TabsContent value="loan" className="space-y-4 p-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">Loan Details</h2>
+              <p className="text-gray-500 mb-6">Please provide details about the loan you're applying for.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="loanType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Loan Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select loan type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="personal">Personal Loan</SelectItem>
+                        <SelectItem value="business">Business Loan</SelectItem>
+                        <SelectItem value="mortgage">Mortgage</SelectItem>
+                        <SelectItem value="agricultural">Agricultural Loan</SelectItem>
+                        <SelectItem value="education">Education Loan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="loanAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Loan Amount (UGX)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="5,000,000" {...field} />
+                    </FormControl>
+                    <FormDescription>Enter amount in Ugandan Shillings</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="loanTerm"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Loan Term</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select loan term" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="6">6 months</SelectItem>
+                        <SelectItem value="12">12 months</SelectItem>
+                        <SelectItem value="24">24 months</SelectItem>
+                        <SelectItem value="36">36 months</SelectItem>
+                        <SelectItem value="48">48 months</SelectItem>
+                        <SelectItem value="60">60 months</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="loanPurpose"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Loan Purpose</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Describe how you plan to use this loan" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="flex justify-between mt-6">
+              <Button type="button" variant="outline" onClick={() => prevTab('loan')}>
+                Previous Step
+              </Button>
+              <Button type="button" onClick={() => nextTab('loan')}>
+                Next Step
+              </Button>
+            </div>
+          </TabsContent>
+          
+          {/* Employment Details Tab */}
+          <TabsContent value="employment" className="space-y-4 p-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">Employment Information</h2>
+              <p className="text-gray-500 mb-6">Please provide details about your employment and income.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="employmentStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Employment Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="employed">Employed</SelectItem>
+                        <SelectItem value="self-employed">Self-Employed</SelectItem>
+                        <SelectItem value="business-owner">Business Owner</SelectItem>
+                        <SelectItem value="unemployed">Unemployed</SelectItem>
+                        <SelectItem value="retired">Retired</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="employerName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Employer Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Company name" {...field} />
+                    </FormControl>
+                    <FormDescription>Leave blank if self-employed</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="monthlyIncome"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Monthly Income (UGX)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="1,500,000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="flex justify-between mt-6">
+              <Button type="button" variant="outline" onClick={() => prevTab('employment')}>
+                Previous Step
+              </Button>
+              <Button type="button" onClick={() => nextTab('employment')}>
+                Next Step
+              </Button>
+            </div>
+          </TabsContent>
+          
+          {/* Collateral Tab */}
+          <TabsContent value="collateral" className="space-y-4 p-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">Collateral Information</h2>
+              <p className="text-gray-500 mb-6">Please provide details about any collateral you're offering for this loan.</p>
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="hasCollateral"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>I have collateral to offer for this loan</FormLabel>
+                    <FormDescription>
+                      Providing collateral may improve your chances of approval and interest rates
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
             />
-          </div>
-        )}
-      </div>
-    </>
+            
+            {hasCollateral && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <FormField
+                  control={form.control}
+                  name="collateralType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Collateral Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select collateral type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="real-estate">Real Estate</SelectItem>
+                          <SelectItem value="vehicle">Vehicle</SelectItem>
+                          <SelectItem value="business-assets">Business Assets</SelectItem>
+                          <SelectItem value="savings">Savings/Deposits</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="collateralValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estimated Value (UGX)</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="10,000,000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="collateralDescription"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Collateral Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Provide details about your collateral" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+            
+            <div className="flex justify-between mt-6">
+              <Button type="button" variant="outline" onClick={() => prevTab('collateral')}>
+                Previous Step
+              </Button>
+              <Button type="button" onClick={() => nextTab('collateral')}>
+                Next Step
+              </Button>
+            </div>
+          </TabsContent>
+          
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="space-y-4 p-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">Supporting Documents</h2>
+              <p className="text-gray-500 mb-6">Please upload the required documents to support your loan application.</p>
+            </div>
+            
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">National ID</CardTitle>
+                  <CardDescription>Upload a clear scan or photo of your National ID (front and back)</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DocumentUpload 
+                    documentType="national-id"
+                    verifyDocument={documentVerificationService.verifyNationalId}
+                  />
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Proof of Income</CardTitle>
+                  <CardDescription>Upload your recent payslips or bank statements</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DocumentUpload 
+                    documentType="bank-statement"
+                    verifyDocument={documentVerificationService.verifyBankStatement}
+                  />
+                </CardContent>
+              </Card>
+              
+              {hasCollateral && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Collateral Documents</CardTitle>
+                    <CardDescription>Upload documents proving ownership of your collateral</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <DocumentUpload 
+                      documentType="land-title"
+                      verifyDocument={documentVerificationService.verifyLandTitle}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+              
+              {form.watch('loanType') === 'business' && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Business Documents</CardTitle>
+                    <CardDescription>Upload your business registration and license</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <DocumentUpload 
+                      documentType="business-license"
+                      verifyDocument={documentVerificationService.verifyBusinessLicense}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+            
+            <div className="flex justify-between mt-6">
+              <Button type="button" variant="outline" onClick={() => prevTab('documents')}>
+                Previous Step
+              </Button>
+              <Button type="button" onClick={() => nextTab('documents')}>
+                Next Step
+              </Button>
+            </div>
+          </TabsContent>
+          
+          {/* Review Tab */}
+          <TabsContent value="review" className="space-y-4 p-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">Review Your Application</h2>
+              <p className="text-gray-500 mb-6">Please review your information before submitting your loan application.</p>
+            </div>
+            
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Personal Information</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Full Name:</span> {form.getValues('fullName')}
+                  </div>
+                  <div>
+                    <span className="font-medium">Email:</span> {form.getValues('email')}
+                  </div>
+                  <div>
+                    <span className="font-medium">Phone:</span> {form.getValues('phone')}
+                  </div>
+                  <div>
+                    <span className="font-medium">National ID:</span> {form.getValues('nationalId')}
+                  </div>
+                  <div className="md:col-span-2">
+                    <span className="font-medium">Address:</span> {form.getValues('address')}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Loan Details</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Loan Type:</span> {form.getValues('loanType')}
+                  </div>
+                  <div>
+                    <span className="font-medium">Loan Amount:</span> UGX {form.getValues('loanAmount')}
+                  </div>
+                  <div>
+                    <span className="font-medium">Loan Term:</span> {form.getValues('loanTerm')} months
+                  </div>
+                  <div className="md:col-span-2">
+                    <span className="font-medium">Loan Purpose:</span> {form.getValues('loanPurpose')}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Employment Information</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Employment Status:</span> {form.getValues('employmentStatus')}
+                  </div>
+                  <div>
+                    <span className="font-medium">Employer:</span> {form.getValues('employerName') || 'N/A'}
+                  </div>
+                  <div>
+                    <span className="font-medium">Monthly Income:</span> UGX {form.getValues('monthlyIncome')}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {hasCollateral && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Collateral Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Collateral Type:</span> {form.getValues('collateralType')}
+                    </div>
+                    <div>
+                      <span className="font-medium">Estimated Value:</span> UGX {form.getValues('collateralValue')}
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="font-medium">Description:</span> {form.getValues('collateralDescription')}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              <FormField
+                control={form.control}
+                name="agreeToTerms"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>I agree to the terms and conditions</FormLabel>
+                      <FormDescription>
+                        By submitting this application, I confirm that all information provided is accurate and complete.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="flex justify-between mt-6">
+              <Button type="button" variant="outline" onClick={() => prevTab('review')}>
+                Previous Step
+              </Button>
+              <Button type="submit" disabled={isSubmitting} className="bg-green-600 hover:bg-green-700">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  'Submit Application'
+                )}
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </form>
+    </Form>
   );
 };
 

@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 interface PropertyTypeData {
   name: string;
@@ -99,92 +100,151 @@ export const PropertyInsights = () => {
     );
   }
 
+  // Define chart configuration
+  const chartConfig = {
+    residential: { label: 'Residential', color: '#8884d8' },
+    commercial: { label: 'Commercial', color: '#82ca9d' },
+    agricultural: { label: 'Agricultural', color: '#ffc658' }
+  };
+
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Property Type Distribution</CardTitle>
-            <CardDescription>Breakdown of property types in portfolio</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={typeData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+    <div className="space-y-8 w-full">
+      {/* Chart Section - Switched to a single row full-width layout */}
+      <Card className="w-full shadow-md">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl">Property Analytics Dashboard</CardTitle>
+          <CardDescription>Overview of property types and price trends in our portfolio</CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Property Type Distribution */}
+            <div className="flex flex-col space-y-3">
+              <h3 className="font-medium text-lg">Property Type Distribution</h3>
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={typeData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {typeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `${value}%`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-6">
+                {typeData.map((entry) => (
+                  <div key={entry.name} className="flex items-center">
+                    <div 
+                      className="w-3 h-3 mr-2 rounded-sm" 
+                      style={{ backgroundColor: entry.color }} 
+                    />
+                    <span className="text-sm font-medium">{entry.name}: {entry.value}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Property Price Trends */}
+            <div className="flex flex-col space-y-3">
+              <h3 className="font-medium text-lg">Property Price Trends</h3>
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={priceData}
+                    margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
                   >
-                    {typeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `${value}%`} />
-                </PieChart>
-              </ResponsiveContainer>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                    <XAxis dataKey="month" />
+                    <YAxis width={50} tickFormatter={(value) => `${value}`} />
+                    <Tooltip formatter={(value) => `UGX ${Number(value).toLocaleString()}`} />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="residential" 
+                      stroke="#8884d8" 
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Residential" 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="commercial" 
+                      stroke="#82ca9d" 
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Commercial" 
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="agricultural" 
+                      stroke="#ffc658" 
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Agricultural" 
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Property Price Trends</CardTitle>
-            <CardDescription>Average price per square foot over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={priceData}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `UGX ${Number(value).toLocaleString()}`} />
-                  <Legend />
-                  <Line type="monotone" dataKey="residential" stroke="#8884d8" name="Residential" />
-                  <Line type="monotone" dataKey="commercial" stroke="#82ca9d" name="Commercial" />
-                  <Line type="monotone" dataKey="agricultural" stroke="#ffc658" name="Agricultural" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
+      {/* Top Selling Properties - Full width card */}
+      <Card className="w-full shadow-md">
         <CardHeader>
-          <CardTitle>Top Selling Properties</CardTitle>
+          <CardTitle className="text-xl">Top Selling Properties</CardTitle>
           <CardDescription>Highest valued property sales in the past month</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Location</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Sale Price</TableHead>
-                <TableHead>Sale Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {topProperties.map((property) => (
-                <TableRow key={property.id}>
-                  <TableCell className="font-medium">{property.location}</TableCell>
-                  <TableCell>{property.type}</TableCell>
-                  <TableCell>UGX {property.price.toLocaleString()}</TableCell>
-                  <TableCell>{new Date(property.salesDate).toLocaleDateString()}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold">Location</TableHead>
+                  <TableHead className="font-semibold">Type</TableHead>
+                  <TableHead className="font-semibold">Sale Price</TableHead>
+                  <TableHead className="font-semibold">Sale Date</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {topProperties.map((property) => (
+                  <TableRow key={property.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-medium">{property.location}</TableCell>
+                    <TableCell>
+                      <span 
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          property.type === 'Residential' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : property.type === 'Commercial' 
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {property.type}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-mono">UGX {property.price.toLocaleString()}</TableCell>
+                    <TableCell>{new Date(property.salesDate).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

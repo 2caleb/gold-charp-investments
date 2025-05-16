@@ -180,8 +180,14 @@ const Dashboard: React.FC = () => {
           <LoanPerformanceChart />
           <RiskProfileMap />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Property Insights - Now full width for better visibility */}
+        <div className="mb-6">
           <PropertyInsights />
+        </div>
+        
+        {/* Field Officer Activity */}
+        <div>
           <FieldOfficerActivity />
         </div>
       </div>
