@@ -57,7 +57,7 @@ const LoanApplicationForm = () => {
   const [hasCollateral, setHasCollateral] = useState(false);
 
   // Function to verify document using the verify-document Edge Function
-  const verifyDocument = async (documentId: string): Promise<void> => {
+  const verifyDocument: DocumentVerifier = async (documentId: string): Promise<void> => {
     try {
       // Call the Edge Function
       const { data, error } = await supabase.functions.invoke('verify-document', {
@@ -75,7 +75,7 @@ const LoanApplicationForm = () => {
     }
   };
   
-  const verifyPropertyDoc = async (documentId: string): Promise<void> => {
+  const verifyPropertyDoc: DocumentVerifier = async (documentId: string): Promise<void> => {
     try {
       // Call the Edge Function
       const { data, error } = await supabase.functions.invoke('verify-document', {

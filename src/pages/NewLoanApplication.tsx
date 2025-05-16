@@ -5,7 +5,7 @@ import Layout from '@/components/layout/Layout';
 import LoanApplicationForm from '@/components/loans/LoanApplicationForm';
 import { Button } from '@/components/ui/button';
 import { BarChart3, ClipboardList, MapPin } from 'lucide-react';
-import RiskProfileMap from '@/components/dashboard/RiskProfileMap';
+import { RiskProfileMap } from '@/components/dashboard/RiskProfileMap';
 
 const NewLoanApplication = () => {
   return (
