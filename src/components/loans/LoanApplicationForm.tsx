@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RealTimeUpdates from './RealTimeUpdates';
 import { LoanDetailsForm } from './LoanDetailsForm';
@@ -52,6 +53,9 @@ const LoanApplicationForm = () => {
     getLoanAgreementUrl
   } = useLoanApplicationForm();
 
+  // New state to track collateral selection
+  const [hasCollateral, setHasCollateral] = useState(false);
+
   // Function to verify document using the verify-document Edge Function
   const verifyDocument = async (documentId: string): Promise<void> => {
     try {
@@ -89,43 +93,10 @@ const LoanApplicationForm = () => {
     }
   };
 
-  // Listen for terms accepted event to automatically switch to documents tab
-  useEffect(() => {
-    const handleTermsAccepted = () => {
-      if (loanApplicationId) {
-        setActiveTab("documents");
-      }
-    };
-    
-    window.addEventListener('termsAccepted', handleTermsAccepted);
-    
-    return () => {
-      window.removeEventListener('termsAccepted', handleTermsAccepted);
-    };
-  }, [loanApplicationId, setActiveTab]);
-  
-  // Auto-transition to documents tab when loan application is submitted
-  useEffect(() => {
-    if (loanApplicationId) {
-      setActiveTab("documents");
-    }
-  }, [loanApplicationId, setActiveTab]);
-  
-  // Listen for checkbox changes to trigger the documents tab
-  const handleTermsChange = (event: CustomEvent) => {
-    if (event.detail?.checked && loanApplicationId) {
-      setActiveTab("documents");
-    }
+  // Handle collateral checkbox change from the form
+  const handleCollateralChange = (hasCollateral: boolean) => {
+    setHasCollateral(hasCollateral);
   };
-
-  // Add global event listener for the terms checkbox change
-  useEffect(() => {
-    window.addEventListener('termsCheckboxChanged', handleTermsChange);
-    
-    return () => {
-      window.removeEventListener('termsCheckboxChanged', handleTermsChange);
-    };
-  }, [loanApplicationId]);
 
   return (
     <>
@@ -134,31 +105,20 @@ const LoanApplicationForm = () => {
       <RealtimeUpdateNotification update={realtimeUpdate} />
       
       <div className="max-w-4xl mx-auto">
-        <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="details" className="text-base py-3">Application Details</TabsTrigger>
-            <TabsTrigger 
-              value="documents" 
-              className="text-base py-3"
-              disabled={!loanApplicationId}
-            >
-              Supporting Documents
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="details">
-            <LoanDetailsForm 
-              onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
-              clients={clients}
-              isLoadingClients={isLoadingClients}
-              preselectedClientId={preselectedClientId}
-              submissionError={submissionError}
-              loanApplicationId={loanApplicationId}
-            />
-          </TabsContent>
-          
-          <TabsContent value="documents">
+        <LoanDetailsForm 
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          clients={clients}
+          isLoadingClients={isLoadingClients}
+          preselectedClientId={preselectedClientId}
+          submissionError={submissionError}
+          loanApplicationId={loanApplicationId}
+          onCollateralChange={handleCollateralChange}
+        />
+        
+        {hasCollateral && loanApplicationId && (
+          <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8">
+            <h2 className="text-xl font-semibold mb-6">Supporting Documents</h2>
             <DocumentsUploadSection
               loanApplicationId={loanApplicationId}
               isLoadingDocuments={isLoadingDocuments}
@@ -190,8 +150,8 @@ const LoanApplicationForm = () => {
               handleDeleteLoanAgreement={handleDeleteLoanAgreement}
               getLoanAgreementUrl={getLoanAgreementUrl}
             />
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
     </>
   );

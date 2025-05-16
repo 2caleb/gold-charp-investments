@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import LoanApplicationForm from '@/components/loans/LoanApplicationForm';
 import { Button } from '@/components/ui/button';
-import { BarChart3, ClipboardList } from 'lucide-react';
+import { BarChart3, ClipboardList, MapPin } from 'lucide-react';
+import RiskProfileMap from '@/components/dashboard/RiskProfileMap';
 
 const NewLoanApplication = () => {
   return (
@@ -15,7 +16,7 @@ const NewLoanApplication = () => {
             <div>
               <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4 dark:text-white">New Loan Application</h1>
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
-                Fill out the form below to submit a new loan application. You'll be able to add supporting documents after submission.
+                Fill out the form below to submit a new loan application. If you have collateral, you'll be able to add supporting documents.
               </p>
             </div>
             <div className="mt-4 md:mt-0 flex space-x-4">
@@ -34,8 +35,25 @@ const NewLoanApplication = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8">
-            <LoanApplicationForm />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-2">
+              <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg">
+                <LoanApplicationForm />
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
+              <h2 className="text-xl font-semibold mb-4 flex items-center">
+                <MapPin className="mr-2 h-5 w-5 text-red-500" />
+                Geographical Risk Distribution
+              </h2>
+              <div className="h-96">
+                <RiskProfileMap />
+              </div>
+              <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                The map shows loan risk assessment based on geographical location.
+                Darker regions indicate higher risk areas.
+              </p>
+            </div>
           </div>
         </div>
       </section>

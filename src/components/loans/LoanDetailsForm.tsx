@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -80,6 +81,7 @@ interface LoanDetailsFormProps {
   preselectedClientId?: string | null;
   submissionError?: string | null;
   loanApplicationId?: string | null;
+  onCollateralChange?: (hasCollateral: boolean) => void;
 }
 
 export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
@@ -90,6 +92,7 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
   preselectedClientId,
   submissionError,
   loanApplicationId,
+  onCollateralChange,
 }) => {
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   
@@ -144,6 +147,13 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
     }
   }, [termsAccepted]);
 
+  // Notify parent component when collateral checkbox changes
+  useEffect(() => {
+    if (onCollateralChange) {
+      onCollateralChange(hasCollateral);
+    }
+  }, [hasCollateral, onCollateralChange]);
+
   const { setValue, watch, formState } = form;
 
   const handleTermsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,7 +174,7 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8">
         {submissionError && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -177,7 +187,7 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
           <Alert className="bg-green-50 border-green-300">
             <AlertTitle>Application Submitted</AlertTitle>
             <AlertDescription>
-              Your application has been submitted with ID: {loanApplicationId}. Please upload supporting documents.
+              Your application has been submitted with ID: {loanApplicationId}. {hasCollateral ? "Please upload supporting documents for your collateral below." : ""}
             </AlertDescription>
           </Alert>
         )}
@@ -518,7 +528,12 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
                     <FormControl>
                       <Checkbox
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (onCollateralChange) {
+                            onCollateralChange(checked === true);
+                          }
+                        }}
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
