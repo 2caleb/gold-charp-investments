@@ -5,21 +5,21 @@ import { Card, CardContent } from "@/components/ui/card";
 const testimonials = [
   {
     id: 1,
-    name: "Sarah Johnson",
+    name: "Nakimuli Sarah",
     role: "First-time Homebuyer",
     content: "PropelWealth made buying my first home so much easier than I expected. Their team guided me through every step and helped me secure a mortgage that fit my budget perfectly.",
     image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&h=500&q=80"
   },
   {
     id: 2,
-    name: "Michael Rodriguez",
+    name: "Mukasa Ronald",
     role: "Property Investor",
     content: "I've worked with many real estate companies, but none have matched the expertise and service level of PropelWealth. Their investment property recommendations have consistently exceeded my ROI expectations.",
     image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&h=500&q=80"
   },
   {
     id: 3,
-    name: "Emily Chang",
+    name: "Namuwonge Emily",
     role: "Homeowner",
     content: "Refinancing our home through PropelWealth saved us hundreds of dollars every month. Their team found us a much better rate than we thought possible, and the process was surprisingly quick.",
     image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=500&h=500&q=80"

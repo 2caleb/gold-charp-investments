@@ -9,42 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      branches: {
-        Row: {
-          address: string
-          created_at: string
-          email: string | null
-          id: string
-          location: string
-          manager_id: string | null
-          name: string
-          phone_number: string
-          updated_at: string | null
-        }
-        Insert: {
-          address: string
-          created_at?: string
-          email?: string | null
-          id?: string
-          location: string
-          manager_id?: string | null
-          name: string
-          phone_number: string
-          updated_at?: string | null
-        }
-        Update: {
-          address?: string
-          created_at?: string
-          email?: string | null
-          id?: string
-          location?: string
-          manager_id?: string | null
-          name?: string
-          phone_number?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       clients: {
         Row: {
           address: string
@@ -284,6 +248,27 @@ export type Database = {
         }
         Relationships: []
       }
+      Permissions: {
+        Row: {
+          full_name: string | null
+          id: string
+          Permissions: string | null
+          role: string | null
+        }
+        Insert: {
+          full_name?: string | null
+          id: string
+          Permissions?: string | null
+          role?: string | null
+        }
+        Update: {
+          full_name?: string | null
+          id?: string
+          Permissions?: string | null
+          role?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -311,6 +296,24 @@ export type Database = {
           phone?: string | null
           role?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      Roles: {
+        Row: {
+          full_name: string | null
+          id: string
+          role: string | null
+        }
+        Insert: {
+          full_name?: string | null
+          id: string
+          role?: string | null
+        }
+        Update: {
+          full_name?: string | null
+          id?: string
+          role?: string | null
         }
         Relationships: []
       }

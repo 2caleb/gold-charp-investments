@@ -183,10 +183,76 @@ export function useLoanApplicationForm() {
       // Convert loan_amount from string to number
       const numericAmount = parseFloat(values.loan_amount.replace(/,/g, ''));
       
-      // Get client data
-      const selectedClient = clients.find(c => c.id === values.client_id);
-      if (!selectedClient) {
-        throw new Error("Selected client not found");
+      // Handle client data based on whether it's a new or existing client
+      let clientId = values.client_id;
+      let clientData = {
+        full_name: '',
+        phone_number: '',
+        id_number: '',
+        address: '',
+        employment_status: '',
+        monthly_income: 0,
+        email: null as string | null
+      };
+      
+      // If this is a new client, create the client first
+      if (values.client_type === 'new') {
+        if (!values.full_name || !values.phone_number || !values.id_number) {
+          throw new Error("Missing required client information");
+        }
+        
+        // Create new client
+        const { data: newClientData, error: newClientError } = await supabase
+          .from('clients')
+          .insert({
+            full_name: values.full_name,
+            phone_number: values.phone_number,
+            id_number: values.id_number,
+            address: values.address || '',
+            employment_status: values.employment_status || 'employed',
+            monthly_income: parseFloat(values.monthly_income || '0'),
+            email: values.email || null,
+            user_id: user.id
+          })
+          .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income, email')
+          .single();
+          
+        if (newClientError) throw newClientError;
+        
+        clientId = newClientData.id;
+        clientData = {
+          full_name: newClientData.full_name,
+          phone_number: newClientData.phone_number,
+          id_number: newClientData.id_number,
+          address: newClientData.address,
+          employment_status: newClientData.employment_status,
+          monthly_income: newClientData.monthly_income,
+          email: newClientData.email
+        };
+        
+        // Add the new client to the clients list
+        setClients(prevClients => [...prevClients, { ...newClientData, created_at: new Date().toISOString() }]);
+        
+        toast({
+          title: "New client created",
+          description: `Created client profile for ${newClientData.full_name}`,
+        });
+      } else {
+        // Get existing client data
+        const selectedClient = clients.find(c => c.id === clientId);
+        if (!selectedClient) {
+          throw new Error("Selected client not found");
+        }
+        
+        clientData = {
+          full_name: selectedClient.full_name,
+          phone_number: selectedClient.phone_number,
+          id_number: selectedClient.id_number,
+          address: selectedClient.address,
+          employment_status: selectedClient.employment_status,
+          monthly_income: selectedClient.monthly_income,
+          email: selectedClient.email
+        };
       }
       
       // Get the manager's user ID (in a real app, you might fetch this from profiles table)
@@ -197,23 +263,25 @@ export function useLoanApplicationForm() {
       const { data, error } = await supabase
         .from('loan_applications')
         .insert({
-          client_name: selectedClient.full_name,
-          phone_number: selectedClient.phone_number,
-          id_number: selectedClient.id_number,
-          address: selectedClient.address,
+          client_id: clientId,
+          client_name: clientData.full_name,
+          phone_number: clientData.phone_number,
+          id_number: clientData.id_number,
+          address: clientData.address,
           loan_type: values.loan_type,
           loan_amount: String(numericAmount),
           loan_term: values.loan_term,
           purpose_of_loan: values.purpose_of_loan,
-          applicant_name: values.applicant_name,
+          applicant_name: values.applicant_name || clientData.full_name,
           has_collateral: values.has_collateral,
-          collateral_description: values.collateral_description,
-          notes: values.notes,
+          collateral_description: values.collateral_description || '',
+          notes: values.notes || '',
           terms_accepted: values.terms_accepted,
           created_by: user.id,
           current_approver: manager_id,
-          employment_status: selectedClient.employment_status,
-          monthly_income: selectedClient.monthly_income.toString()
+          employment_status: clientData.employment_status,
+          monthly_income: clientData.monthly_income.toString(),
+          email: clientData.email
         })
         .select();
 

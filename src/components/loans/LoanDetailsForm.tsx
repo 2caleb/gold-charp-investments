@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,13 +24,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, User, UserPlus, UserCheck } from 'lucide-react';
 import { Client } from '@/types/schema';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const loanApplicationSchema = z.object({
-  client_id: z.string().uuid("Please select a client"),
+  client_type: z.enum(['existing', 'new']),
+  client_id: z.string().uuid("Please select a client").optional().or(z.literal('')),
   applicant_name: z.string().min(1, "Applicant name is required"),
   loan_type: z.string().min(1, "Please select a loan type"),
   loan_amount: z.string().min(1, "Loan amount is required"),
@@ -42,6 +47,14 @@ const loanApplicationSchema = z.object({
   terms_accepted: z.boolean().refine(val => val === true, {
     message: "You must accept the terms and conditions",
   }),
+  // New client fields
+  full_name: z.string().optional(),
+  phone_number: z.string().optional(),
+  id_number: z.string().optional(),
+  address: z.string().optional(),
+  employment_status: z.string().optional(),
+  monthly_income: z.string().optional(),
+  email: z.string().email("Please enter a valid email").optional().or(z.literal('')),
 });
 
 export type LoanApplicationValues = z.infer<typeof loanApplicationSchema>;
@@ -65,9 +78,15 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
   submissionError,
   loanApplicationId,
 }) => {
+  const [clientType, setClientType] = useState<'existing' | 'new'>(preselectedClientId ? 'existing' : 'new');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(
+    preselectedClientId ? clients.find(c => c.id === preselectedClientId) || null : null
+  );
+  
   const form = useForm<LoanApplicationValues>({
     resolver: zodResolver(loanApplicationSchema),
     defaultValues: {
+      client_type: preselectedClientId ? 'existing' : 'new',
       client_id: preselectedClientId || "",
       applicant_name: "",
       loan_type: "",
@@ -78,10 +97,66 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
       collateral_description: "",
       notes: "",
       terms_accepted: false,
+      full_name: "",
+      phone_number: "",
+      id_number: "",
+      address: "",
+      employment_status: "",
+      monthly_income: "",
+      email: "",
     },
   });
 
   const hasCollateral = form.watch("has_collateral");
+  const currentClientType = form.watch("client_type");
+  const currentClientId = form.watch("client_id");
+  
+  // Update form when client type changes
+  const handleClientTypeChange = (value: 'existing' | 'new') => {
+    setClientType(value);
+    form.setValue('client_type', value);
+    
+    if (value === 'new') {
+      form.setValue('client_id', '');
+      setSelectedClient(null);
+    }
+  };
+  
+  // Update selected client when client_id changes
+  React.useEffect(() => {
+    if (currentClientId && currentClientType === 'existing') {
+      const client = clients.find(c => c.id === currentClientId);
+      if (client) {
+        setSelectedClient(client);
+        form.setValue('applicant_name', client.full_name);
+      }
+    }
+  }, [currentClientId, clients, form, currentClientType]);
+  
+  const getClientInitials = (name: string) => {
+    return name.split(' ')
+      .map(part => part.charAt(0).toUpperCase())
+      .slice(0, 2)
+      .join('');
+  };
+  
+  const renderEmploymentStatusBadge = (status: string) => {
+    switch(status) {
+      case 'employed':
+        return <Badge className="bg-green-600">Employed</Badge>;
+      case 'self-employed':
+        return <Badge className="bg-blue-600">Self-Employed</Badge>;
+      case 'unemployed':
+        return <Badge variant="destructive">Unemployed</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return numAmount.toLocaleString('en-UG', { style: 'currency', currency: 'UGX' }).replace('UGX', 'UGX ');
+  };
 
   return (
     <>
@@ -95,46 +170,221 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormSection title="Applicant Information" />
+          <Tabs value={clientType} onValueChange={(v) => handleClientTypeChange(v as 'existing' | 'new')} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="existing" disabled={!!preselectedClientId}>
+                <UserCheck className="mr-2 h-4 w-4" />
+                Existing Client
+              </TabsTrigger>
+              <TabsTrigger value="new" disabled={!!preselectedClientId}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                New Client
+              </TabsTrigger>
+            </TabsList>
             
-          <FormField
-            control={form.control}
-            name="client_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Client</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
-                  defaultValue={field.value}
-                  disabled={isLoadingClients || !!preselectedClientId}
-                >
-                  <FormControl>
-                    <SelectTrigger className="bg-white dark:bg-gray-950">
-                      <SelectValue placeholder={isLoadingClients ? "Loading clients..." : "Select a client"} />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {isLoadingClients ? (
-                      <div className="flex items-center justify-center p-2">
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        <span>Loading...</span>
+            <TabsContent value="existing" className="pt-4">
+              <FormField
+                control={form.control}
+                name="client_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Select Client</FormLabel>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                      }} 
+                      defaultValue={field.value}
+                      disabled={isLoadingClients || !!preselectedClientId}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="bg-white dark:bg-gray-950">
+                          <SelectValue placeholder={isLoadingClients ? "Loading clients..." : "Select a client"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {isLoadingClients ? (
+                          <div className="flex items-center justify-center p-2">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            <span>Loading...</span>
+                          </div>
+                        ) : clients.length > 0 ? (
+                          clients.map((client) => (
+                            <SelectItem key={client.id} value={client.id}>
+                              <div className="flex items-center">
+                                <Avatar className="h-6 w-6 mr-2">
+                                  <AvatarFallback>{getClientInitials(client.full_name)}</AvatarFallback>
+                                </Avatar>
+                                {client.full_name}
+                              </div>
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="p-2 text-center text-gray-500">No clients found</div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Client information card */}
+              {selectedClient && (
+                <Card className="mt-4 border border-gray-200 dark:border-gray-700">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center mb-4">
+                      <Avatar className="h-12 w-12 mr-4">
+                        <AvatarFallback className="bg-purple-700 text-white">
+                          {getClientInitials(selectedClient.full_name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="text-lg font-semibold">{selectedClient.full_name}</h3>
+                        {renderEmploymentStatusBadge(selectedClient.employment_status)}
                       </div>
-                    ) : clients.length > 0 ? (
-                      clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.full_name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-2 text-center text-gray-500">No clients found</div>
-                    )}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mt-2">
+                      <div>
+                        <p className="text-sm text-gray-500">ID Number</p>
+                        <p>{selectedClient.id_number}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Phone</p>
+                        <p>{selectedClient.phone_number}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Address</p>
+                        <p>{selectedClient.address}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Monthly Income</p>
+                        <p>{formatCurrency(selectedClient.monthly_income)}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="new" className="pt-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="full_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter client's full name" {...field} className="bg-white dark:bg-gray-950" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="phone_number"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 0771234567" {...field} className="bg-white dark:bg-gray-950" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="id_number"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ID Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="National ID Number" {...field} className="bg-white dark:bg-gray-950" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email (Optional)</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="client@example.com" {...field} className="bg-white dark:bg-gray-950" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem className="col-span-2">
+                          <FormLabel>Address</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Client's residence address" {...field} className="bg-white dark:bg-gray-950" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="employment_status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Employment Status</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="bg-white dark:bg-gray-950">
+                                <SelectValue placeholder="Select employment status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="employed">Employed</SelectItem>
+                              <SelectItem value="self-employed">Self-Employed</SelectItem>
+                              <SelectItem value="unemployed">Unemployed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="monthly_income"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Monthly Income (UGX)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 1,500,000" {...field} className="bg-white dark:bg-gray-950" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
           
+          <FormSection title="Loan Details" />
+
           <FormField
             control={form.control}
             name="applicant_name"
@@ -142,14 +392,17 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
               <FormItem>
                 <FormLabel>Applicant Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter full name" {...field} className="bg-white dark:bg-gray-950" />
+                  <Input 
+                    placeholder="Enter full name" 
+                    {...field} 
+                    className="bg-white dark:bg-gray-950"
+                    disabled={selectedClient !== null}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
-          <FormSection title="Loan Details" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
