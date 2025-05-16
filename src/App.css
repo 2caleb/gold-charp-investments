@@ -42,19 +42,20 @@
   color: #888;
 }
 
-/* Glass effect for navbar */
+/* Glass effect for navbar - updated with more opacity and stronger blur */
 .glass-navbar {
-  background: rgba(255, 255, 255, 0.75);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   transition: all 0.3s ease;
 }
 
-/* Dark mode glass effect */
+/* Dark mode glass effect - updated with more opacity and stronger blur */
 .dark .glass-navbar {
-  background: rgba(17, 24, 39, 0.75);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(17, 24, 39, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25);
   transition: all 0.3s ease;
 }
