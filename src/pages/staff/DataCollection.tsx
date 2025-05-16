@@ -126,29 +126,29 @@ const DataCollection = () => {
                 <CardDescription>Common tasks for client management</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Link to="/clients/new">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Users className="mr-2 h-4 w-4" />
-                      Add New Client
+                    <Button variant="outline" className="w-full justify-start truncate h-auto py-2.5">
+                      <Users className="min-w-4 h-4 mr-2" />
+                      <span className="truncate">Add New Client</span>
                     </Button>
                   </Link>
                   <Link to="/loan-applications/new">
-                    <Button variant="outline" className="w-full justify-start">
-                      <FileText className="mr-2 h-4 w-4" />
-                      New Loan Application
+                    <Button variant="outline" className="w-full justify-start truncate h-auto py-2.5">
+                      <FileText className="min-w-4 h-4 mr-2" />
+                      <span className="truncate">New Loan Application</span>
                     </Button>
                   </Link>
                   <Link to="/clients">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Users className="mr-2 h-4 w-4" />
-                      View All Clients
+                    <Button variant="outline" className="w-full justify-start truncate h-auto py-2.5">
+                      <Users className="min-w-4 h-4 mr-2" />
+                      <span className="truncate">View All Clients</span>
                     </Button>
                   </Link>
                   <Link to="/dashboard">
-                    <Button variant="outline" className="w-full justify-start">
-                      <ChartBar className="mr-2 h-4 w-4" />
-                      View Dashboard
+                    <Button variant="outline" className="w-full justify-start truncate h-auto py-2.5">
+                      <ChartBar className="min-w-4 h-4 mr-2" />
+                      <span className="truncate">View Dashboard</span>
                     </Button>
                   </Link>
                 </div>
