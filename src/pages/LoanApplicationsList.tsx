@@ -63,7 +63,7 @@ const LoanApplicationsList = () => {
       try {
         const { data, error } = await supabase
           .from('loan_applications')
-          .select('id, client_name, loan_amount, loan_type, status, created_at, loan_id, rejection_reason, approval_notes, original_amount');
+          .select('id, client_name, loan_amount, loan_type, status, created_at, loan_id, rejection_reason, approval_notes');
 
         if (error) throw error;
         
@@ -79,7 +79,7 @@ const LoanApplicationsList = () => {
             loan_id: app.loan_id || 'No ID',
             rejection_reason: app.rejection_reason,
             approval_notes: app.approval_notes,
-            original_amount: app.original_amount
+            original_amount: undefined // Since we're not querying this field, set it as undefined
           }));
           
           setApplications(safeData);

@@ -7,7 +7,6 @@ import { ChartBar, FileText, Users, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
 interface RecentApplication {
   client_name: string;
@@ -129,15 +128,7 @@ const DataCollection = () => {
               </p>
             </div>
             
-            <div className="mt-4 md:mt-0 flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4">
-              <Button 
-                variant="outline" 
-                onClick={handleGenerateNewLoanId} 
-                className="flex items-center justify-center"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Generate Loan ID
-              </Button>
+            <div className="mt-4 md:mt-0">
               <DataCollectionButton />
             </div>
           </div>

@@ -25,6 +25,7 @@ import { useLoanCalculator } from '@/hooks/use-loan-calculator';
 import LoanCalculationDisplay from './LoanCalculationDisplay';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
+import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
 // Define the form schema with Zod
 const clientFormSchema = z.object({
