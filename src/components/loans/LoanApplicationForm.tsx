@@ -996,6 +996,25 @@ const LoanApplicationForm = () => {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
+                  <CardTitle className="text-base">Applicant Passport Photo</CardTitle>
+                  <CardDescription>Upload a passport-sized photo of the applicant</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DocumentUpload 
+                    title="Passport Photo"
+                    documentType="passport_photo"
+                    onUpload={handleNationalIdUpload}
+                    isUploading={false}
+                    iconType="user"
+                    enableCapture={true}
+                    isPrintable={true}
+                    isPrintReady={form.getValues('fullName') !== '' && form.getValues('nationalId') !== ''}
+                  />
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
                   <CardTitle className="text-base">National ID</CardTitle>
                   <CardDescription>Upload a clear scan or photo of your National ID (front and back)</CardDescription>
                 </CardHeader>
@@ -1010,6 +1029,8 @@ const LoanApplicationForm = () => {
                     enableScanning={true}
                     uploadedFiles={nationalIdDocuments}
                     onDelete={(id) => handleDeleteDocument(id, 'id_document')}
+                    isPrintable={true}
+                    isPrintReady={form.getValues('fullName') !== '' && form.getValues('nationalId') !== ''}
                   />
                 </CardContent>
               </Card>
@@ -1027,47 +1048,79 @@ const LoanApplicationForm = () => {
                     isUploading={false}
                     uploadedFiles={incomeDocuments}
                     onDelete={(id) => handleDeleteDocument(id, 'proof_of_income')}
+                    isPrintable={true}
+                    isPrintReady={form.getValues('monthlyIncome') !== ''}
                   />
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Guarantor 1 ID</CardTitle>
-                  <CardDescription>Upload ID document for first guarantor</CardDescription>
+                  <CardTitle className="text-base">Guarantor 1 Documents</CardTitle>
+                  <CardDescription>Upload documents for first guarantor</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <DocumentUpload 
-                    title="Guarantor 1 ID"
-                    documentType="id_document"
-                    onUpload={handleGuarantor1Upload}
-                    isUploading={false}
-                    iconType="id"
-                    enableCapture={true}
-                    enableScanning={true}
-                    uploadedFiles={guarantor1Documents}
-                    onDelete={(id) => handleDeleteDocument(id, 'guarantor1_id')}
-                  />
+                  <div className="space-y-4">
+                    <DocumentUpload 
+                      title="Guarantor 1 Passport Photo"
+                      documentType="guarantor1_photo"
+                      onUpload={handleGuarantor1Upload}
+                      isUploading={false}
+                      iconType="user"
+                      enableCapture={true}
+                      isPrintable={true}
+                      isPrintReady={form.getValues('guarantor1FullName') !== '' && form.getValues('guarantor1NationalId') !== ''}
+                    />
+                    
+                    <DocumentUpload 
+                      title="Guarantor 1 ID"
+                      documentType="id_document"
+                      onUpload={handleGuarantor1Upload}
+                      isUploading={false}
+                      iconType="id"
+                      enableCapture={true}
+                      enableScanning={true}
+                      uploadedFiles={guarantor1Documents.filter(doc => doc.documentType === 'id_document')}
+                      onDelete={(id) => handleDeleteDocument(id, 'guarantor1_id')}
+                      isPrintable={true}
+                      isPrintReady={form.getValues('guarantor1FullName') !== '' && form.getValues('guarantor1NationalId') !== ''}
+                    />
+                  </div>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Guarantor 2 ID</CardTitle>
-                  <CardDescription>Upload ID document for second guarantor</CardDescription>
+                  <CardTitle className="text-base">Guarantor 2 Documents</CardTitle>
+                  <CardDescription>Upload documents for second guarantor</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <DocumentUpload 
-                    title="Guarantor 2 ID"
-                    documentType="id_document"
-                    onUpload={handleGuarantor2Upload}
-                    isUploading={false}
-                    iconType="id"
-                    enableCapture={true}
-                    enableScanning={true}
-                    uploadedFiles={guarantor2Documents}
-                    onDelete={(id) => handleDeleteDocument(id, 'guarantor2_id')}
-                  />
+                  <div className="space-y-4">
+                    <DocumentUpload 
+                      title="Guarantor 2 Passport Photo"
+                      documentType="guarantor2_photo"
+                      onUpload={handleGuarantor2Upload}
+                      isUploading={false}
+                      iconType="user"
+                      enableCapture={true}
+                      isPrintable={true}
+                      isPrintReady={form.getValues('guarantor2FullName') !== '' && form.getValues('guarantor2NationalId') !== ''}
+                    />
+                    
+                    <DocumentUpload 
+                      title="Guarantor 2 ID"
+                      documentType="id_document"
+                      onUpload={handleGuarantor2Upload}
+                      isUploading={false}
+                      iconType="id"
+                      enableCapture={true}
+                      enableScanning={true}
+                      uploadedFiles={guarantor2Documents.filter(doc => doc.documentType === 'id_document')}
+                      onDelete={(id) => handleDeleteDocument(id, 'guarantor2_id')}
+                      isPrintable={true}
+                      isPrintReady={form.getValues('guarantor2FullName') !== '' && form.getValues('guarantor2NationalId') !== ''}
+                    />
+                  </div>
                 </CardContent>
               </Card>
               
@@ -1087,6 +1140,8 @@ const LoanApplicationForm = () => {
                       enableCapture={true}
                       uploadedFiles={collateralDocuments}
                       onDelete={(id) => handleDeleteDocument(id, 'collateral_photo')}
+                      isPrintable={true}
+                      isPrintReady={form.getValues('hasCollateral') && form.getValues('collateralType') !== ''}
                     />
                   </CardContent>
                 </Card>

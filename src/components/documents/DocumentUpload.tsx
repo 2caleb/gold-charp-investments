@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, X, FileText, Camera, Home, File, Video, ScanLine, Trash2 } from 'lucide-react';
+import { Loader2, Upload, X, FileText, Camera, Home, File, Video, ScanLine, Trash2, Printer } from 'lucide-react';
 import { useMediaCapture } from '@/hooks/use-media-capture';
 import { DocumentScanner } from '@/components/media/DocumentScanner';
 
@@ -19,14 +19,16 @@ interface UploadedFile {
 
 interface DocumentUploadProps {
   title: string;
-  documentType: 'id_document' | 'collateral_photo' | 'property_document' | 'loan_agreement' | 'video_evidence';
+  documentType: 'id_document' | 'collateral_photo' | 'property_document' | 'loan_agreement' | 'video_evidence' | 'passport_photo' | 'guarantor1_photo' | 'guarantor2_photo';
   onUpload: (file: File, description?: string, tags?: string[]) => Promise<void>;
   isUploading: boolean;
-  iconType?: 'id' | 'photo' | 'property' | 'document' | 'video';
+  iconType?: 'id' | 'photo' | 'property' | 'document' | 'video' | 'user';
   enableScanning?: boolean;
   enableCapture?: boolean;
   uploadedFiles?: UploadedFile[];
   onDelete?: (fileId: string) => Promise<void>;
+  isPrintable?: boolean;
+  isPrintReady?: boolean;
 }
 
 export const DocumentUpload: React.FC<DocumentUploadProps> = ({
@@ -38,7 +40,9 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   enableScanning = false,
   enableCapture = false,
   uploadedFiles = [],
-  onDelete
+  onDelete,
+  isPrintable = false,
+  isPrintReady = false
 }) => {
   const [description, setDescription] = useState('');
   const [showScanner, setShowScanner] = useState(false);
@@ -51,7 +55,8 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
     photo: <Camera className="h-6 w-6" />,
     property: <Home className="h-6 w-6" />,
     document: <File className="h-6 w-6" />,
-    video: <Video className="h-6 w-6" />
+    video: <Video className="h-6 w-6" />,
+    user: <Camera className="h-6 w-6" />
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,6 +143,11 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
     }
   };
 
+  const handlePrint = () => {
+    if (!isPrintReady) return;
+    window.print();
+  };
+
   // Combine uploaded files from props and local state
   const allFiles = [
     ...uploadedFiles,
@@ -168,9 +178,23 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       ) : (
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="flex items-center mb-4">
-              {icons[iconType]}
-              <h3 className="text-lg font-medium ml-2">{title}</h3>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                {icons[iconType]}
+                <h3 className="text-lg font-medium ml-2">{title}</h3>
+              </div>
+              {isPrintable && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePrint}
+                  disabled={!isPrintReady}
+                  className={`${!isPrintReady ? 'opacity-30 cursor-not-allowed' : ''}`}
+                  title={isPrintReady ? "Print document" : "Complete the form to enable printing"}
+                >
+                  <Printer className="h-5 w-5" />
+                </Button>
+              )}
             </div>
             
             <div className="space-y-4">
@@ -191,7 +215,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                   onChange={handleFileChange}
                   className="hidden"
                   id={`file-upload-${documentType}`}
-                  accept={documentType === 'video_evidence' ? 'video/*' : 'image/*,.pdf,.doc,.docx'}
+                  accept={documentType.includes('photo') ? 'image/*' : documentType === 'video_evidence' ? 'video/*' : 'image/*,.pdf,.doc,.docx'}
                 />
                 
                 <div className="flex flex-wrap gap-2 mb-4">
@@ -219,14 +243,14 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                     </Button>
                   )}
                   
-                  {enableCapture && (
+                  {(enableCapture || documentType.includes('photo')) && (
                     <Button 
                       onClick={handleCaptureImage}
                       disabled={isUploading}
                       variant="outline"
                     >
                       <Camera className="h-4 w-4 mr-2" />
-                      Take Photo
+                      {documentType.includes('passport') ? 'Take Passport Photo' : 'Take Photo'}
                     </Button>
                   )}
                   

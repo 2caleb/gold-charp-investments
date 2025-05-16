@@ -7,6 +7,7 @@ import { ChartBar, FileText, Users, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
 interface RecentApplication {
   client_name: string;
