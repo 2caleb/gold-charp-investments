@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RealTimeUpdates from './RealTimeUpdates';
 import { LoanDetailsForm } from './LoanDetailsForm';
@@ -48,6 +48,13 @@ const LoanApplicationForm = () => {
     getPropertyDocumentUrl,
     getLoanAgreementUrl
   } = useLoanApplicationForm();
+
+  // Auto-transition to documents tab when loan application is submitted
+  useEffect(() => {
+    if (loanApplicationId) {
+      setActiveTab("documents");
+    }
+  }, [loanApplicationId, setActiveTab]);
 
   return (
     <>

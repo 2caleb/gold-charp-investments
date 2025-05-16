@@ -21,6 +21,11 @@ import About from '@/pages/About';
 import DataCollection from '@/pages/staff/DataCollection';
 import NewClient from '@/pages/NewClient';
 import ClientsList from '@/pages/ClientsList';
+import ManagerReviewDashboard from '@/pages/staff/ManagerReviewDashboard';
+import DirectorRiskDashboard from '@/pages/staff/DirectorRiskDashboard';
+import CEOApprovalDashboard from '@/pages/staff/CEOApprovalDashboard';
+import ChairpersonFinalDashboard from '@/pages/staff/ChairpersonFinalDashboard';
+import RoleBasedRoute from '@/components/auth/RoleBasedRoute';
 
 function App() {
   return (
@@ -57,6 +62,28 @@ function App() {
         <Route path="/staff/data-collection" element={
           <PrivateRoute>
             <DataCollection />
+          </PrivateRoute>
+        } />
+        
+        {/* Role-specific dashboards */}
+        <Route path="/staff/manager-review" element={
+          <PrivateRoute>
+            <ManagerReviewDashboard />
+          </PrivateRoute>
+        } />
+        <Route path="/staff/director-risk" element={
+          <PrivateRoute>
+            <DirectorRiskDashboard />
+          </PrivateRoute>
+        } />
+        <Route path="/staff/ceo-approval" element={
+          <PrivateRoute>
+            <CEOApprovalDashboard />
+          </PrivateRoute>
+        } />
+        <Route path="/staff/chairperson-approval" element={
+          <PrivateRoute>
+            <ChairpersonFinalDashboard />
           </PrivateRoute>
         } />
         

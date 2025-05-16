@@ -1,14 +1,14 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@/hooks/use-user';
 
 export type Role = 'field_officer' | 'manager' | 'director' | 'ceo' | 'chairperson' | 'client' | 'it_personnel';
 
 export function useRolePermissions() {
-  const { userProfile } = useUser();
-  const [isLoading, setIsLoading] = useState(false);
+  const { userProfile, isLoading: userLoading } = useUser();
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Get the actual user role from profile, but don't restrict permissions based on it
+  // Get the actual user role from profile
   const userRole = userProfile?.role as Role | null;
   
   // Map workflow stages to roles - defined before use
@@ -22,22 +22,28 @@ export function useRolePermissions() {
   
   // Now we can use roleToStage
   const currentWorkflowStage = userRole ? roleToStage[userRole] : null;
+
+  useEffect(() => {
+    if (!userLoading) {
+      setIsLoading(false);
+    }
+  }, [userLoading]);
   
-  // Grant all permissions to all authenticated users
-  const canCollectData = true;
-  const canReviewApplications = true;
-  const canAssessRisk = true;
-  const canApprove = true;
-  const canFinalizeApproval = true;
-  const canViewAllApplications = true;
-  const canAccessDashboard = true;
-  const canAccessFullInterface = true;
+  // Grant permissions based on role
+  const canCollectData = !!userRole;
+  const canReviewApplications = ['manager', 'director', 'ceo', 'chairperson'].includes(userRole || '');
+  const canAssessRisk = ['director', 'ceo', 'chairperson'].includes(userRole || '');
+  const canApprove = ['ceo', 'chairperson'].includes(userRole || '');
+  const canFinalizeApproval = userRole === 'chairperson';
+  const canViewAllApplications = !!userRole;
+  const canAccessDashboard = !!userRole;
+  const canAccessFullInterface = !!userRole;
 
   return {
     userRole,
     isLoading,
     currentWorkflowStage,
-    // Access permissions - all set to true
+    // Access permissions based on role
     canCollectData,
     canReviewApplications,
     canAssessRisk,
@@ -46,7 +52,7 @@ export function useRolePermissions() {
     canViewAllApplications,
     canAccessDashboard,
     canAccessFullInterface,
-    // Role checks - still based on actual role for display purposes
+    // Role checks
     isFieldOfficer: userRole === 'field_officer',
     isManager: userRole === 'manager',
     isDirector: userRole === 'director',

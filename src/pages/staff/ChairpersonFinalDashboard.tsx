@@ -1,0 +1,160 @@
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Layout from '@/components/layout/Layout';
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Stamp, FileText } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useRolePermissions } from '@/hooks/use-role-permissions';
+
+const ChairpersonFinalDashboard = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { userRole } = useRolePermissions();
+  const [applications, setApplications] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPendingApplications = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch applications pending Chairperson final approval
+        const { data, error } = await supabase
+          .from('loan_applications')
+          .select(`
+            id, 
+            client_name, 
+            loan_amount, 
+            loan_type, 
+            purpose_of_loan,
+            created_at, 
+            status, 
+            loan_application_workflow(current_stage, ceo_approved)
+          `)
+          .eq('loan_application_workflow.current_stage', 'ceo')
+          .eq('loan_application_workflow.ceo_approved', true)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        setApplications(data || []);
+      } catch (error: any) {
+        console.error('Error fetching applications:', error);
+        toast({
+          title: 'Failed to load applications',
+          description: error.message,
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (userRole === 'chairperson') {
+      fetchPendingApplications();
+    }
+  }, [toast, userRole]);
+
+  const handleViewApplication = (id: string) => {
+    navigate(`/loan-applications/${id}`);
+  };
+
+  if (userRole !== 'chairperson') {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold mb-6">Chairperson Final Approval Dashboard</h1>
+          <Card>
+            <CardContent className="flex items-center justify-center p-8">
+              <p className="text-lg text-gray-600">
+                You do not have permission to access this page. This page is only available for users with the Chairperson role.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-2">Chairperson Final Approval Dashboard</h1>
+        <p className="text-lg text-gray-600 mb-6">
+          Provide final approval for loan applications that have been approved by the CEO.
+        </p>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin mr-3" />
+            <p>Loading applications...</p>
+          </div>
+        ) : applications.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center p-8">
+              <p className="text-lg text-gray-600 mb-2">No applications pending final approval</p>
+              <p className="text-gray-500">All current applications have been reviewed.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6">
+            {applications.map((application) => (
+              <Card key={application.id} className="shadow-md">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-center">
+                    <CardTitle className="text-xl font-medium">
+                      {application.client_name}
+                    </CardTitle>
+                    <Badge className="bg-green-500">{application.status}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Loan Amount</p>
+                      <p className="text-lg">{application.loan_amount} UGX</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Loan Type</p>
+                      <p className="text-lg capitalize">{application.loan_type}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Purpose</p>
+                      <p className="text-lg">{application.purpose_of_loan}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Stage</p>
+                      <p className="text-lg">Final Approval</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="flex items-center"
+                        onClick={() => handleViewApplication(application.id)}
+                      >
+                        <Stamp className="mr-2 h-4 w-4" />
+                        Finalize Approval
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      {new Date(application.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </Layout>
+  );
+};
+
+export default ChairpersonFinalDashboard;

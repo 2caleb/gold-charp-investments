@@ -1,20 +1,28 @@
 
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import GoldCharpLogo from '@/components/logo/GoldCharpLogo';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/hooks/use-user';
+import { useRolePermissions } from '@/hooks/use-role-permissions';
 
 interface RoleBasedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: string[]; // Not used anymore but kept for compatibility
+  allowedRoles?: string[];
   redirectTo?: string;
 }
 
 const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({ 
   children, 
+  allowedRoles = [], 
   redirectTo = '/' 
 }) => {
-  const { isLoading } = useAuth();
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
+  const { userProfile, isLoading: profileLoading } = useUser();
+  const { userRole } = useRolePermissions();
+  
+  const isLoading = authLoading || profileLoading;
 
   if (isLoading) {
     return (
@@ -25,7 +33,22 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     );
   }
 
-  // Allow access to all authenticated users regardless of role
+  // If no specific roles are required, allow access to all authenticated users
+  if (allowedRoles.length === 0) {
+    return <>{children}</>;
+  }
+
+  // Check if user has required role
+  const hasRequiredRole = allowedRoles.includes(userRole || '');
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  if (!hasRequiredRole) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
   return <>{children}</>;
 };
 

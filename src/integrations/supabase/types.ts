@@ -9,7 +9,22 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      clients: {
+      applicant_name: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
+      client_name: {
         Row: {
           address: string
           created_at: string
