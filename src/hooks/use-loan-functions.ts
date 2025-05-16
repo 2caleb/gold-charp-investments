@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { generateRejectionReason, generateDownsizingReason } from '@/utils/loanUtils';
 
 export function useLoanFunctions() {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,8 +11,15 @@ export function useLoanFunctions() {
   /**
    * Process a new loan application through the backend
    */
-  const processLoanApplication = async (loanId: string, clientName: string, loanAmount: string, 
-    loanType: string, employmentStatus: string, monthlyIncome: string) => {
+  const processLoanApplication = async (
+    loanId: string, 
+    clientName: string, 
+    loanAmount: string, 
+    loanType: string, 
+    employmentStatus: string, 
+    monthlyIncome: string,
+    loanIdentificationNumber: string
+  ) => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('process-loan-application', {
@@ -21,7 +29,8 @@ export function useLoanFunctions() {
           loan_amount: loanAmount,
           loan_type: loanType,
           employment_status: employmentStatus,
-          monthly_income: monthlyIncome
+          monthly_income: monthlyIncome,
+          loan_identification_number: loanIdentificationNumber
         }
       });
 
@@ -51,26 +60,54 @@ export function useLoanFunctions() {
    */
   const handleLoanApproval = async (
     loanId: string, 
-    action: 'approve' | 'reject', 
+    action: 'approve' | 'reject' | 'downsize', 
     notes: string, 
-    approverId: string
+    approverId: string,
+    employmentStatus?: string,
+    monthlyIncome?: string,
+    loanAmount?: string,
+    downsizedAmount?: string,
+    roleType?: 'manager' | 'director' | 'ceo' | 'chairperson'
   ) => {
     setIsLoading(true);
     try {
+      // Generate reason if not provided
+      let finalNotes = notes;
+      
+      if (action === 'reject' && !notes && roleType && employmentStatus && loanAmount && monthlyIncome) {
+        finalNotes = generateRejectionReason(roleType, employmentStatus, loanAmount, monthlyIncome);
+      }
+      
+      if (action === 'downsize' && !notes && loanAmount && downsizedAmount && monthlyIncome) {
+        finalNotes = generateDownsizingReason(loanAmount, downsizedAmount, monthlyIncome);
+      }
+      
       const { data, error } = await supabase.functions.invoke('loan-approval', {
         body: {
           loan_id: loanId,
           action,
-          notes,
-          approver_id: approverId
+          notes: finalNotes,
+          approver_id: approverId,
+          downsized_amount: downsizedAmount
         }
       });
 
       if (error) throw error;
       
+      let toastTitle = 'Action Successful';
+      let description = data.message;
+      
+      if (action === 'approve') {
+        toastTitle = 'Loan Approved';
+      } else if (action === 'reject') {
+        toastTitle = 'Loan Rejected';
+      } else if (action === 'downsize') {
+        toastTitle = 'Loan Amount Adjusted';
+      }
+      
       toast({
-        title: action === 'approve' ? 'Loan Approved' : 'Loan Rejected',
-        description: data.message,
+        title: toastTitle,
+        description,
       });
       
       return data;

@@ -228,6 +228,21 @@ const LoanApplicationForm = () => {
     }
   };
   
+  // Fix TypeScript errors: Update the document upload handlers to return Promises
+  const handleDocumentUpload = async (file: File, description?: string, tags?: string[]): Promise<void> => {
+    return new Promise((resolve) => {
+      // Simulate upload process
+      setTimeout(() => {
+        console.log('Document uploaded:', file.name);
+        toast({
+          title: "Document Uploaded",
+          description: `${file.name} has been uploaded successfully.`,
+        });
+        resolve();
+      }, 1500);
+    });
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -670,7 +685,7 @@ const LoanApplicationForm = () => {
                 <CardContent>
                   <DocumentUpload 
                     documentType="id_document"
-                    onUpload={() => {}}
+                    onUpload={handleDocumentUpload}
                     isUploading={false}
                   />
                 </CardContent>
@@ -684,7 +699,7 @@ const LoanApplicationForm = () => {
                 <CardContent>
                   <DocumentUpload 
                     documentType="loan_agreement"
-                    onUpload={() => {}}
+                    onUpload={handleDocumentUpload}
                     isUploading={false}
                   />
                 </CardContent>
@@ -700,7 +715,7 @@ const LoanApplicationForm = () => {
                     <DocumentUpload 
                       title="Collateral Documents"
                       documentType="collateral_photo"
-                      onUpload={() => {}}
+                      onUpload={handleDocumentUpload}
                       isUploading={false}
                     />
                   </CardContent>
@@ -717,7 +732,7 @@ const LoanApplicationForm = () => {
                     <DocumentUpload 
                       title="Business Documents"
                       documentType="property_document"
-                      onUpload={() => {}}
+                      onUpload={handleDocumentUpload}
                       isUploading={false}
                     />
                   </CardContent>

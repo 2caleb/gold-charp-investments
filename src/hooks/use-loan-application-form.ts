@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Client } from '@/types/schema';
 import { useDocumentUpload, UploadedDocument } from '@/hooks/use-document-upload';
 import { LoanApplicationValues } from '@/components/loans/LoanDetailsForm';
+import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
 export function useLoanApplicationForm() {
   const { user } = useAuth();
@@ -22,6 +22,7 @@ export function useLoanApplicationForm() {
   const [loanApplicationId, setLoanApplicationId] = useState<string | null>(null);
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [loanIdentificationNumber, setLoanIdentificationNumber] = useState<string>('');
   
   // Document upload hooks
   const {
@@ -59,6 +60,11 @@ export function useLoanApplicationForm() {
     deleteDocument: deleteLoanAgreement,
     setUploadedDocuments: setLoanAgreements
   } = useDocumentUpload();
+
+  // Generate a loan ID when the hook is initialized
+  useEffect(() => {
+    setLoanIdentificationNumber(generateLoanIdentificationNumber());
+  }, []);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -283,7 +289,8 @@ export function useLoanApplicationForm() {
           current_approver: manager_id,
           employment_status: clientData.employment_status,
           monthly_income: clientData.monthly_income.toString(),
-          email: clientData.email
+          email: clientData.email,
+          loan_id: loanIdentificationNumber // Add the loan identification number
         })
         .select();
 
@@ -298,7 +305,7 @@ export function useLoanApplicationForm() {
         
         toast({
           title: "Loan application submitted",
-          description: "Your loan application has been submitted successfully. You can now upload supporting documents.",
+          description: `Your loan application has been submitted successfully with ID: ${loanIdentificationNumber}. You can now upload supporting documents.`,
           variant: "default",
         });
       } else {
@@ -378,6 +385,16 @@ export function useLoanApplicationForm() {
     }
   };
 
+  const regenerateLoanId = () => {
+    const newId = generateLoanIdentificationNumber();
+    setLoanIdentificationNumber(newId);
+    
+    toast({
+      title: "Loan ID Regenerated",
+      description: `New loan ID: ${newId}`,
+    });
+  };
+
   const handleFinish = () => {
     // Navigate to the loan applications list or another appropriate page
     navigate('/loan-applications');
@@ -400,6 +417,7 @@ export function useLoanApplicationForm() {
     loanApplicationId,
     isLoadingDocuments,
     submissionError,
+    loanIdentificationNumber,
     
     // Document states
     idDocuments,
@@ -415,6 +433,7 @@ export function useLoanApplicationForm() {
     handleSubmit,
     handleLoanUpdate,
     handleFinish,
+    regenerateLoanId,
     handleUploadIdDocument,
     handleUploadCollateralPhoto,
     handleUploadPropertyDocument,

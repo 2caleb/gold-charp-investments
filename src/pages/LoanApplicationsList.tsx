@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { FilePlus, Eye, Loader2 } from 'lucide-react';
+import { FilePlus, Eye, Loader2, AlertTriangle, InfoIcon } from 'lucide-react';
 import DataCollectionButton from '@/components/loans/DataCollectionButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +11,7 @@ import { useRolePermissions } from '@/hooks/use-role-permissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LoanApplication {
   id: string;
@@ -19,6 +20,10 @@ interface LoanApplication {
   loan_type: string;
   status: string;
   created_at: string;
+  loan_id?: string; // New field for loan ID
+  rejection_reason?: string;
+  approval_notes?: string;
+  original_amount?: string;
 }
 
 const getStatusColor = (status: string) => {
@@ -34,6 +39,8 @@ const getStatusColor = (status: string) => {
       return 'bg-green-100 text-green-800 border-green-200';
     case 'rejected':
       return 'bg-red-100 text-red-800 border-red-200';
+    case 'downsized':
+      return 'bg-amber-100 text-amber-800 border-amber-200';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200';
   }
@@ -57,7 +64,7 @@ const LoanApplicationsList = () => {
       try {
         const { data, error } = await supabase
           .from('loan_applications')
-          .select('id, client_name, loan_amount, loan_type, status, created_at')
+          .select('id, client_name, loan_amount, loan_type, status, created_at, loan_id, rejection_reason, approval_notes, original_amount')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -143,6 +150,7 @@ const LoanApplicationsList = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Loan ID</TableHead>
                         <TableHead>Client Name</TableHead>
                         <TableHead>Loan Type</TableHead>
                         <TableHead>Amount</TableHead>
@@ -154,13 +162,48 @@ const LoanApplicationsList = () => {
                     <TableBody>
                       {applications.map((application) => (
                         <TableRow key={application.id}>
+                          <TableCell className="font-mono">
+                            {application.loan_id || 'No ID'}
+                          </TableCell>
                           <TableCell className="font-medium">{application.client_name}</TableCell>
                           <TableCell className="capitalize">{application.loan_type}</TableCell>
-                          <TableCell>{application.loan_amount} UGX</TableCell>
+                          <TableCell>
+                            {application.status === 'downsized' && application.original_amount ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger className="flex items-center">
+                                    <span className="line-through text-gray-500 mr-1">{application.original_amount}</span>
+                                    {application.loan_amount} UGX
+                                    <AlertTriangle className="h-4 w-4 ml-1 text-amber-500" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-sm">
+                                    <p>Loan amount reduced from original request of {application.original_amount} UGX</p>
+                                    {application.approval_notes && (
+                                      <p className="mt-1 text-xs">{application.approval_notes}</p>
+                                    )}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              `${application.loan_amount} UGX`
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Badge className={`${getStatusColor(application.status)}`}>
                               {formatStatus(application.status)}
                             </Badge>
+                            {application.status === 'rejected' && application.rejection_reason && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger className="ml-2">
+                                    <InfoIcon className="h-4 w-4 text-red-500" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-sm">
+                                    <p>{application.rejection_reason}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                           </TableCell>
                           <TableCell>{new Date(application.created_at).toLocaleDateString()}</TableCell>
                           <TableCell className="text-right">
