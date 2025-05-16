@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -63,8 +64,9 @@ export function useLoanApplicationForm() {
     const fetchClients = async () => {
       setIsLoadingClients(true);
       try {
+        // Changed from 'clients' to 'client_name' to match the actual table name
         const { data, error } = await supabase
-          .from('clients')
+          .from('client_name')
           .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income, created_at, updated_at, user_id, email');
         
         if (error) throw error;
@@ -201,9 +203,9 @@ export function useLoanApplicationForm() {
           throw new Error("Missing required client information");
         }
         
-        // Create new client
+        // Create new client - changed from 'clients' to 'client_name'
         const { data: newClientData, error: newClientError } = await supabase
-          .from('clients')
+          .from('client_name')
           .insert({
             full_name: values.full_name,
             phone_number: values.phone_number,

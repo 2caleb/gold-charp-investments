@@ -27,6 +27,7 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
+        <GoldCharpLogo className="h-16 w-16 mb-6" />
         <Loader2 className="h-12 w-12 animate-spin text-purple-700 mb-4" />
         <p className="text-gray-600 text-lg">Loading...</p>
       </div>
@@ -35,7 +36,7 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
 
   // If no specific roles are required, allow access to all authenticated users
   if (allowedRoles.length === 0) {
-    return <>{children}</>;
+    return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
   }
 
   // Check if user has required role

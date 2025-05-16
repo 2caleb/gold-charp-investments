@@ -9,6 +9,7 @@ import LoanApplicationsList from '@/pages/LoanApplicationsList';
 import LoanApprovalPage from '@/pages/LoanApprovalPage';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
+import RoleBasedRoute from '@/components/auth/RoleBasedRoute';
 import { Toaster } from '@/components/ui/toaster';
 import Dashboard from '@/pages/Dashboard';
 import Notifications from '@/pages/Notifications';
@@ -25,7 +26,6 @@ import ManagerReviewDashboard from '@/pages/staff/ManagerReviewDashboard';
 import DirectorRiskDashboard from '@/pages/staff/DirectorRiskDashboard';
 import CEOApprovalDashboard from '@/pages/staff/CEOApprovalDashboard';
 import ChairpersonFinalDashboard from '@/pages/staff/ChairpersonFinalDashboard';
-import RoleBasedRoute from '@/components/auth/RoleBasedRoute';
 
 function App() {
   return (
@@ -58,7 +58,7 @@ function App() {
           </PrivateRoute>
         } />
         
-        {/* All staff routes accessible to all authenticated users */}
+        {/* Data collection route accessible to all staff but particularly for field officers */}
         <Route path="/staff/data-collection" element={
           <PrivateRoute>
             <DataCollection />
@@ -67,24 +67,24 @@ function App() {
         
         {/* Role-specific dashboards */}
         <Route path="/staff/manager-review" element={
-          <PrivateRoute>
+          <RoleBasedRoute allowedRoles={['manager']}>
             <ManagerReviewDashboard />
-          </PrivateRoute>
+          </RoleBasedRoute>
         } />
         <Route path="/staff/director-risk" element={
-          <PrivateRoute>
+          <RoleBasedRoute allowedRoles={['director']}>
             <DirectorRiskDashboard />
-          </PrivateRoute>
+          </RoleBasedRoute>
         } />
         <Route path="/staff/ceo-approval" element={
-          <PrivateRoute>
+          <RoleBasedRoute allowedRoles={['ceo']}>
             <CEOApprovalDashboard />
-          </PrivateRoute>
+          </RoleBasedRoute>
         } />
         <Route path="/staff/chairperson-approval" element={
-          <PrivateRoute>
+          <RoleBasedRoute allowedRoles={['chairperson']}>
             <ChairpersonFinalDashboard />
-          </PrivateRoute>
+          </RoleBasedRoute>
         } />
         
         {/* Client management routes */}
