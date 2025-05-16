@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, X, FileText, Camera, Home, File, Video } from 'lucide-react';
+import { Loader2, Upload, X, FileText, Camera, Home, File, Video, ScanLine } from 'lucide-react';
 import { useMediaCapture } from '@/hooks/use-media-capture';
 import { DocumentScanner } from '@/components/media/DocumentScanner';
 
@@ -15,6 +15,8 @@ interface DocumentUploadProps {
   onUpload: (file: File, description?: string, tags?: string[]) => Promise<void>;
   isUploading: boolean;
   iconType?: 'id' | 'photo' | 'property' | 'document' | 'video';
+  enableScanning?: boolean;
+  enableCapture?: boolean;
 }
 
 export const DocumentUpload: React.FC<DocumentUploadProps> = ({
@@ -22,7 +24,9 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   documentType,
   onUpload,
   isUploading,
-  iconType = 'document'
+  iconType = 'document',
+  enableScanning = false,
+  enableCapture = false
 }) => {
   const [description, setDescription] = useState('');
   const [showScanner, setShowScanner] = useState(false);
@@ -163,18 +167,18 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                     Select File
                   </Button>
                   
-                  {(documentType === 'id_document' || documentType === 'property_document') && (
+                  {enableScanning && (
                     <Button 
                       onClick={() => setShowScanner(true)}
                       disabled={isUploading}
                       variant="outline"
                     >
-                      <FileText className="h-4 w-4 mr-2" />
+                      <ScanLine className="h-4 w-4 mr-2" />
                       Scan Document
                     </Button>
                   )}
                   
-                  {(documentType === 'collateral_photo') && (
+                  {enableCapture && (
                     <Button 
                       onClick={handleCaptureImage}
                       disabled={isUploading}
@@ -185,7 +189,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                     </Button>
                   )}
                   
-                  {(documentType === 'video_evidence') && (
+                  {documentType === 'video_evidence' && (
                     <Button 
                       onClick={handleCaptureVideo}
                       disabled={isUploading}

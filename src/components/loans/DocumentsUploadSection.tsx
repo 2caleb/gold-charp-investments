@@ -1,12 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { DocumentList } from '@/components/documents/DocumentList';
 import { UploadedDocument } from '@/hooks/use-document-upload';
+import { Badge } from '@/components/ui/badge';
 
 interface DocumentsUploadSectionProps {
   loanApplicationId: string | null;
@@ -16,25 +17,26 @@ interface DocumentsUploadSectionProps {
   idDocuments: UploadedDocument[];
   isUploadingId: boolean;
   handleUploadIdDocument: (file: File, description?: string, tags?: string[]) => Promise<void>;
-  handleDeleteIdDocument: (id: string) => Promise<boolean>;
+  handleDeleteIdDocument: (id: string) => Promise<void>;
   getIdDocumentUrl: (id: string) => Promise<string | null>;
+  verifyDocument?: (documentId: string, documentType: string) => Promise<any>;
   // Collateral Photos
   collateralPhotos: UploadedDocument[];
   isUploadingCollateral: boolean;
   handleUploadCollateralPhoto: (file: File, description?: string, tags?: string[]) => Promise<void>;
-  handleDeleteCollateralPhoto: (id: string) => Promise<boolean>;
+  handleDeleteCollateralPhoto: (id: string) => Promise<void>;
   getCollateralPhotoUrl: (id: string) => Promise<string | null>;
   // Property Documents
   propertyDocuments: UploadedDocument[];
   isUploadingProperty: boolean;
   handleUploadPropertyDocument: (file: File, description?: string, tags?: string[]) => Promise<void>;
-  handleDeletePropertyDocument: (id: string) => Promise<boolean>;
+  handleDeletePropertyDocument: (id: string) => Promise<void>;
   getPropertyDocumentUrl: (id: string) => Promise<string | null>;
   // Loan Agreements
   loanAgreements: UploadedDocument[];
   isUploadingLoan: boolean;
   handleUploadLoanAgreement: (file: File, description?: string, tags?: string[]) => Promise<void>;
-  handleDeleteLoanAgreement: (id: string) => Promise<boolean>;
+  handleDeleteLoanAgreement: (id: string) => Promise<void>;
   getLoanAgreementUrl: (id: string) => Promise<string | null>;
 }
 
@@ -48,6 +50,7 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
   handleUploadIdDocument,
   handleDeleteIdDocument,
   getIdDocumentUrl,
+  verifyDocument,
   // Collateral Photos
   collateralPhotos,
   isUploadingCollateral,
@@ -67,21 +70,52 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
   handleDeleteLoanAgreement,
   getLoanAgreementUrl,
 }) => {
-  // Create wrapper functions that return Promise<void> for each delete handler
-  const handleIdDocumentDelete = async (id: string): Promise<void> => {
-    await handleDeleteIdDocument(id);
+  const [verifyingDocId, setVerifyingDocId] = useState<string | null>(null);
+  const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
+  
+  const handleVerifyDocument = async (documentId: string, documentType: string) => {
+    if (!verifyDocument) return;
+    
+    setVerifyingDocId(documentId);
+    try {
+      const result = await verifyDocument(documentId, documentType);
+      setVerificationResults(prev => ({
+        ...prev,
+        [documentId]: result
+      }));
+    } finally {
+      setVerifyingDocId(null);
+    }
   };
   
-  const handleCollateralPhotoDelete = async (id: string): Promise<void> => {
-    await handleDeleteCollateralPhoto(id);
-  };
-  
-  const handlePropertyDocumentDelete = async (id: string): Promise<void> => {
-    await handleDeletePropertyDocument(id);
-  };
-  
-  const handleLoanAgreementDelete = async (id: string): Promise<void> => {
-    await handleDeleteLoanAgreement(id);
+  const renderVerificationBadge = (documentId: string) => {
+    const result = verificationResults[documentId];
+    if (!result) return null;
+    
+    if (verifyingDocId === documentId) {
+      return (
+        <Badge variant="outline" className="ml-2 bg-gray-100">
+          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+          Verifying...
+        </Badge>
+      );
+    }
+    
+    if (result.isAuthentic) {
+      return (
+        <Badge variant="outline" className="ml-2 bg-green-100 text-green-800">
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          Verified
+        </Badge>
+      );
+    }
+    
+    return (
+      <Badge variant="outline" className="ml-2 bg-red-100 text-red-800">
+        <XCircle className="h-3 w-3 mr-1" />
+        Invalid
+      </Badge>
+    );
   };
 
   if (!loanApplicationId) {
@@ -120,6 +154,7 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
             onUpload={handleUploadIdDocument}
             isUploading={isUploadingId}
             iconType="id"
+            enableScanning={true}
           />
           
           <DocumentUpload 
@@ -128,6 +163,7 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
             onUpload={handleUploadCollateralPhoto}
             isUploading={isUploadingCollateral}
             iconType="photo"
+            enableCapture={true}
           />
         </div>
         
@@ -138,13 +174,14 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
             onUpload={handleUploadPropertyDocument}
             isUploading={isUploadingProperty}
             iconType="property"
+            enableScanning={true}
           />
           
           <DocumentUpload 
             title="Loan Agreement"
             documentType="loan_agreement"
             onUpload={handleUploadLoanAgreement}
-            isUploading={isUploadingLoan}
+            isUploadingLoan={isUploadingLoan}
             iconType="document"
           />
         </div>
@@ -158,28 +195,34 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
         <DocumentList
           title="National ID Documents"
           documents={idDocuments}
-          onDelete={handleIdDocumentDelete}
+          onDelete={handleDeleteIdDocument}
           onPreview={getIdDocumentUrl}
+          onVerify={verifyDocument ? (id) => handleVerifyDocument(id, "id_document") : undefined}
+          isVerifying={verifyingDocId !== null}
+          renderBadge={renderVerificationBadge}
         />
         
         <DocumentList
           title="Collateral Photos"
           documents={collateralPhotos}
-          onDelete={handleCollateralPhotoDelete}
+          onDelete={handleDeleteCollateralPhoto}
           onPreview={getCollateralPhotoUrl}
         />
         
         <DocumentList
           title="Property Documents"
           documents={propertyDocuments}
-          onDelete={handlePropertyDocumentDelete}
+          onDelete={handleDeletePropertyDocument}
           onPreview={getPropertyDocumentUrl}
+          onVerify={verifyDocument ? (id) => handleVerifyDocument(id, "property_document") : undefined}
+          isVerifying={verifyingDocId !== null}
+          renderBadge={renderVerificationBadge}
         />
         
         <DocumentList
           title="Loan Agreements"
           documents={loanAgreements}
-          onDelete={handleLoanAgreementDelete}
+          onDelete={handleDeleteLoanAgreement}
           onPreview={getLoanAgreementUrl}
         />
       </div>

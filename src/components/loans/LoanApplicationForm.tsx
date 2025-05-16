@@ -46,7 +46,8 @@ const LoanApplicationForm = () => {
     getIdDocumentUrl,
     getCollateralPhotoUrl,
     getPropertyDocumentUrl,
-    getLoanAgreementUrl
+    getLoanAgreementUrl,
+    verifyDocument
   } = useLoanApplicationForm();
 
   // Auto-transition to documents tab when loan application is submitted
@@ -54,6 +55,21 @@ const LoanApplicationForm = () => {
     if (loanApplicationId) {
       setActiveTab("documents");
     }
+  }, [loanApplicationId, setActiveTab]);
+  
+  // Listen for terms accepted event to automatically switch to documents tab
+  useEffect(() => {
+    const handleTermsAccepted = () => {
+      if (loanApplicationId) {
+        setActiveTab("documents");
+      }
+    };
+    
+    window.addEventListener('termsAccepted', handleTermsAccepted);
+    
+    return () => {
+      window.removeEventListener('termsAccepted', handleTermsAccepted);
+    };
   }, [loanApplicationId, setActiveTab]);
 
   return (
@@ -98,6 +114,7 @@ const LoanApplicationForm = () => {
               handleUploadIdDocument={handleUploadIdDocument}
               handleDeleteIdDocument={handleDeleteIdDocument}
               getIdDocumentUrl={getIdDocumentUrl}
+              verifyDocument={verifyDocument}
               // Collateral Photos
               collateralPhotos={collateralPhotos}
               isUploadingCollateral={isUploadingCollateral}

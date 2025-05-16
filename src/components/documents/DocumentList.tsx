@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileText, Download, Trash2, Eye } from 'lucide-react';
+import { Loader2, FileText, Download, Trash2, Eye, ShieldCheck } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 
@@ -12,6 +12,9 @@ interface DocumentListProps {
   documents: UploadedDocument[];
   onDelete: (id: string) => Promise<void>;
   onPreview: (id: string) => Promise<string | null>;
+  onVerify?: (id: string) => Promise<void>;
+  isVerifying?: boolean;
+  renderBadge?: (documentId: string) => React.ReactNode;
   isLoading?: boolean;
   title?: string;
 }
@@ -20,6 +23,9 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   documents,
   onDelete,
   onPreview,
+  onVerify,
+  isVerifying = false,
+  renderBadge,
   isLoading = false,
   title = 'Uploaded Documents'
 }) => {
@@ -40,6 +46,12 @@ export const DocumentList: React.FC<DocumentListProps> = ({
     setIsDeleting(prev => ({ ...prev, [id]: true }));
     await onDelete(id);
     setIsDeleting(prev => ({ ...prev, [id]: false }));
+  };
+  
+  const handleVerify = async (id: string) => {
+    if (onVerify) {
+      await onVerify(id);
+    }
   };
 
   const isImage = (fileType: string) => {
@@ -78,7 +90,12 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                 <div className="flex items-center">
                   <FileText className="h-6 w-6 mr-3 text-gray-500" />
                   <div>
-                    <p className="text-sm font-medium truncate max-w-[200px]">{doc.fileName}</p>
+                    <div className="flex items-center">
+                      <p className="text-sm font-medium truncate max-w-[200px]">
+                        {doc.fileName}
+                      </p>
+                      {renderBadge && renderBadge(doc.id)}
+                    </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {(doc.fileSize / 1024).toFixed(1)} KB • {doc.documentType.replace('_', ' ')}
                     </p>
@@ -94,6 +111,21 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
+                  
+                  {onVerify && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleVerify(doc.id)}
+                      disabled={isVerifying}
+                    >
+                      {isVerifying ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ShieldCheck className="h-4 w-4 text-blue-500" />
+                      )}
+                    </Button>
+                  )}
                   
                   <Button
                     variant="ghost"
