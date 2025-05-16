@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { DataCollectionButton } from '@/components/loans/DataCollectionButton';
@@ -9,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
+import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
 
 interface RecentApplication {
   client_name: string;
@@ -21,6 +21,9 @@ interface RecentApplication {
 }
 
 const DataCollection = () => {
+  // Force desktop view for better UX
+  useDesktopRedirect();
+  
   const { toast } = useToast();
   const [recentApplications, setRecentApplications] = useState<RecentApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -131,7 +134,13 @@ const DataCollection = () => {
             </div>
             
             <div className="mt-4 md:mt-0">
-              <DataCollectionButton />
+              <DataCollectionButton onDataCollected={() => {
+                // Refresh data after collection
+                toast({
+                  title: "Data Collected",
+                  description: "New client data has been successfully collected and saved."
+                });
+              }} />
             </div>
           </div>
 

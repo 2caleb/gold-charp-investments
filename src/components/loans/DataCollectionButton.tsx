@@ -3,11 +3,11 @@ import React, { useState, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,503 +17,795 @@ import { useToast } from "@/hooks/use-toast"
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { DocumentUpload } from '@/components/documents/DocumentUpload';
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DocumentUpload } from "@/components/documents/DocumentUpload"
+import { useDocumentUpload, UploadedDocument } from "@/hooks/use-document-upload"
+import { supabase } from "@/integrations/supabase/client"
+import { useAuth } from "@/contexts/AuthContext"
+import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
 import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
-interface LoanCalculationDisplayProps {
-  loanAmount?: number;
-  interestRate?: number;
-  loanTerm?: number;
+// Form schema
+const formSchema = z.object({
+  full_name: z.string().min(2, { message: "Full name is required" }),
+  phone_number: z.string().min(10, { message: "Phone number must be at least 10 characters" }),
+  address: z.string().min(5, { message: "Address is required" }),
+  id_number: z.string().min(1, { message: "ID number is required" }),
+  employment_status: z.string(),
+  monthly_income: z.string(),
+  loan_amount: z.string().min(1, { message: "Loan amount is required" }),
+  loan_type: z.string(),
+  loan_term: z.string(),
+  term_unit: z.enum(["daily", "weekly", "monthly"]),
+  guarantor1_name: z.string().min(2, { message: "Guarantor name is required" }),
+  guarantor1_phone: z.string().min(10, { message: "Phone number must be at least 10 characters" }),
+  guarantor1_id_number: z.string().min(1, { message: "ID number is required" }),
+  guarantor2_name: z.string().optional(),
+  guarantor2_phone: z.string().optional(),
+  guarantor2_id_number: z.string().optional(),
+  purpose_of_loan: z.string().min(1, { message: "Purpose of loan is required" }),
+  terms_accepted: z.boolean().refine((val) => val === true, {
+    message: "You must accept the terms and conditions",
+  }),
+  email: z.string().email().optional().or(z.literal("")),
+});
+
+export interface DataCollectionButtonProps {
+  onDataCollected?: (data: any) => void;
 }
 
-const LoanCalculationDisplay: React.FC<LoanCalculationDisplayProps> = ({ loanAmount, interestRate, loanTerm }) => {
-  const calculateMonthlyPayment = useCallback(() => {
-    if (!loanAmount || !interestRate || !loanTerm) return 0;
-    const monthlyInterestRate = interestRate / 100 / 12;
-    const numberOfPayments = loanTerm;
-    return (loanAmount * monthlyInterestRate) / (1 - Math.pow(1 + monthlyInterestRate, -numberOfPayments));
-  }, [loanAmount, interestRate, loanTerm]);
-
-  const monthlyPayment = calculateMonthlyPayment();
-
-  return (
-    <div className="mt-4">
-      <h3 className="text-lg font-semibold">Loan Calculation</h3>
-      <p>Loan Amount: ${loanAmount || 0}</p>
-      <p>Interest Rate: {interestRate || 0}%</p>
-      <p>Loan Term: {loanTerm || 0} months</p>
-      <p>Monthly Payment: ${monthlyPayment.toFixed(2) || 0}</p>
-    </div>
-  );
-};
-
-interface DataCollectionButtonProps {
-  onDataCollected: (data: any) => void;
-}
-
-export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({ onDataCollected }) => {
-  const { toast } = useToast();
+export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
+  onDataCollected = () => {}
+}) => {
+  // Force desktop view for better UX
+  useDesktopRedirect();
+  
   const [open, setOpen] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [idNumber, setIdNumber] = useState('');
-  const [loanAmount, setLoanAmount] = useState<number | undefined>(undefined);
-  const [interestRate, setInterestRate] = useState<number | undefined>(undefined);
-  const [loanTerm, setLoanTerm] = useState<number | undefined>(undefined);
-  const [guarantor1FullName, setGuarantor1FullName] = useState('');
-  const [guarantor1IdNumber, setGuarantor1IdNumber] = useState('');
-  const [guarantor2FullName, setGuarantor2FullName] = useState('');
-  const [guarantor2IdNumber, setGuarantor2IdNumber] = useState('');
-  const [loanId, setLoanId] = useState<string>(generateLoanIdentificationNumber());
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [isPrintable, setIsPrintable] = useState(false);
-
+  const [activeTab, setActiveTab] = useState("client");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formReady, setFormReady] = useState(false);
+  const [generatedLoanId, setGeneratedLoanId] = useState("");
+  const { toast } = useToast();
+  const { user } = useAuth();
+  
+  // Generate loan ID on component mount
   useEffect(() => {
-    if (
-      firstName && 
-      lastName && 
-      idNumber && 
-      loanAmount && 
-      loanTerm && 
-      guarantor1FullName && 
-      guarantor1IdNumber && 
-      guarantor2FullName && 
-      guarantor2IdNumber
-    ) {
-      setIsPrintable(true);
-    } else {
-      setIsPrintable(false);
-    }
-  }, [firstName, lastName, idNumber, loanAmount, loanTerm, guarantor1FullName, guarantor1IdNumber, guarantor2FullName, guarantor2IdNumber]);
-
-  const handlePrint = useCallback(() => {
-    if (isPrintable) {
-      window.print();
-    }
-  }, [isPrintable]);
-
-  const handleDataCollection = () => {
-    if (!firstName || !lastName || !idNumber || !loanAmount || !loanTerm || !guarantor1FullName || !guarantor1IdNumber || !guarantor2FullName || !guarantor2IdNumber) {
+    const newId = generateLoanIdentificationNumber();
+    setGeneratedLoanId(newId);
+  }, []);
+  
+  // Document upload hooks
+  const {
+    isUploading: isUploadingId, 
+    uploadDocument: uploadIdDocument,
+    uploadedDocuments: idDocuments,
+    deleteDocument: deleteIdDocument
+  } = useDocumentUpload();
+  
+  const {
+    isUploading: isUploadingPassport,
+    uploadDocument: uploadPassportPhoto,
+    uploadedDocuments: passportPhotos,
+    deleteDocument: deletePassportPhoto
+  } = useDocumentUpload();
+  
+  const {
+    isUploading: isUploadingGuarantor1,
+    uploadDocument: uploadGuarantor1Photo,
+    uploadedDocuments: guarantor1Photos,
+    deleteDocument: deleteGuarantor1Photo
+  } = useDocumentUpload();
+  
+  const {
+    isUploading: isUploadingGuarantor2,
+    uploadDocument: uploadGuarantor2Photo,
+    uploadedDocuments: guarantor2Photos,
+    deleteDocument: deleteGuarantor2Photo
+  } = useDocumentUpload();
+  
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      full_name: "",
+      phone_number: "",
+      address: "",
+      id_number: "",
+      employment_status: "employed",
+      monthly_income: "",
+      loan_amount: "",
+      loan_type: "personal",
+      loan_term: "12",
+      term_unit: "monthly",
+      guarantor1_name: "",
+      guarantor1_phone: "",
+      guarantor1_id_number: "",
+      guarantor2_name: "",
+      guarantor2_phone: "",
+      guarantor2_id_number: "",
+      purpose_of_loan: "",
+      terms_accepted: false,
+      email: ""
+    },
+  });
+  
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  
+  // Check if form is ready for printing
+  useEffect(() => {
+    setFormReady(form.formState.isValid && Boolean(clientId) && Boolean(applicationId) && idDocuments.length > 0);
+  }, [form.formState.isValid, clientId, applicationId, idDocuments.length]);
+  
+  // Handle form submission
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!user) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
+        title: "Authentication required",
+        description: "You must be logged in to submit client data",
         variant: "destructive",
       });
       return;
     }
-
-    const data = {
-      firstName,
-      lastName,
-      idNumber,
-      loanAmount,
-      loanTerm,
-      guarantor1FullName,
-      guarantor1IdNumber,
-      guarantor2FullName,
-      guarantor2IdNumber,
-    };
-    onDataCollected(data);
-    setOpen(false);
-    toast({
-      title: "Success",
-      description: "Data collected successfully.",
-    });
-  };
-
-  const handleRegenerateLoanId = () => {
-    const newLoanId = generateLoanIdentificationNumber();
-    setLoanId(newLoanId);
-    toast({
-      title: "Loan ID Regenerated",
-      description: `New loan ID: ${newLoanId}`,
-    });
-  };
-
-  const handleFileUpload = async (file: File, documentType: string) => {
-    setIsUploading(true);
+    
+    setIsSubmitting(true);
+    
     try {
-      // Simulate upload process
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Create client record
+      const { data: clientData, error: clientError } = await supabase
+        .from("client_name")
+        .insert({
+          full_name: values.full_name,
+          phone_number: values.phone_number,
+          id_number: values.id_number,
+          address: values.address,
+          employment_status: values.employment_status,
+          monthly_income: parseFloat(values.monthly_income),
+          user_id: user.id,
+          email: values.email || null
+        })
+        .select()
+        .single();
+        
+      if (clientError) throw clientError;
       
-      setUploadedFiles(prev => [...prev, file]);
+      setClientId(clientData.id);
+      
+      // Create loan application
+      const { data: applicationData, error: applicationError } = await supabase
+        .from("loan_applications")
+        .insert({
+          client_id: clientData.id,
+          client_name: values.full_name,
+          phone_number: values.phone_number,
+          id_number: values.id_number,
+          address: values.address,
+          employment_status: values.employment_status,
+          monthly_income: values.monthly_income,
+          loan_type: values.loan_type,
+          loan_amount: values.loan_amount,
+          loan_term: `${values.loan_term} ${values.term_unit}`,
+          purpose_of_loan: values.purpose_of_loan,
+          created_by: user.id,
+          current_approver: user.id,
+          loan_id: generatedLoanId,
+          email: values.email || null,
+          notes: `Guarantor 1: ${values.guarantor1_name} (${values.guarantor1_phone}, ID: ${values.guarantor1_id_number})${
+            values.guarantor2_name ? `\nGuarantor 2: ${values.guarantor2_name} (${values.guarantor2_phone}, ID: ${values.guarantor2_id_number})` : ''
+          }`
+        })
+        .select()
+        .single();
+        
+      if (applicationError) throw applicationError;
+      
+      setApplicationId(applicationData.id);
+      
+      setActiveTab("documents");
+      
       toast({
-        title: "Document Uploaded",
-        description: `${file.name} has been uploaded successfully.`,
+        title: "Client data collected",
+        description: "Client data has been successfully saved",
+        variant: "default",
       });
-    } catch (error) {
-      console.error('Error uploading file:', error);
+      
+      // Notify parent component if needed
+      onDataCollected({
+        ...values,
+        client_id: clientData.id,
+        application_id: applicationData.id
+      });
+      
+    } catch (error: any) {
+      console.error("Error submitting client data:", error);
       toast({
-        title: "Upload Failed",
-        description: "There was an error uploading the document. Please try again.",
+        title: "Error",
+        description: error.message || "An error occurred while saving client data",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
+      setIsSubmitting(false);
     }
   };
-
+  
+  const handleUploadIdDocument = async (file: File, description?: string) => {
+    if (!applicationId) {
+      toast({
+        title: "Submit client data first",
+        description: "Please submit the client data before uploading documents",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    await uploadIdDocument(file, 'id_document', applicationId, description);
+  };
+  
+  const handleUploadPassportPhoto = async (file: File, description?: string) => {
+    if (!applicationId) {
+      toast({
+        title: "Submit client data first",
+        description: "Please submit the client data before uploading documents",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    await uploadPassportPhoto(file, 'passport_photo', applicationId, description);
+  };
+  
+  const handleUploadGuarantor1Photo = async (file: File, description?: string) => {
+    if (!applicationId) {
+      toast({
+        title: "Submit client data first",
+        description: "Please submit the client data before uploading documents",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    await uploadGuarantor1Photo(file, 'guarantor1_photo', applicationId, description);
+  };
+  
+  const handleUploadGuarantor2Photo = async (file: File, description?: string) => {
+    if (!applicationId) {
+      toast({
+        title: "Submit client data first",
+        description: "Please submit the client data before uploading documents",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    await uploadGuarantor2Photo(file, 'guarantor2_photo', applicationId, description);
+  };
+  
+  const handleFinish = () => {
+    setOpen(false);
+    toast({
+      title: "Process complete",
+      description: "Client data and documents have been collected successfully",
+    });
+  };
+  
+  const handleRegenerateLoanId = () => {
+    const newId = generateLoanIdentificationNumber();
+    setGeneratedLoanId(newId);
+    
+    toast({
+      title: "Loan ID Generated",
+      description: `New ID: ${newId}`,
+    });
+  };
+  
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button className="bg-green-600 hover:bg-green-700">
           <UserPlus className="mr-2 h-4 w-4" />
           Collect Client Data
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-[1024px]">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <div>
-            <DialogTitle>Collect Client Data</DialogTitle>
-            <DialogDescription>
-              Enter client details and loan information
-            </DialogDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePrint}
-              disabled={!isPrintable}
-              className={`${!isPrintable ? 'opacity-30 cursor-not-allowed' : ''}`}
-              title={isPrintable ? "Print document" : "Complete the form to enable printing"}
-            >
-              <Printer className="h-5 w-5" />
-            </Button>
-            <DialogClose asChild>
-              <Button variant="ghost" size="icon">
-                <X className="h-5 w-5" />
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Client Data Collection</span>
+            <div className="flex items-center">
+              <span className="text-sm font-normal text-gray-500 mr-2">Loan ID:</span>
+              <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">
+                {generatedLoanId}
+              </code>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRegenerateLoanId} 
+                className="ml-2"
+                title="Generate new loan ID"
+              >
+                <RotateCw className="h-4 w-4" />
               </Button>
-            </DialogClose>
-          </div>
-        </DialogHeader>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-1">
-            <div className="flex flex-col space-y-1 mb-4">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="loanIdentificationNumber">Loan ID</Label>
+              
+              {applicationId && formReady && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2 text-xs"
-                  onClick={handleRegenerateLoanId}
+                  onClick={() => window.print()}
+                  className="ml-2"
+                  title="Print client data"
                 >
-                  <RotateCw className="h-3 w-3 mr-1" /> Regenerate
+                  <Printer className="h-4 w-4" />
                 </Button>
-              </div>
-              <div className="relative">
-                <Input
-                  id="loanIdentificationNumber"
-                  value={loanId}
-                  readOnly
-                  className="bg-gray-50 font-mono"
-                />
-              </div>
+              )}
+              {(!applicationId || !formReady) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled
+                  className="ml-2 opacity-30"
+                  title="Complete form to enable printing"
+                >
+                  <Printer className="h-4 w-4" />
+                </Button>
+              )}
             </div>
-
-            <div className="flex flex-col space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  placeholder="Enter first name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  placeholder="Enter last name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="idNumber">ID Number</Label>
-                <Input
-                  id="idNumber"
-                  placeholder="Enter ID number"
-                  value={idNumber}
-                  onChange={(e) => setIdNumber(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="md:col-span-1">
-            <div className="flex flex-col space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="loanAmount">Loan Amount</Label>
-                <Input
-                  type="number"
-                  id="loanAmount"
-                  placeholder="Enter loan amount"
-                  value={loanAmount === undefined ? '' : loanAmount.toString()}
-                  onChange={(e) => setLoanAmount(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="interestRate">Interest Rate (%)</Label>
-                <Input
-                  type="number"
-                  id="interestRate"
-                  placeholder="Enter interest rate"
-                  value={interestRate === undefined ? '' : interestRate.toString()}
-                  onChange={(e) => setInterestRate(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="loanTerm">Loan Term (Months)</Label>
-                <Input
-                  type="number"
-                  id="loanTerm"
-                  placeholder="Enter loan term in months"
-                  value={loanTerm === undefined ? '' : loanTerm.toString()}
-                  onChange={(e) => setLoanTerm(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div className="md:col-span-1">
-            <h3 className="text-lg font-semibold mb-2">Guarantor 1 Details</h3>
-            <div className="flex flex-col space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="guarantor1FullName">Full Name</Label>
-                <Input
-                  id="guarantor1FullName"
-                  placeholder="Enter guarantor 1 full name"
-                  value={guarantor1FullName}
-                  onChange={(e) => setGuarantor1FullName(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="guarantor1IdNumber">ID Number</Label>
-                <Input
-                  id="guarantor1IdNumber"
-                  placeholder="Enter guarantor 1 ID number"
-                  value={guarantor1IdNumber}
-                  onChange={(e) => setGuarantor1IdNumber(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="md:col-span-1">
-            <h3 className="text-lg font-semibold mb-2">Guarantor 2 Details</h3>
-            <div className="flex flex-col space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="guarantor2FullName">Full Name</Label>
-                <Input
-                  id="guarantor2FullName"
-                  placeholder="Enter guarantor 2 full name"
-                  value={guarantor2FullName}
-                  onChange={(e) => setGuarantor2FullName(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="guarantor2IdNumber">ID Number</Label>
-                <Input
-                  id="guarantor2IdNumber"
-                  placeholder="Enter guarantor 2 ID number"
-                  value={guarantor2IdNumber}
-                  onChange={(e) => setGuarantor2IdNumber(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <h3 className="text-xl font-semibold mb-4">Supporting Documents</h3>
-          <Tabs defaultValue="client" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="client">Client Documents</TabsTrigger>
-              <TabsTrigger value="guarantor1">Guarantor 1</TabsTrigger>
-              <TabsTrigger value="guarantor2">Guarantor 2</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="client" className="space-y-4 p-4">
-              <div className="grid gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Passport Photo</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <DocumentUpload
-                      title="Client Passport Photo"
-                      documentType="passport_photo"
-                      onUpload={(file) => handleFileUpload(file, 'passport_photo')}
-                      isUploading={isUploading}
-                      iconType="user"
-                      enableCapture={true}
-                      isPrintable={true}
-                      isPrintReady={firstName !== '' && lastName !== ''}
+          </DialogTitle>
+          <DialogDescription>
+            Enter client information and upload required documents
+          </DialogDescription>
+        </DialogHeader>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
+          <TabsList className="grid grid-cols-2 mb-4">
+            <TabsTrigger value="client">Client Information</TabsTrigger>
+            <TabsTrigger value="documents" disabled={!clientId}>Documents</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="client">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="full_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Full Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="phone_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+256 700 000000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="id_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ID Number</FormLabel>
+                        <FormControl>
+                          <Input placeholder="CM12345678" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="johndoe@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem className="col-span-1 md:col-span-2">
+                        <FormLabel>Address</FormLabel>
+                        <FormControl>
+                          <Input placeholder="123 Main St, Kampala" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="employment_status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Employment Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select employment status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="employed">Employed</SelectItem>
+                            <SelectItem value="self_employed">Self Employed</SelectItem>
+                            <SelectItem value="unemployed">Unemployed</SelectItem>
+                            <SelectItem value="retired">Retired</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="monthly_income"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Monthly Income (UGX)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="1000000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="loan_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Loan Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select loan type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="personal">Personal Loan</SelectItem>
+                            <SelectItem value="business">Business Loan</SelectItem>
+                            <SelectItem value="mortgage">Mortgage Loan</SelectItem>
+                            <SelectItem value="auto">Auto Loan</SelectItem>
+                            <SelectItem value="education">Education Loan</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex space-x-2">
+                    <FormField
+                      control={form.control}
+                      name="loan_term"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Loan Term</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="12" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </CardContent>
-                </Card>
+                    
+                    <FormField
+                      control={form.control}
+                      name="term_unit"
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormLabel>Term Unit</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select unit" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="daily">Days</SelectItem>
+                              <SelectItem value="weekly">Weeks</SelectItem>
+                              <SelectItem value="monthly">Months</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="loan_amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Loan Amount (UGX)</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="5000000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="purpose_of_loan"
+                    render={({ field }) => (
+                      <FormItem className="col-span-1 md:col-span-2">
+                        <FormLabel>Purpose of Loan</FormLabel>
+                        <FormControl>
+                          <Textarea placeholder="Describe how you plan to use this loan" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Guarantor 1 Information */}
+                  <div className="col-span-1 md:col-span-2 mt-2">
+                    <h3 className="font-medium text-lg mb-2">Guarantor 1</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="guarantor1_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Jane Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor1_phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+256 700 000000" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor1_id_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ID Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="CM12345678" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Guarantor 2 Information */}
+                  <div className="col-span-1 md:col-span-2 mt-2">
+                    <h3 className="font-medium text-lg mb-2">Guarantor 2 (Optional)</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="guarantor2_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="John Smith" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor2_phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="+256 700 000000" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor2_id_number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ID Number</FormLabel>
+                            <FormControl>
+                              <Input placeholder="CM12345678" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="terms_accepted"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 col-span-1 md:col-span-2">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={field.onChange}
+                            className="mt-1"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            I accept the terms and conditions for this loan application
+                          </FormLabel>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                 
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">National ID</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <DocumentUpload
-                      title="ID Document"
-                      documentType="id_document"
-                      onUpload={(file) => handleFileUpload(file, 'id_document')}
-                      isUploading={isUploading}
-                      iconType="id"
-                      enableCapture={true}
-                      enableScanning={true}
-                      isPrintable={true}
-                      isPrintReady={firstName !== '' && lastName !== ''}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="guarantor1" className="space-y-4 p-4">
-              <div className="grid gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Guarantor 1 Passport Photo</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <DocumentUpload
-                      title="Guarantor 1 Passport Photo"
-                      documentType="guarantor1_photo"
-                      onUpload={(file) => handleFileUpload(file, 'guarantor1_photo')}
-                      isUploading={isUploading}
-                      iconType="user"
-                      enableCapture={true}
-                      isPrintable={true}
-                      isPrintReady={guarantor1FullName !== ''}
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Guarantor 1 ID</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <DocumentUpload
-                      title="Guarantor 1 ID Document"
-                      documentType="id_document"
-                      onUpload={(file) => handleFileUpload(file, 'guarantor1_id')}
-                      isUploading={isUploading}
-                      iconType="id"
-                      enableCapture={true}
-                      enableScanning={true}
-                      isPrintable={true}
-                      isPrintReady={guarantor1FullName !== ''}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="guarantor2" className="space-y-4 p-4">
-              <div className="grid gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Guarantor 2 Passport Photo</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <DocumentUpload
-                      title="Guarantor 2 Passport Photo"
-                      documentType="guarantor2_photo"
-                      onUpload={(file) => handleFileUpload(file, 'guarantor2_photo')}
-                      isUploading={isUploading}
-                      iconType="user"
-                      enableCapture={true}
-                      isPrintable={true}
-                      isPrintReady={guarantor2FullName !== ''}
-                    />
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium">Guarantor 2 ID</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <DocumentUpload
-                      title="Guarantor 2 ID Document"
-                      documentType="id_document"
-                      onUpload={(file) => handleFileUpload(file, 'guarantor2_id')}
-                      isUploading={isUploading}
-                      iconType="id"
-                      enableCapture={true}
-                      enableScanning={true}
-                      isPrintable={true}
-                      isPrintReady={guarantor2FullName !== ''}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <LoanCalculationDisplay loanAmount={loanAmount} interestRate={interestRate} loanTerm={loanTerm} />
-
-        <div className="flex justify-end mt-4">
-          <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button type="button" onClick={handleDataCollection} className="ml-2">
-            Collect Data
-          </Button>
-        </div>
+                <DialogFooter>
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full md:w-auto"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Save Client Data
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </TabsContent>
+          
+          <TabsContent value="documents">
+            <div className="space-y-6">
+              <DocumentUpload
+                title="National ID Document"
+                documentType="id_document"
+                onUpload={handleUploadIdDocument}
+                isUploading={isUploadingId}
+                uploadedFiles={idDocuments.map(doc => ({
+                  name: doc.fileName,
+                  size: doc.fileSize,
+                  type: doc.fileType,
+                  id: doc.id,
+                  documentType: doc.documentType
+                }))}
+                onDelete={deleteIdDocument}
+                iconType="id"
+                enableScanning={true}
+                enableCapture={true}
+                isPrintable={true}
+                isPrintReady={formReady}
+              />
+              
+              <DocumentUpload
+                title="Passport Photo"
+                documentType="passport_photo"
+                onUpload={handleUploadPassportPhoto}
+                isUploading={isUploadingPassport}
+                uploadedFiles={passportPhotos.map(doc => ({
+                  name: doc.fileName,
+                  size: doc.fileSize,
+                  type: doc.fileType,
+                  id: doc.id,
+                  documentType: doc.documentType
+                }))}
+                onDelete={deletePassportPhoto}
+                iconType="user"
+                enableCapture={true}
+                isPrintable={true}
+                isPrintReady={formReady}
+              />
+              
+              <DocumentUpload
+                title="Guarantor 1 Photo"
+                documentType="guarantor1_photo"
+                onUpload={handleUploadGuarantor1Photo}
+                isUploading={isUploadingGuarantor1}
+                uploadedFiles={guarantor1Photos.map(doc => ({
+                  name: doc.fileName,
+                  size: doc.fileSize,
+                  type: doc.fileType,
+                  id: doc.id,
+                  documentType: doc.documentType
+                }))}
+                onDelete={deleteGuarantor1Photo}
+                iconType="user"
+                enableCapture={true}
+                isPrintable={true}
+                isPrintReady={formReady}
+              />
+              
+              <DocumentUpload
+                title="Guarantor 2 Photo (Optional)"
+                documentType="guarantor2_photo"
+                onUpload={handleUploadGuarantor2Photo}
+                isUploading={isUploadingGuarantor2}
+                uploadedFiles={guarantor2Photos.map(doc => ({
+                  name: doc.fileName,
+                  size: doc.fileSize,
+                  type: doc.fileType,
+                  id: doc.id,
+                  documentType: doc.documentType
+                }))}
+                onDelete={deleteGuarantor2Photo}
+                iconType="user"
+                enableCapture={true}
+                isPrintable={true}
+                isPrintReady={formReady}
+              />
+              
+              <DialogFooter>
+                <Button onClick={handleFinish} className="w-full md:w-auto">
+                  <Check className="mr-2 h-4 w-4" />
+                  Finish
+                </Button>
+              </DialogFooter>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
 };
-
-useEffect(() => {
-  // Add print styles
-  const style = document.createElement('style');
-  style.id = 'print-styles';
-  style.innerHTML = `
-    @media print {
-      body * {
-        visibility: hidden;
-      }
-      .print-content, .print-content * {
-        visibility: visible;
-      }
-      .print-content {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
-      .no-print {
-        display: none !important;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-  
-  return () => {
-    // Cleanup
-    const styleElem = document.getElementById('print-styles');
-    if (styleElem) styleElem.remove();
-  };
-}, []);

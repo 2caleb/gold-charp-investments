@@ -1,12 +1,16 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import LoanApplicationForm from '@/components/loans/LoanApplicationForm';
 import { Button } from '@/components/ui/button';
 import { BarChart3, ClipboardList } from 'lucide-react';
+import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
 
 const NewLoanApplication = () => {
+  // Force desktop view for better UX
+  useDesktopRedirect();
+
   return (
     <Layout>
       <section className="bg-gray-50 dark:bg-gray-900 py-8 md:py-16">
