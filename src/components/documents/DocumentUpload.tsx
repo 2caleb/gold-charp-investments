@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,6 +14,7 @@ interface UploadedFile {
   url?: string;
   type: string;
   id?: string;
+  documentType?: string; // Added documentType property
 }
 
 interface DocumentUploadProps {
@@ -150,12 +150,16 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
 
   // Combine uploaded files from props and local state
   const allFiles = [
-    ...uploadedFiles,
+    ...uploadedFiles.map(file => ({
+      ...file,
+      documentType: file.documentType || documentType // Ensure documentType is set
+    })),
     ...localUploadedFiles.map(file => ({
       name: file.name,
       size: file.size,
       type: file.type,
-      id: file.name // Use filename as temporary ID for local files
+      id: file.name, // Use filename as temporary ID for local files
+      documentType // Add documentType from props
     }))
   ];
 

@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import DataCollectionButton from '@/components/loans/DataCollectionButton';
+import { DataCollectionButton } from '@/components/loans/DataCollectionButton';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartBar, FileText, Users, Calendar } from 'lucide-react';

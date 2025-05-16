@@ -1,9 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { FilePlus, Eye, Loader2, AlertTriangle, InfoIcon } from 'lucide-react';
-import DataCollectionButton from '@/components/loans/DataCollectionButton';
+import { DataCollectionButton } from '@/components/loans/DataCollectionButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
