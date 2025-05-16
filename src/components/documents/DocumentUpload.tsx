@@ -5,9 +5,17 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Upload, X, FileText, Camera, Home, File, Video, ScanLine } from 'lucide-react';
+import { Loader2, Upload, X, FileText, Camera, Home, File, Video, ScanLine, Trash2 } from 'lucide-react';
 import { useMediaCapture } from '@/hooks/use-media-capture';
 import { DocumentScanner } from '@/components/media/DocumentScanner';
+
+interface UploadedFile {
+  name: string;
+  size: number;
+  url?: string;
+  type: string;
+  id?: string;
+}
 
 interface DocumentUploadProps {
   title: string;
@@ -17,6 +25,8 @@ interface DocumentUploadProps {
   iconType?: 'id' | 'photo' | 'property' | 'document' | 'video';
   enableScanning?: boolean;
   enableCapture?: boolean;
+  uploadedFiles?: UploadedFile[];
+  onDelete?: (fileId: string) => Promise<void>;
 }
 
 export const DocumentUpload: React.FC<DocumentUploadProps> = ({
@@ -26,10 +36,13 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
   isUploading,
   iconType = 'document',
   enableScanning = false,
-  enableCapture = false
+  enableCapture = false,
+  uploadedFiles = [],
+  onDelete
 }) => {
   const [description, setDescription] = useState('');
   const [showScanner, setShowScanner] = useState(false);
+  const [localUploadedFiles, setLocalUploadedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { captureImage, captureVideo, MediaCaptureUI } = useMediaCapture();
   
@@ -45,6 +58,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       await onUpload(file, description);
+      setLocalUploadedFiles(prev => [...prev, file]);
       setDescription('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -67,6 +81,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       file.lastModified = Date.now();
       
       await onUpload(file as File, description);
+      setLocalUploadedFiles(prev => [...prev, file as File]);
       setDescription('');
     } catch (error) {
       console.error('Error capturing image:', error);
@@ -88,6 +103,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       file.lastModified = Date.now();
       
       await onUpload(file as File, description);
+      setLocalUploadedFiles(prev => [...prev, file as File]);
       setDescription('');
     } catch (error) {
       console.error('Error capturing video:', error);
@@ -109,10 +125,35 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
       file.lastModified = Date.now();
       
       await onUpload(file as File, description);
+      setLocalUploadedFiles(prev => [...prev, file as File]);
       setDescription('');
     } catch (error) {
       console.error('Error processing scanned document:', error);
     }
+  };
+
+  const handleDeleteFile = async (fileId: string) => {
+    if (onDelete && fileId) {
+      await onDelete(fileId);
+    }
+  };
+
+  // Combine uploaded files from props and local state
+  const allFiles = [
+    ...uploadedFiles,
+    ...localUploadedFiles.map(file => ({
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      id: file.name // Use filename as temporary ID for local files
+    }))
+  ];
+
+  // Function to format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   return (
@@ -153,7 +194,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                   accept={documentType === 'video_evidence' ? 'video/*' : 'image/*,.pdf,.doc,.docx'}
                 />
                 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-4">
                   <Button 
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
@@ -200,6 +241,35 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
                     </Button>
                   )}
                 </div>
+
+                {/* Display uploaded files */}
+                {allFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <Label>Attachments</Label>
+                    <div className="border rounded-md p-3 space-y-2">
+                      {allFiles.map((file, index) => (
+                        <div key={file.id || index} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                          <div className="flex items-center">
+                            <FileText className="h-4 w-4 mr-2 text-blue-500" />
+                            <div>
+                              <p className="text-sm font-medium">{file.name}</p>
+                              <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                            </div>
+                          </div>
+                          {onDelete && file.id && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleDeleteFile(file.id as string)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

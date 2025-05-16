@@ -13,6 +13,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormSection,
 } from '@/components/ui/form';
 import {
   Select,
@@ -32,10 +33,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, RefreshCcw } from 'lucide-react';
 import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
+// Extended schema to include guarantor fields
 const loanFormSchema = z.object({
   // Loan Identification
   loanIdentificationNumber: z.string().min(1, { message: 'Loan ID is required' }),
@@ -46,6 +48,20 @@ const loanFormSchema = z.object({
   phone: z.string().min(10, { message: 'Valid phone number is required' }),
   nationalId: z.string().min(5, { message: 'National ID is required' }),
   address: z.string().min(5, { message: 'Address is required' }),
+  
+  // Guarantor 1
+  guarantor1FullName: z.string().min(3, { message: 'Guarantor full name is required' }),
+  guarantor1Phone: z.string().min(10, { message: 'Valid phone number is required' }),
+  guarantor1NationalId: z.string().min(5, { message: 'National ID is required' }),
+  guarantor1Relationship: z.string().min(1, { message: 'Relationship is required' }),
+  guarantor1Address: z.string().min(5, { message: 'Address is required' }),
+
+  // Guarantor 2
+  guarantor2FullName: z.string().min(3, { message: 'Guarantor full name is required' }),
+  guarantor2Phone: z.string().min(10, { message: 'Valid phone number is required' }),
+  guarantor2NationalId: z.string().min(5, { message: 'National ID is required' }),
+  guarantor2Relationship: z.string().min(1, { message: 'Relationship is required' }),
+  guarantor2Address: z.string().min(5, { message: 'Address is required' }),
   
   // Loan Details
   loanType: z.string().min(1, { message: 'Loan type is required' }),
@@ -71,6 +87,15 @@ const loanFormSchema = z.object({
 });
 
 type LoanFormValues = z.infer<typeof loanFormSchema>;
+
+// Types for uploaded files
+interface UploadedFile {
+  name: string;
+  size: number;
+  url?: string;
+  type: string;
+  id?: string;
+}
 
 // Mock document verification service
 const documentVerificationService = {
@@ -103,6 +128,13 @@ const LoanApplicationForm = () => {
   const [activeTab, setActiveTab] = useState('identification');
   const [loanId, setLoanId] = useState<string>('');
   
+  // Track uploaded documents
+  const [nationalIdDocuments, setNationalIdDocuments] = useState<UploadedFile[]>([]);
+  const [collateralDocuments, setCollateralDocuments] = useState<UploadedFile[]>([]);
+  const [incomeDocuments, setIncomeDocuments] = useState<UploadedFile[]>([]);
+  const [guarantor1Documents, setGuarantor1Documents] = useState<UploadedFile[]>([]);
+  const [guarantor2Documents, setGuarantor2Documents] = useState<UploadedFile[]>([]);
+  
   // Generate a loan ID when the component mounts
   useEffect(() => {
     setLoanId(generateLoanIdentificationNumber());
@@ -117,6 +149,16 @@ const LoanApplicationForm = () => {
       phone: '',
       nationalId: '',
       address: '',
+      guarantor1FullName: '',
+      guarantor1Phone: '',
+      guarantor1NationalId: '',
+      guarantor1Relationship: '',
+      guarantor1Address: '',
+      guarantor2FullName: '',
+      guarantor2Phone: '',
+      guarantor2NationalId: '',
+      guarantor2Relationship: '',
+      guarantor2Address: '',
       loanType: '',
       loanAmount: '',
       loanPurpose: '',
@@ -181,12 +223,16 @@ const LoanApplicationForm = () => {
     }
   };
   
+  // Navigation functions
   const nextTab = (currentTab: string) => {
     switch (currentTab) {
       case 'identification':
         setActiveTab('personal');
         break;
       case 'personal':
+        setActiveTab('guarantors');
+        break;
+      case 'guarantors':
         setActiveTab('loan');
         break;
       case 'loan':
@@ -208,8 +254,11 @@ const LoanApplicationForm = () => {
   
   const prevTab = (currentTab: string) => {
     switch (currentTab) {
-      case 'loan':
+      case 'guarantors':
         setActiveTab('personal');
+        break;
+      case 'loan':
+        setActiveTab('guarantors');
         break;
       case 'employment':
         setActiveTab('loan');
@@ -228,28 +277,111 @@ const LoanApplicationForm = () => {
     }
   };
   
-  // Fix TypeScript errors: Update the document upload handlers to return Promises
-  const handleDocumentUpload = async (file: File, description?: string, tags?: string[]): Promise<void> => {
+  // Document handlers
+  const handleDocumentUpload = async (file: File, documentType: string): Promise<void> => {
     return new Promise((resolve) => {
       // Simulate upload process
       setTimeout(() => {
-        console.log('Document uploaded:', file.name);
+        console.log(`${documentType} uploaded:`, file.name);
+        
+        // Create a new uploaded file object
+        const newFile: UploadedFile = {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          id: `${documentType}-${Date.now()}` // Generate a temporary ID
+        };
+        
+        // Add the file to the appropriate state based on document type
+        switch (documentType) {
+          case 'id_document':
+            setNationalIdDocuments(prev => [...prev, newFile]);
+            break;
+          case 'collateral_photo':
+            setCollateralDocuments(prev => [...prev, newFile]);
+            break;
+          case 'proof_of_income':
+            setIncomeDocuments(prev => [...prev, newFile]);
+            break;
+          case 'guarantor1_id':
+            setGuarantor1Documents(prev => [...prev, newFile]);
+            break;
+          case 'guarantor2_id':
+            setGuarantor2Documents(prev => [...prev, newFile]);
+            break;
+        }
+        
         toast({
           title: "Document Uploaded",
           description: `${file.name} has been uploaded successfully.`,
         });
+        
         resolve();
       }, 1500);
     });
+  };
+
+  const handleDeleteDocument = async (fileId: string, documentType: string): Promise<void> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Remove the file from the appropriate state based on document type
+        switch (documentType) {
+          case 'id_document':
+            setNationalIdDocuments(prev => prev.filter(doc => doc.id !== fileId));
+            break;
+          case 'collateral_photo':
+            setCollateralDocuments(prev => prev.filter(doc => doc.id !== fileId));
+            break;
+          case 'proof_of_income':
+            setIncomeDocuments(prev => prev.filter(doc => doc.id !== fileId));
+            break;
+          case 'guarantor1_id':
+            setGuarantor1Documents(prev => prev.filter(doc => doc.id !== fileId));
+            break;
+          case 'guarantor2_id':
+            setGuarantor2Documents(prev => prev.filter(doc => doc.id !== fileId));
+            break;
+        }
+        
+        toast({
+          title: "Document Deleted",
+          description: "The document has been removed.",
+        });
+        
+        resolve();
+      }, 500);
+    });
+  };
+
+  // Handler functions for specific document types
+  const handleNationalIdUpload = async (file: File): Promise<void> => {
+    return handleDocumentUpload(file, 'id_document');
+  };
+  
+  const handleCollateralUpload = async (file: File): Promise<void> => {
+    return handleDocumentUpload(file, 'collateral_photo');
+  };
+  
+  const handleIncomeDocUpload = async (file: File): Promise<void> => {
+    return handleDocumentUpload(file, 'proof_of_income');
+  };
+  
+  const handleGuarantor1Upload = async (file: File): Promise<void> => {
+    return handleDocumentUpload(file, 'guarantor1_id');
+  };
+  
+  const handleGuarantor2Upload = async (file: File): Promise<void> => {
+    return handleDocumentUpload(file, 'guarantor2_id');
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-7 mb-8">
+          <TabsList className="grid grid-cols-8 mb-8">
             <TabsTrigger value="identification">Identification</TabsTrigger>
             <TabsTrigger value="personal">Personal</TabsTrigger>
+            <TabsTrigger value="guarantors">Guarantors</TabsTrigger>
             <TabsTrigger value="loan">Loan Details</TabsTrigger>
             <TabsTrigger value="employment">Employment</TabsTrigger>
             <TabsTrigger value="collateral">Collateral</TabsTrigger>
@@ -397,6 +529,191 @@ const LoanApplicationForm = () => {
                 Previous Step
               </Button>
               <Button type="button" onClick={() => nextTab('personal')}>
+                Next Step
+              </Button>
+            </div>
+          </TabsContent>
+          
+          {/* New Guarantors Tab */}
+          <TabsContent value="guarantors" className="space-y-4 p-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">Guarantors Information</h2>
+              <p className="text-gray-500 mb-6">Please provide details for two guarantors who can vouch for your loan.</p>
+            </div>
+            
+            <FormSection title="Guarantor 1" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="guarantor1FullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="guarantor1Phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+256 700 000000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="guarantor1NationalId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>National ID Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="CM12345678" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="guarantor1Relationship"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Relationship to Applicant</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select relationship" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="family">Family Member</SelectItem>
+                        <SelectItem value="friend">Friend</SelectItem>
+                        <SelectItem value="colleague">Work Colleague</SelectItem>
+                        <SelectItem value="employer">Employer</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="guarantor1Address"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Residential Address</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter guarantor's full address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormSection title="Guarantor 2" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="guarantor2FullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Jane Smith" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="guarantor2Phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="+256 700 000000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="guarantor2NationalId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>National ID Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="CM12345678" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="guarantor2Relationship"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Relationship to Applicant</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select relationship" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="family">Family Member</SelectItem>
+                        <SelectItem value="friend">Friend</SelectItem>
+                        <SelectItem value="colleague">Work Colleague</SelectItem>
+                        <SelectItem value="employer">Employer</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="guarantor2Address"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Residential Address</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Enter guarantor's full address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="flex justify-between mt-6">
+              <Button type="button" variant="outline" onClick={() => prevTab('guarantors')}>
+                Previous Step
+              </Button>
+              <Button type="button" onClick={() => nextTab('guarantors')}>
                 Next Step
               </Button>
             </div>
@@ -669,7 +986,7 @@ const LoanApplicationForm = () => {
             </div>
           </TabsContent>
           
-          {/* Documents Tab - Fix the missing title property */}
+          {/* Documents Tab - Updated with our new DocumentUpload component */}
           <TabsContent value="documents" className="space-y-4 p-6">
             <div>
               <h2 className="text-2xl font-semibold mb-4">Supporting Documents</h2>
@@ -686,8 +1003,13 @@ const LoanApplicationForm = () => {
                   <DocumentUpload 
                     title="National ID Document"
                     documentType="id_document"
-                    onUpload={handleDocumentUpload}
+                    onUpload={handleNationalIdUpload}
                     isUploading={false}
+                    iconType="id"
+                    enableCapture={true} 
+                    enableScanning={true}
+                    uploadedFiles={nationalIdDocuments}
+                    onDelete={(id) => handleDeleteDocument(id, 'id_document')}
                   />
                 </CardContent>
               </Card>
@@ -701,8 +1023,50 @@ const LoanApplicationForm = () => {
                   <DocumentUpload 
                     title="Proof of Income"
                     documentType="loan_agreement"
-                    onUpload={handleDocumentUpload}
+                    onUpload={handleIncomeDocUpload}
                     isUploading={false}
+                    uploadedFiles={incomeDocuments}
+                    onDelete={(id) => handleDeleteDocument(id, 'proof_of_income')}
+                  />
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Guarantor 1 ID</CardTitle>
+                  <CardDescription>Upload ID document for first guarantor</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DocumentUpload 
+                    title="Guarantor 1 ID"
+                    documentType="id_document"
+                    onUpload={handleGuarantor1Upload}
+                    isUploading={false}
+                    iconType="id"
+                    enableCapture={true}
+                    enableScanning={true}
+                    uploadedFiles={guarantor1Documents}
+                    onDelete={(id) => handleDeleteDocument(id, 'guarantor1_id')}
+                  />
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Guarantor 2 ID</CardTitle>
+                  <CardDescription>Upload ID document for second guarantor</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <DocumentUpload 
+                    title="Guarantor 2 ID"
+                    documentType="id_document"
+                    onUpload={handleGuarantor2Upload}
+                    isUploading={false}
+                    iconType="id"
+                    enableCapture={true}
+                    enableScanning={true}
+                    uploadedFiles={guarantor2Documents}
+                    onDelete={(id) => handleDeleteDocument(id, 'guarantor2_id')}
                   />
                 </CardContent>
               </Card>
@@ -717,25 +1081,12 @@ const LoanApplicationForm = () => {
                     <DocumentUpload 
                       title="Collateral Documents"
                       documentType="collateral_photo"
-                      onUpload={handleDocumentUpload}
+                      onUpload={handleCollateralUpload}
                       isUploading={false}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-              
-              {form.watch('loanType') === 'business' && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-base">Business Documents</CardTitle>
-                    <CardDescription>Upload your business registration and license</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <DocumentUpload 
-                      title="Business Documents"
-                      documentType="property_document"
-                      onUpload={handleDocumentUpload}
-                      isUploading={false}
+                      iconType="photo"
+                      enableCapture={true}
+                      uploadedFiles={collateralDocuments}
+                      onDelete={(id) => handleDeleteDocument(id, 'collateral_photo')}
                     />
                   </CardContent>
                 </Card>
