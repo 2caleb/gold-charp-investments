@@ -4,8 +4,7 @@ import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import LoanApplicationForm from '@/components/loans/LoanApplicationForm';
 import { Button } from '@/components/ui/button';
-import { BarChart3, ClipboardList, MapPin } from 'lucide-react';
-import { RiskProfileMap } from '@/components/dashboard/RiskProfileMap';
+import { BarChart3, ClipboardList } from 'lucide-react';
 
 const NewLoanApplication = () => {
   return (
@@ -35,24 +34,9 @@ const NewLoanApplication = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div className="lg:col-span-2">
-              <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg">
-                <LoanApplicationForm />
-              </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4">
-              <h2 className="text-xl font-semibold mb-4 flex items-center">
-                <MapPin className="mr-2 h-5 w-5 text-red-500" />
-                Geographical Risk Distribution
-              </h2>
-              <div className="h-96">
-                <RiskProfileMap />
-              </div>
-              <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                The map shows loan risk assessment based on geographical location.
-                Darker regions indicate higher risk areas.
-              </p>
+          <div className="mx-auto max-w-4xl">
+            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg">
+              <LoanApplicationForm />
             </div>
           </div>
         </div>
