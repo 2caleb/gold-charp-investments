@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DocumentUpload } from '@/components/loans/DocumentUpload';
+import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -577,8 +577,9 @@ const LoanApplicationForm = () => {
                 </CardHeader>
                 <CardContent>
                   <DocumentUpload 
-                    documentType="national-id"
-                    verifyDocument={documentVerificationService.verifyNationalId}
+                    documentType="id_document"
+                    onUpload={() => {}}
+                    isUploading={false}
                   />
                 </CardContent>
               </Card>
@@ -590,8 +591,9 @@ const LoanApplicationForm = () => {
                 </CardHeader>
                 <CardContent>
                   <DocumentUpload 
-                    documentType="bank-statement"
-                    verifyDocument={documentVerificationService.verifyBankStatement}
+                    documentType="loan_agreement"
+                    onUpload={() => {}}
+                    isUploading={false}
                   />
                 </CardContent>
               </Card>
@@ -604,8 +606,10 @@ const LoanApplicationForm = () => {
                   </CardHeader>
                   <CardContent>
                     <DocumentUpload 
-                      documentType="land-title"
-                      verifyDocument={documentVerificationService.verifyLandTitle}
+                      title="Collateral Documents"
+                      documentType="collateral_photo"
+                      onUpload={() => {}}
+                      isUploading={false}
                     />
                   </CardContent>
                 </Card>
@@ -619,8 +623,10 @@ const LoanApplicationForm = () => {
                   </CardHeader>
                   <CardContent>
                     <DocumentUpload 
-                      documentType="business-license"
-                      verifyDocument={documentVerificationService.verifyBusinessLicense}
+                      title="Business Documents"
+                      documentType="property_document"
+                      onUpload={() => {}}
+                      isUploading={false}
                     />
                   </CardContent>
                 </Card>
