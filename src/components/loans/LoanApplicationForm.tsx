@@ -6,6 +6,7 @@ import { LoanDetailsForm } from './LoanDetailsForm';
 import { DocumentsUploadSection } from './DocumentsUploadSection';
 import { RealtimeUpdateNotification } from './RealtimeUpdateNotification';
 import { useLoanApplicationForm } from '@/hooks/use-loan-application-form';
+import { supabase } from '@/integrations/supabase/client';
 
 const LoanApplicationForm = () => {
   const {
@@ -46,9 +47,29 @@ const LoanApplicationForm = () => {
     getIdDocumentUrl,
     getCollateralPhotoUrl,
     getPropertyDocumentUrl,
-    getLoanAgreementUrl,
-    verifyDocument
+    getLoanAgreementUrl
   } = useLoanApplicationForm();
+
+  // Function to verify document using the verify-document Edge Function
+  const verifyDocument = async (documentId: string, documentType: string) => {
+    try {
+      // Call the Edge Function
+      const { data, error } = await supabase.functions.invoke('verify-document', {
+        body: { documentId, documentType }
+      });
+      
+      if (error) {
+        console.error('Error verifying document:', error);
+        return false;
+      }
+      
+      console.log('Document verification result:', data);
+      return data;
+    } catch (err) {
+      console.error('Exception verifying document:', err);
+      return false;
+    }
+  };
 
   // Auto-transition to documents tab when loan application is submitted
   useEffect(() => {

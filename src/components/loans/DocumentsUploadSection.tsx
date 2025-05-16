@@ -181,7 +181,7 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
             title="Loan Agreement"
             documentType="loan_agreement"
             onUpload={handleUploadLoanAgreement}
-            isUploadingLoan={isUploadingLoan}
+            isUploading={isUploadingLoan}
             iconType="document"
           />
         </div>
@@ -235,3 +235,4 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
     </div>
   );
 };
+
