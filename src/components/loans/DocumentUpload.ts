@@ -2,3 +2,11 @@
 // This is a simple re-export file to maintain backward compatibility
 // and avoid modifying too much code
 export { DocumentUpload } from '@/components/documents/DocumentUpload';
+
+// Add types to fix TypeScript errors if needed
+export type DocumentUploadProps = {
+  documentType: string;
+  title?: string;
+  onUpload: (file: File, description?: string, tags?: string[]) => Promise<void>;
+  isUploading: boolean;
+};

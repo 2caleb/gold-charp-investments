@@ -15,7 +15,7 @@ const NewLoanApplication = () => {
             <div>
               <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4 dark:text-white">New Loan Application</h1>
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
-                Fill out the form below to submit a new loan application. If you have collateral, you'll be able to add supporting documents.
+                Fill out the form below to submit a new loan application. Each application receives a unique identification number for tracking.
               </p>
             </div>
             <div className="mt-4 md:mt-0 flex space-x-4">

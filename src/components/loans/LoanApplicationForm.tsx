@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,9 +33,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCcw } from 'lucide-react';
+import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
 const loanFormSchema = z.object({
+  // Loan Identification
+  loanIdentificationNumber: z.string().min(1, { message: 'Loan ID is required' }),
+  
   // Personal Information
   fullName: z.string().min(3, { message: 'Full name is required' }),
   email: z.string().email({ message: 'Valid email is required' }),
@@ -96,11 +100,18 @@ const documentVerificationService = {
 const LoanApplicationForm = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState('personal');
+  const [activeTab, setActiveTab] = useState('identification');
+  const [loanId, setLoanId] = useState<string>('');
+  
+  // Generate a loan ID when the component mounts
+  useEffect(() => {
+    setLoanId(generateLoanIdentificationNumber());
+  }, []);
   
   const form = useForm<LoanFormValues>({
     resolver: zodResolver(loanFormSchema),
     defaultValues: {
+      loanIdentificationNumber: '',
       fullName: '',
       email: '',
       phone: '',
@@ -121,7 +132,25 @@ const LoanApplicationForm = () => {
     },
   });
   
+  // Update the form with the generated loan ID
+  useEffect(() => {
+    if (loanId) {
+      form.setValue('loanIdentificationNumber', loanId);
+    }
+  }, [loanId, form]);
+  
   const hasCollateral = form.watch('hasCollateral');
+  
+  const regenerateLoanId = () => {
+    const newLoanId = generateLoanIdentificationNumber();
+    setLoanId(newLoanId);
+    form.setValue('loanIdentificationNumber', newLoanId);
+    
+    toast({
+      title: "Loan ID Regenerated",
+      description: `New loan ID: ${newLoanId}`,
+    });
+  };
   
   const onSubmit = async (data: LoanFormValues) => {
     setIsSubmitting(true);
@@ -154,6 +183,9 @@ const LoanApplicationForm = () => {
   
   const nextTab = (currentTab: string) => {
     switch (currentTab) {
+      case 'identification':
+        setActiveTab('personal');
+        break;
       case 'personal':
         setActiveTab('loan');
         break;
@@ -200,7 +232,8 @@ const LoanApplicationForm = () => {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-6 mb-8">
+          <TabsList className="grid grid-cols-7 mb-8">
+            <TabsTrigger value="identification">Identification</TabsTrigger>
             <TabsTrigger value="personal">Personal</TabsTrigger>
             <TabsTrigger value="loan">Loan Details</TabsTrigger>
             <TabsTrigger value="employment">Employment</TabsTrigger>
@@ -208,6 +241,62 @@ const LoanApplicationForm = () => {
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="review">Review</TabsTrigger>
           </TabsList>
+          
+          {/* Loan Identification Tab */}
+          <TabsContent value="identification" className="space-y-4 p-6">
+            <div>
+              <h2 className="text-2xl font-semibold mb-4">Loan Identification</h2>
+              <p className="text-gray-500 mb-6">Each loan is assigned a unique identification number for tracking and reference.</p>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-6">
+              <Card className="border-2 border-dashed border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="flex justify-between items-center">
+                    <span>Loan Identification Number</span>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="icon"
+                      onClick={regenerateLoanId}
+                      title="Generate New ID"
+                      className="h-8 w-8"
+                    >
+                      <RefreshCcw className="h-4 w-4" />
+                    </Button>
+                  </CardTitle>
+                  <CardDescription>This unique ID will be used to track your loan application</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="loanIdentificationNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            className="text-lg font-mono bg-gray-50 dark:bg-gray-800"
+                            readOnly 
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Format: LN-YYYY-MM-XXXXX (Year-Month-Sequence)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="flex justify-end mt-6">
+              <Button type="button" onClick={() => nextTab('identification')}>
+                Next Step
+              </Button>
+            </div>
+          </TabsContent>
           
           {/* Personal Information Tab */}
           <TabsContent value="personal" className="space-y-4 p-6">
@@ -288,7 +377,10 @@ const LoanApplicationForm = () => {
               />
             </div>
             
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-between mt-6">
+              <Button type="button" variant="outline" onClick={() => prevTab('personal')}>
+                Previous Step
+              </Button>
               <Button type="button" onClick={() => nextTab('personal')}>
                 Next Step
               </Button>
@@ -651,6 +743,17 @@ const LoanApplicationForm = () => {
             </div>
             
             <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Loan Identification</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <div>
+                    <span className="font-medium">Loan ID:</span> {form.getValues('loanIdentificationNumber')}
+                  </div>
+                </CardContent>
+              </Card>
+              
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Personal Information</CardTitle>
