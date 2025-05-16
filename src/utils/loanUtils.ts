@@ -71,7 +71,7 @@ export function generateRejectionReason(
         reason = 'Initial review indicates insufficient documentation or inconsistencies in the provided information. Please ensure all required documents are submitted and information is accurate.';
         break;
       case 'director':
-        reason = 'Risk assessment has determined that this loan carries a higher than acceptable risk profile based on current market conditions and the applicant's financial history.';
+        reason = "Risk assessment has determined that this loan carries a higher than acceptable risk profile based on current market conditions and the applicant's financial history.";
         break;
       case 'ceo':
         reason = 'The loan application does not align with our current strategic lending priorities or risk appetite. We recommend exploring alternative financing options.';
