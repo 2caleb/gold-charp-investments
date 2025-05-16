@@ -69,6 +69,15 @@ const LoanApplicationForm = () => {
     }
   };
 
+  // Create wrapper functions for document verification that match the expected Promise<void> return type
+  const handleVerifyIdDocument = async (id: string): Promise<void> => {
+    await verifyDocument(id, 'id_document');
+  };
+  
+  const handleVerifyPropertyDocument = async (id: string): Promise<void> => {
+    await verifyDocument(id, 'property_document');
+  };
+
   // Auto-transition to documents tab when loan application is submitted
   useEffect(() => {
     if (loanApplicationId) {
@@ -133,7 +142,7 @@ const LoanApplicationForm = () => {
               handleUploadIdDocument={handleUploadIdDocument}
               handleDeleteIdDocument={handleDeleteIdDocument}
               getIdDocumentUrl={getIdDocumentUrl}
-              verifyDocument={verifyDocument}
+              verifyDocument={handleVerifyIdDocument}
               // Collateral Photos
               collateralPhotos={collateralPhotos}
               isUploadingCollateral={isUploadingCollateral}
@@ -146,6 +155,7 @@ const LoanApplicationForm = () => {
               handleUploadPropertyDocument={handleUploadPropertyDocument}
               handleDeletePropertyDocument={handleDeletePropertyDocument}
               getPropertyDocumentUrl={getPropertyDocumentUrl}
+              verifyDocument={handleVerifyPropertyDocument}
               // Loan Agreements
               loanAgreements={loanAgreements}
               isUploadingLoan={isUploadingLoan}
