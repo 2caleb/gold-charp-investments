@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -91,6 +92,8 @@ export function useDocumentUpload() {
 
       if (!data) throw new Error('Upload failed');
 
+      console.log('File uploaded successfully to bucket:', bucketId, data);
+
       // Save metadata to database
       const { data: metaData, error: metaError } = await supabase
         .from('document_metadata')
@@ -124,7 +127,7 @@ export function useDocumentUpload() {
 
       toast({
         title: 'Upload successful',
-        description: `${file.name} was uploaded successfully`,
+        description: `${file.name} was uploaded successfully to ${bucketId}`,
       });
 
       return newDocument;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LoanDetailsForm from './LoanDetailsForm';
@@ -286,17 +285,6 @@ const LoanApplicationForm = () => {
           
           <div className="flex justify-end space-x-4 mt-8">
             <Button 
-              onClick={handlePrint} 
-              variant="outline"
-              disabled={!isReadyToPrint}
-              className={!isReadyToPrint ? "opacity-50" : ""}
-              title={!isReadyToPrint ? "Complete form and upload required documents to enable printing" : "Print application"}
-            >
-              <Printer className="mr-2 h-4 w-4" />
-              Print Application
-            </Button>
-            
-            <Button 
               onClick={handleFinish}
               className="bg-purple-700 hover:bg-purple-800"
               disabled={!hasNecessaryDocuments || !form.getValues().guarantor1_consent}
@@ -305,6 +293,25 @@ const LoanApplicationForm = () => {
               Complete Application
             </Button>
           </div>
+          
+          {isReadyToPrint && (
+            <div className="mt-6 p-6 bg-gray-50 dark:bg-gray-800 border border-green-200 dark:border-green-900 rounded-lg">
+              <div className="flex items-center mb-4 text-green-600 dark:text-green-400">
+                <Check className="mr-2 h-5 w-5" />
+                <h3 className="text-lg font-medium">Application Ready for Printing</h3>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">
+                Your loan application has been completed successfully. You can now print it for your records or for submission.
+              </p>
+              <Button 
+                onClick={handlePrint} 
+                className="w-full sm:w-auto"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                Print Application
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

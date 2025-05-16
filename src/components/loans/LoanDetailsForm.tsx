@@ -80,7 +80,7 @@ const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      client_type: 'existing',
+      client_type: 'existing',  // This is now set as a default value
       loan_type: 'personal',
       loan_amount: '',
       loan_term: '12',
@@ -109,7 +109,12 @@ const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
   }, [preselectedClientId, form]);
   
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit(values);
+    // Ensure client_type is always passed (this is the key fix for the build error)
+    const formattedValues: LoanApplicationValues = {
+      ...values,
+      client_type: values.client_type || 'existing',
+    };
+    onSubmit(formattedValues);
   };
   
   return (
