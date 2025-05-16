@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import DataCollectionButton from '@/components/loans/DataCollectionButton';
@@ -15,6 +14,8 @@ interface RecentApplication {
   loan_type: string;
   loan_amount: string;
   status: string;
+  created_at: string;
+  id: string;
   loan_id?: string;
 }
 
@@ -34,14 +35,26 @@ const DataCollection = () => {
       setIsLoading(true);
       try {
         // Fetch recent applications
-        const { data: applications, error: applicationsError } = await supabase
+        const { data, error } = await supabase
           .from('loan_applications')
-          .select('client_name, loan_type, loan_amount, status, loan_id')
+          .select('id, client_name, loan_amount, loan_type, status, created_at, loan_id')
           .order('created_at', { ascending: false })
-          .limit(3);
+          .limit(5);
           
-        if (applicationsError) throw applicationsError;
-        setRecentApplications(applications || []);
+        if (error) throw error;
+        
+        // Handle the data safely to avoid TypeScript errors
+        const safeData = data?.map(app => ({
+          id: app.id,
+          client_name: app.client_name,
+          loan_amount: app.loan_amount,
+          loan_type: app.loan_type,
+          status: app.status,
+          created_at: app.created_at,
+          loan_id: app.loan_id || 'No ID'
+        })) || [];
+        
+        setRecentApplications(safeData);
         
         // Fetch stats (for a real application, these would be separate queries)
         const { count: clientCount, error: clientError } = await supabase

@@ -6,7 +6,7 @@ export { DocumentUpload } from '@/components/documents/DocumentUpload';
 // Add types to fix TypeScript errors if needed
 export type DocumentUploadProps = {
   documentType: string;
-  title?: string;
+  title: string; // Make sure this is required
   onUpload: (file: File, description?: string, tags?: string[]) => Promise<void>;
   isUploading: boolean;
 };

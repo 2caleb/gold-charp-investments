@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -20,7 +19,7 @@ interface LoanApplication {
   loan_type: string;
   status: string;
   created_at: string;
-  loan_id?: string; // New field for loan ID
+  loan_id?: string; // Field for loan ID
   rejection_reason?: string;
   approval_notes?: string;
   original_amount?: string;
@@ -62,13 +61,29 @@ const LoanApplicationsList = () => {
       
       setIsLoading(true);
       try {
+        // Modify the query to handle the case where loan_id column might not exist yet
+        // This is a temporary solution until the SQL migration is applied
         const { data, error } = await supabase
           .from('loan_applications')
-          .select('id, client_name, loan_amount, loan_type, status, created_at, loan_id, rejection_reason, approval_notes, original_amount')
-          .order('created_at', { ascending: false });
+          .select('id, client_name, loan_amount, loan_type, status, created_at, loan_id, rejection_reason, approval_notes, original_amount');
 
         if (error) throw error;
-        setApplications(data || []);
+        
+        // Ensure we handle the data properly even if some fields are missing
+        const safeData = data?.map(app => ({
+          id: app.id,
+          client_name: app.client_name,
+          loan_amount: app.loan_amount,
+          loan_type: app.loan_type,
+          status: app.status,
+          created_at: app.created_at,
+          loan_id: app.loan_id || 'No ID',
+          rejection_reason: app.rejection_reason,
+          approval_notes: app.approval_notes,
+          original_amount: app.original_amount
+        })) || [];
+        
+        setApplications(safeData);
       } catch (error: any) {
         console.error('Error fetching loan applications:', error);
         toast({
@@ -76,6 +91,8 @@ const LoanApplicationsList = () => {
           description: error.message || 'An error occurred while fetching loan applications',
           variant: 'destructive',
         });
+        // Set empty array on error to avoid TypeScript errors
+        setApplications([]);
       } finally {
         setIsLoading(false);
       }

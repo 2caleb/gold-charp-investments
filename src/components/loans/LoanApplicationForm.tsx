@@ -669,7 +669,7 @@ const LoanApplicationForm = () => {
             </div>
           </TabsContent>
           
-          {/* Documents Tab */}
+          {/* Documents Tab - Fix the missing title property */}
           <TabsContent value="documents" className="space-y-4 p-6">
             <div>
               <h2 className="text-2xl font-semibold mb-4">Supporting Documents</h2>
@@ -684,6 +684,7 @@ const LoanApplicationForm = () => {
                 </CardHeader>
                 <CardContent>
                   <DocumentUpload 
+                    title="National ID Document"
                     documentType="id_document"
                     onUpload={handleDocumentUpload}
                     isUploading={false}
@@ -698,6 +699,7 @@ const LoanApplicationForm = () => {
                 </CardHeader>
                 <CardContent>
                   <DocumentUpload 
+                    title="Proof of Income"
                     documentType="loan_agreement"
                     onUpload={handleDocumentUpload}
                     isUploading={false}
