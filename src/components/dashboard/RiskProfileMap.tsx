@@ -165,7 +165,7 @@ export const RiskProfileMap = () => {
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Select value={selectedRegion || ''} onValueChange={handleRegionChange}>
+          <Select value={selectedRegion || ""} onValueChange={handleRegionChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select Region" />
             </SelectTrigger>
@@ -202,12 +202,12 @@ export const RiskProfileMap = () => {
             </CardHeader>
             <CardContent>
               <div className="border rounded-md">
-                <AspectRatio ratio={16/9} className="bg-muted">
+                <AspectRatio ratio={16/9} className="bg-muted relative">
                   <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800 relative">
                     {/* Uganda Map Visualization */}
                     <div className="relative w-full h-full">
                       {/* Base map image of Uganda */}
-                      <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Uganda_regions_blank.svg/800px-Uganda_regions_blank.svg.png')] bg-no-repeat bg-contain bg-center opacity-30"></div>
+                      <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Uganda_regions_blank.svg/800px-Uganda_regions_blank.svg.png')] bg-contain bg-center bg-no-repeat opacity-30"></div>
                       
                       {/* Interactive risk markers */}
                       <div className="absolute inset-0">

@@ -51,11 +51,11 @@ const LoanApplicationForm = () => {
   } = useLoanApplicationForm();
 
   // Function to verify document using the verify-document Edge Function
-  const verifyDocument = async (documentId: string, documentType: string): Promise<void> => {
+  const verifyDocument = async (documentId: string): Promise<void> => {
     try {
       // Call the Edge Function
       const { data, error } = await supabase.functions.invoke('verify-document', {
-        body: { documentId, documentType }
+        body: { documentId, documentType: 'id_document' }
       });
       
       if (error) {
@@ -68,23 +68,25 @@ const LoanApplicationForm = () => {
       console.error('Exception verifying document:', err);
     }
   };
-
-  // Create wrapper functions for document verification that match the expected Promise<void> return type
-  const handleVerifyIdDocument = async (id: string): Promise<void> => {
-    await verifyDocument(id, 'id_document');
-  };
   
-  const handleVerifyPropertyDocument = async (id: string): Promise<void> => {
-    await verifyDocument(id, 'property_document');
-  };
-
-  // Auto-transition to documents tab when loan application is submitted
-  useEffect(() => {
-    if (loanApplicationId) {
-      setActiveTab("documents");
+  const verifyPropertyDoc = async (documentId: string): Promise<void> => {
+    try {
+      // Call the Edge Function
+      const { data, error } = await supabase.functions.invoke('verify-document', {
+        body: { documentId, documentType: 'property_document' }
+      });
+      
+      if (error) {
+        console.error('Error verifying property document:', error);
+        return;
+      }
+      
+      console.log('Property document verification result:', data);
+    } catch (err) {
+      console.error('Exception verifying property document:', err);
     }
-  }, [loanApplicationId, setActiveTab]);
-  
+  };
+
   // Listen for terms accepted event to automatically switch to documents tab
   useEffect(() => {
     const handleTermsAccepted = () => {
@@ -99,6 +101,29 @@ const LoanApplicationForm = () => {
       window.removeEventListener('termsAccepted', handleTermsAccepted);
     };
   }, [loanApplicationId, setActiveTab]);
+  
+  // Auto-transition to documents tab when loan application is submitted
+  useEffect(() => {
+    if (loanApplicationId) {
+      setActiveTab("documents");
+    }
+  }, [loanApplicationId, setActiveTab]);
+  
+  // Listen for checkbox changes to trigger the documents tab
+  const handleTermsChange = (event: CustomEvent) => {
+    if (event.detail?.checked && loanApplicationId) {
+      setActiveTab("documents");
+    }
+  };
+
+  // Add global event listener for the terms checkbox change
+  useEffect(() => {
+    window.addEventListener('termsCheckboxChanged', handleTermsChange);
+    
+    return () => {
+      window.removeEventListener('termsCheckboxChanged', handleTermsChange);
+    };
+  }, [loanApplicationId]);
 
   return (
     <>
@@ -142,7 +167,7 @@ const LoanApplicationForm = () => {
               handleUploadIdDocument={handleUploadIdDocument}
               handleDeleteIdDocument={handleDeleteIdDocument}
               getIdDocumentUrl={getIdDocumentUrl}
-              verifyDocument={handleVerifyIdDocument}
+              verifyDocument={verifyDocument}
               // Collateral Photos
               collateralPhotos={collateralPhotos}
               isUploadingCollateral={isUploadingCollateral}
@@ -155,7 +180,7 @@ const LoanApplicationForm = () => {
               handleUploadPropertyDocument={handleUploadPropertyDocument}
               handleDeletePropertyDocument={handleDeletePropertyDocument}
               getPropertyDocumentUrl={getPropertyDocumentUrl}
-              verifyDocument={handleVerifyPropertyDocument}
+              verifyPropertyDocument={verifyPropertyDoc}
               // Loan Agreements
               loanAgreements={loanAgreements}
               isUploadingLoan={isUploadingLoan}

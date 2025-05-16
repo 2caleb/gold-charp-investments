@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -144,6 +143,24 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
       window.dispatchEvent(event);
     }
   }, [termsAccepted]);
+
+  const { setValue, watch, formState } = form;
+
+  const handleTermsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue("terms_accepted", e.target.checked);
+    
+    // Dispatch custom event when terms checkbox is changed
+    const customEvent = new CustomEvent('termsCheckboxChanged', { 
+      detail: { checked: e.target.checked } 
+    });
+    window.dispatchEvent(customEvent);
+    
+    // Also dispatch the original termsAccepted event for backwards compatibility
+    if (e.target.checked) {
+      const termsAcceptedEvent = new Event('termsAccepted');
+      window.dispatchEvent(termsAcceptedEvent);
+    }
+  };
 
   return (
     <Form {...form}>
@@ -554,28 +571,42 @@ export const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
                 )}
               />
               
-              <FormField
-                control={form.control}
-                name="terms_accepted"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        I accept the terms and conditions
-                      </FormLabel>
-                      <FormDescription>
-                        By checking this box, you agree to the loan terms and conditions
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
+              {/* Terms and conditions */}
+              <div className="flex items-center space-x-2 mt-6">
+                <div className="flex items-start space-x-2">
+                  <Checkbox 
+                    id="terms_accepted" 
+                    checked={watch("terms_accepted")} 
+                    onCheckedChange={(checked) => {
+                      setValue("terms_accepted", checked === true);
+                      // Dispatch custom event when terms checkbox is changed
+                      const customEvent = new CustomEvent('termsCheckboxChanged', { 
+                        detail: { checked: checked === true } 
+                      });
+                      window.dispatchEvent(customEvent);
+                      
+                      // Also dispatch the original termsAccepted event for backwards compatibility
+                      if (checked === true) {
+                        const termsAcceptedEvent = new Event('termsAccepted');
+                        window.dispatchEvent(termsAcceptedEvent);
+                      }
+                    }}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="terms_accepted"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      I accept the terms and conditions
+                    </label>
+                    {formState.errors.terms_accepted && (
+                      <p className="text-sm text-red-500">
+                        You must accept the terms and conditions to continue
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div className="mt-6">
