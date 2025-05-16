@@ -32,6 +32,7 @@ interface DocumentsUploadSectionProps {
   handleUploadPropertyDocument: (file: File, description?: string, tags?: string[]) => Promise<void>;
   handleDeletePropertyDocument: (id: string) => Promise<void>;
   getPropertyDocumentUrl: (id: string) => Promise<string | null>;
+  verifyPropertyDocument?: (id: string) => Promise<void>;
   // Loan Agreements
   loanAgreements: UploadedDocument[];
   isUploadingLoan: boolean;
@@ -63,6 +64,7 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
   handleUploadPropertyDocument,
   handleDeletePropertyDocument,
   getPropertyDocumentUrl,
+  verifyPropertyDocument,
   // Loan Agreements
   loanAgreements,
   isUploadingLoan,
@@ -73,12 +75,27 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
   const [verifyingDocId, setVerifyingDocId] = useState<string | null>(null);
   const [verificationResults, setVerificationResults] = useState<Record<string, any>>({});
   
-  const handleVerifyDocument = async (documentId: string) => {
+  const handleVerifyIdDocument = async (documentId: string) => {
     if (!verifyDocument) return;
     
     setVerifyingDocId(documentId);
     try {
       await verifyDocument(documentId);
+      setVerificationResults(prev => ({
+        ...prev,
+        [documentId]: { isAuthentic: Math.random() > 0.3 } // Mock verification for UI demonstration
+      }));
+    } finally {
+      setVerifyingDocId(null);
+    }
+  };
+  
+  const handleVerifyPropertyDocument = async (documentId: string) => {
+    if (!verifyPropertyDocument) return;
+    
+    setVerifyingDocId(documentId);
+    try {
+      await verifyPropertyDocument(documentId);
       setVerificationResults(prev => ({
         ...prev,
         [documentId]: { isAuthentic: Math.random() > 0.3 } // Mock verification for UI demonstration
@@ -197,7 +214,7 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
           documents={idDocuments}
           onDelete={handleDeleteIdDocument}
           onPreview={getIdDocumentUrl}
-          onVerify={verifyDocument ? (id) => handleVerifyDocument(id) : undefined}
+          onVerify={verifyDocument ? (id) => handleVerifyIdDocument(id) : undefined}
           isVerifying={verifyingDocId !== null}
           renderBadge={renderVerificationBadge}
         />
@@ -214,7 +231,7 @@ export const DocumentsUploadSection: React.FC<DocumentsUploadSectionProps> = ({
           documents={propertyDocuments}
           onDelete={handleDeletePropertyDocument}
           onPreview={getPropertyDocumentUrl}
-          onVerify={verifyDocument ? (id) => handleVerifyDocument(id) : undefined}
+          onVerify={verifyPropertyDocument ? (id) => handleVerifyPropertyDocument(id) : undefined}
           isVerifying={verifyingDocId !== null}
           renderBadge={renderVerificationBadge}
         />
