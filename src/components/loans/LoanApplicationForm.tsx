@@ -51,7 +51,7 @@ const LoanApplicationForm = () => {
   } = useLoanApplicationForm();
 
   // Function to verify document using the verify-document Edge Function
-  const verifyDocument = async (documentId: string, documentType: string) => {
+  const verifyDocument = async (documentId: string, documentType: string): Promise<void> => {
     try {
       // Call the Edge Function
       const { data, error } = await supabase.functions.invoke('verify-document', {
@@ -60,14 +60,12 @@ const LoanApplicationForm = () => {
       
       if (error) {
         console.error('Error verifying document:', error);
-        return false;
+        return;
       }
       
       console.log('Document verification result:', data);
-      return data;
     } catch (err) {
       console.error('Exception verifying document:', err);
-      return false;
     }
   };
 
