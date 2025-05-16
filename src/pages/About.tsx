@@ -244,7 +244,7 @@ const About = () => {
                     <Mail className="h-6 w-6 mr-4 flex-shrink-0 mt-0.5" />
                     <div>
                       <h3 className="font-bold mb-1">Email</h3>
-                      <p>info@goldcharp.com</p>
+                      <p>info@goldcharpinvestments.com</p>
                     </div>
                   </div>
                   
@@ -252,7 +252,9 @@ const About = () => {
                     <Phone className="h-6 w-6 mr-4 flex-shrink-0 mt-0.5" />
                     <div>
                       <h3 className="font-bold mb-1">Phone</h3>
-                      <p>+256 7123 45678</p>
+                      <p>+256-393103974</p>
+                      <p>+256-790501202</p>
+                      <p>+256-200943073</p>
                     </div>
                   </div>
                 </div>
