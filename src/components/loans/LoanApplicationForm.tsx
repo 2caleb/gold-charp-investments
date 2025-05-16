@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RealTimeUpdates from './RealTimeUpdates';
@@ -7,6 +6,9 @@ import { DocumentsUploadSection } from './DocumentsUploadSection';
 import { RealtimeUpdateNotification } from './RealtimeUpdateNotification';
 import { useLoanApplicationForm } from '@/hooks/use-loan-application-form';
 import { supabase } from '@/integrations/supabase/client';
+
+// Define the correct type for document verification functions
+type DocumentVerifier = (id: string) => Promise<void>;
 
 const LoanApplicationForm = () => {
   const {
