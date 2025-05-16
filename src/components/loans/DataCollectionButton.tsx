@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   Dialog,
@@ -13,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Upload, Download, UserPlus, FileText, Check, X, RotateCw, Printer } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast"
 import {
   Select,
@@ -30,11 +30,12 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DocumentUpload } from "@/components/documents/DocumentUpload"
-import { useDocumentUpload, UploadedDocument } from "@/hooks/use-document-upload"
+import { useDocumentUpload, UploadedDocument, DocumentType } from "@/hooks/use-document-upload"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/contexts/AuthContext"
 import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
 import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Form schema
 const formSchema = z.object({
@@ -51,9 +52,13 @@ const formSchema = z.object({
   guarantor1_name: z.string().min(2, { message: "Guarantor name is required" }),
   guarantor1_phone: z.string().min(10, { message: "Phone number must be at least 10 characters" }),
   guarantor1_id_number: z.string().min(1, { message: "ID number is required" }),
+  guarantor1_consent: z.boolean().refine((val) => val === true, {
+    message: "Guarantor 1 must consent to be a guarantor",
+  }),
   guarantor2_name: z.string().optional(),
   guarantor2_phone: z.string().optional(),
   guarantor2_id_number: z.string().optional(),
+  guarantor2_consent: z.boolean().optional(),
   purpose_of_loan: z.string().min(1, { message: "Purpose of loan is required" }),
   terms_accepted: z.boolean().refine((val) => val === true, {
     message: "You must accept the terms and conditions",
@@ -130,9 +135,11 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
       guarantor1_name: "",
       guarantor1_phone: "",
       guarantor1_id_number: "",
+      guarantor1_consent: false,
       guarantor2_name: "",
       guarantor2_phone: "",
       guarantor2_id_number: "",
+      guarantor2_consent: false,
       purpose_of_loan: "",
       terms_accepted: false,
       email: ""
@@ -248,7 +255,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
       return;
     }
     
-    await uploadIdDocument(file, 'id_document', applicationId, description);
+    await uploadIdDocument(file, 'id_document' as DocumentType, applicationId, description);
   };
   
   const handleUploadPassportPhoto = async (file: File, description?: string) => {
@@ -261,7 +268,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
       return;
     }
     
-    await uploadPassportPhoto(file, 'passport_photo', applicationId, description);
+    await uploadPassportPhoto(file, 'passport_photo' as DocumentType, applicationId, description);
   };
   
   const handleUploadGuarantor1Photo = async (file: File, description?: string) => {
@@ -274,7 +281,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
       return;
     }
     
-    await uploadGuarantor1Photo(file, 'guarantor1_photo', applicationId, description);
+    await uploadGuarantor1Photo(file, 'guarantor1_photo' as DocumentType, applicationId, description);
   };
   
   const handleUploadGuarantor2Photo = async (file: File, description?: string) => {
@@ -287,7 +294,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
       return;
     }
     
-    await uploadGuarantor2Photo(file, 'guarantor2_photo', applicationId, description);
+    await uploadGuarantor2Photo(file, 'guarantor2_photo' as DocumentType, applicationId, description);
   };
   
   const handleFinish = () => {
@@ -619,6 +626,30 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                           </FormItem>
                         )}
                       />
+                      
+                      <FormField
+                        control={form.control}
+                        name="guarantor1_consent"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0 col-span-3">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>
+                                I confirm that Guarantor 1 has consented to act as guarantor for this loan and has agreed to their details being used for this purpose.
+                              </FormLabel>
+                              <FormDescription>
+                                The guarantor will be responsible if the loan defaults.
+                              </FormDescription>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </div>
                   
@@ -667,6 +698,32 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                           </FormItem>
                         )}
                       />
+                      
+                      {form.watch("guarantor2_name") && (
+                        <FormField
+                          control={form.control}
+                          name="guarantor2_consent"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 col-span-3">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                              <div className="space-y-1 leading-none">
+                                <FormLabel>
+                                  I confirm that Guarantor 2 has consented to act as guarantor for this loan and has agreed to their details being used for this purpose.
+                                </FormLabel>
+                                <FormDescription>
+                                  The guarantor will be responsible if the loan defaults.
+                                </FormDescription>
+                              </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                     </div>
                   </div>
                   
@@ -676,11 +733,9 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0 col-span-1 md:col-span-2">
                         <FormControl>
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={field.value}
-                            onChange={field.onChange}
-                            className="mt-1"
+                            onCheckedChange={field.onChange}
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
@@ -731,7 +786,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                   id: doc.id,
                   documentType: doc.documentType
                 }))}
-                onDelete={deleteIdDocument}
+                onDelete={(fileId) => deleteIdDocument(fileId)}
                 iconType="id"
                 enableScanning={true}
                 enableCapture={true}
@@ -751,7 +806,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                   id: doc.id,
                   documentType: doc.documentType
                 }))}
-                onDelete={deletePassportPhoto}
+                onDelete={(fileId) => deletePassportPhoto(fileId)}
                 iconType="user"
                 enableCapture={true}
                 isPrintable={true}
@@ -770,7 +825,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                   id: doc.id,
                   documentType: doc.documentType
                 }))}
-                onDelete={deleteGuarantor1Photo}
+                onDelete={(fileId) => deleteGuarantor1Photo(fileId)}
                 iconType="user"
                 enableCapture={true}
                 isPrintable={true}
@@ -789,19 +844,24 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                   id: doc.id,
                   documentType: doc.documentType
                 }))}
-                onDelete={deleteGuarantor2Photo}
+                onDelete={(fileId) => deleteGuarantor2Photo(fileId)}
                 iconType="user"
                 enableCapture={true}
                 isPrintable={true}
                 isPrintReady={formReady}
               />
               
-              <DialogFooter>
+              <div className="flex justify-end mt-8">
+                <Button onClick={() => window.print()} className="mr-4" disabled={!formReady}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print All Documents
+                </Button>
+                
                 <Button onClick={handleFinish} className="w-full md:w-auto">
                   <Check className="mr-2 h-4 w-4" />
                   Finish
                 </Button>
-              </DialogFooter>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

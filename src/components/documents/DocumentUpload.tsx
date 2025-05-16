@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,18 +9,28 @@ import { Loader2, Upload, X, FileText, Camera, Home, File, Video, ScanLine, Tras
 import { useMediaCapture } from '@/hooks/use-media-capture';
 import { DocumentScanner } from '@/components/media/DocumentScanner';
 
+export type DocumentType = 
+  'id_document' | 
+  'collateral_photo' | 
+  'property_document' | 
+  'loan_agreement' | 
+  'video_evidence' | 
+  'passport_photo' | 
+  'guarantor1_photo' | 
+  'guarantor2_photo';
+
 interface UploadedFile {
   name: string;
   size: number;
   url?: string;
   type: string;
   id?: string;
-  documentType?: string; // Added documentType property
+  documentType?: DocumentType;
 }
 
 interface DocumentUploadProps {
   title: string;
-  documentType: 'id_document' | 'collateral_photo' | 'property_document' | 'loan_agreement' | 'video_evidence' | 'passport_photo' | 'guarantor1_photo' | 'guarantor2_photo';
+  documentType: DocumentType;
   onUpload: (file: File, description?: string, tags?: string[]) => Promise<void>;
   isUploading: boolean;
   iconType?: 'id' | 'photo' | 'property' | 'document' | 'video' | 'user';

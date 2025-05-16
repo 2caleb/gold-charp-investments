@@ -1,17 +1,29 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
-type DocumentType = 'id_document' | 'collateral_photo' | 'property_document' | 'loan_agreement';
-type BucketType = 'id_documents' | 'collateral_photos' | 'property_documents' | 'loan_documents';
+export type DocumentType = 
+  'id_document' | 
+  'collateral_photo' | 
+  'property_document' | 
+  'loan_agreement' | 
+  'video_evidence' | 
+  'passport_photo' | 
+  'guarantor1_photo' | 
+  'guarantor2_photo';
+
+type BucketType = 'id_documents' | 'collateral_photos' | 'property_documents' | 'loan_documents' | 'user_photos' | 'guarantor_photos';
 
 const documentToBucketMap: Record<DocumentType, BucketType> = {
   id_document: 'id_documents',
   collateral_photo: 'collateral_photos',
   property_document: 'property_documents',
-  loan_agreement: 'loan_documents'
+  loan_agreement: 'loan_documents',
+  video_evidence: 'loan_documents',
+  passport_photo: 'user_photos',
+  guarantor1_photo: 'guarantor_photos',
+  guarantor2_photo: 'guarantor_photos'
 };
 
 export interface UploadedDocument {
@@ -162,7 +174,7 @@ export function useDocumentUpload() {
     }
   };
 
-  const deleteDocument = async (documentId: string): Promise<boolean> => {
+  const deleteDocument = async (documentId: string): Promise<void> => {
     try {
       // Get document metadata
       const { data: metaData, error: metaError } = await supabase
@@ -197,8 +209,6 @@ export function useDocumentUpload() {
         title: 'Document deleted',
         description: 'The document has been successfully deleted',
       });
-      
-      return true;
     } catch (error: any) {
       console.error('Error deleting document:', error);
       toast({
@@ -206,7 +216,6 @@ export function useDocumentUpload() {
         description: error?.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
-      return false;
     }
   };
 
