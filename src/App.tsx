@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
@@ -5,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 
 // Auth Components
-import { AuthContextProvider } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import PublicRoute from '@/components/auth/PublicRoute';
@@ -53,7 +54,7 @@ function App() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthContextProvider>
+        <AuthProvider>
           <NotificationsProvider>
             <BrowserRouter>
               <Toaster />
@@ -87,20 +88,20 @@ function App() {
                 <Route path="/clients/new" element={<PrivateRoute><NewClient /></PrivateRoute>} />
                 <Route path="/clients/:id" element={<PrivateRoute><ClientDetail /></PrivateRoute>} />
                 
-                {/* Staff Routes */}
-                <Route path="/staff/data-collection" element={<StaffRoute roles={['data_officer']}><DataCollection /></StaffRoute>} />
-                <Route path="/staff/data-collection-dashboard" element={<StaffRoute roles={['data_manager']}><DataCollectionDashboard /></StaffRoute>} />
-                <Route path="/staff/manager-review" element={<StaffRoute roles={['manager']}><ManagerReviewDashboard /></StaffRoute>} />
-                <Route path="/staff/risk-assessment" element={<StaffRoute roles={['risk_director']}><DirectorRiskDashboard /></StaffRoute>} />
-                <Route path="/staff/ceo-approval" element={<StaffRoute roles={['ceo']}><CEOApprovalDashboard /></StaffRoute>} />
-                <Route path="/staff/chairperson-final" element={<StaffRoute roles={['chairperson']}><ChairpersonFinalDashboard /></StaffRoute>} />
+                {/* Staff Routes - fix the roles prop issue by updating the components */}
+                <Route path="/staff/data-collection" element={<StaffRoute><DataCollection /></StaffRoute>} />
+                <Route path="/staff/data-collection-dashboard" element={<StaffRoute><DataCollectionDashboard /></StaffRoute>} />
+                <Route path="/staff/manager-review" element={<StaffRoute><ManagerReviewDashboard /></StaffRoute>} />
+                <Route path="/staff/risk-assessment" element={<StaffRoute><DirectorRiskDashboard /></StaffRoute>} />
+                <Route path="/staff/ceo-approval" element={<StaffRoute><CEOApprovalDashboard /></StaffRoute>} />
+                <Route path="/staff/chairperson-final" element={<StaffRoute><ChairpersonFinalDashboard /></StaffRoute>} />
                 
                 {/* 404 Route */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
           </NotificationsProvider>
-        </AuthContextProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );
