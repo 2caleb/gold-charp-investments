@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -109,10 +108,15 @@ const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
   }, [preselectedClientId, form]);
   
   const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
-    // Ensure client_type is always passed (this is the key fix for the build error)
+    // Ensure all required properties are included
     const formattedValues: LoanApplicationValues = {
       ...values,
       client_type: values.client_type || 'existing',
+      loan_type: values.loan_type || 'personal',  // Ensure loan_type is always set
+      loan_amount: values.loan_amount || '',
+      loan_term: values.loan_term || '',
+      term_unit: values.term_unit || 'monthly',
+      purpose_of_loan: values.purpose_of_loan || ''
     };
     onSubmit(formattedValues);
   };
