@@ -34,8 +34,21 @@ export function useDocumentUpload() {
     return null;
   };
 
-  const deleteDocument = async (documentId: string, documentType: DocumentType): Promise<void> => {
-    const success = await deleterFunction(documentId, documentType);
+  // Create a wrapper function that accepts either one or two arguments
+  const deleteDocument = async (documentId: string, documentType?: DocumentType): Promise<void> => {
+    // If documentType is not provided, try to find it from the uploaded documents
+    let docType = documentType;
+    if (!docType) {
+      const doc = uploadedDocuments.find(doc => doc.id === documentId);
+      if (doc?.documentType) {
+        docType = doc.documentType;
+      } else {
+        console.error('Document type not provided and not found in uploaded documents');
+        return;
+      }
+    }
+    
+    const success = await deleterFunction(documentId, docType);
     
     if (success) {
       setUploadedDocuments(prev => prev.filter(doc => doc.id !== documentId));

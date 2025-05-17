@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Check, Printer, Camera, ScanLine, File, Video, Eye, Download, Trash2 } from 'lucide-react';
 import { DocumentUpload } from "@/components/documents/DocumentUpload";
-import { UploadedDocument } from "@/types/document";
+import { UploadedDocument, DocumentType } from "@/types/document";
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -22,10 +21,10 @@ interface DocumentsTabProps {
   passportPhotos: UploadedDocument[];
   guarantor1Photos: UploadedDocument[];
   guarantor2Photos: UploadedDocument[];
-  deleteIdDocument: (fileId: string) => Promise<void>;
-  deletePassportPhoto: (fileId: string) => Promise<void>;
-  deleteGuarantor1Photo: (fileId: string) => Promise<void>;
-  deleteGuarantor2Photo: (fileId: string) => Promise<void>;
+  deleteIdDocument: (fileId: string, documentType?: DocumentType) => Promise<void>;
+  deletePassportPhoto: (fileId: string, documentType?: DocumentType) => Promise<void>;
+  deleteGuarantor1Photo: (fileId: string, documentType?: DocumentType) => Promise<void>;
+  deleteGuarantor2Photo: (fileId: string, documentType?: DocumentType) => Promise<void>;
   formReady: boolean;
   enableScanning?: boolean;
   enableMediaCapture?: boolean;
@@ -97,6 +96,20 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
     ...guarantor1Photos.map(doc => ({ ...doc, category: "Guarantor 1" })),
     ...guarantor2Photos.map(doc => ({ ...doc, category: "Guarantor 2" }))
   ];
+
+  // Update this specific part in the render method where document deletion happens
+  const handleDeleteDocument = (doc: UploadedDocument) => {
+    // Delete based on document type
+    if (doc.documentType === 'id_document') {
+      deleteIdDocument(doc.id);
+    } else if (doc.documentType === 'passport_photo') {
+      deletePassportPhoto(doc.id);
+    } else if (doc.documentType === 'guarantor1_photo') {
+      deleteGuarantor1Photo(doc.id);
+    } else if (doc.documentType === 'guarantor2_photo') {
+      deleteGuarantor2Photo(doc.id);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -283,18 +296,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
-                                onClick={() => {
-                                  // Delete based on document type
-                                  if (doc.documentType === 'id_document') {
-                                    deleteIdDocument(doc.id);
-                                  } else if (doc.documentType === 'passport_photo') {
-                                    deletePassportPhoto(doc.id);
-                                  } else if (doc.documentType === 'guarantor1_photo') {
-                                    deleteGuarantor1Photo(doc.id);
-                                  } else if (doc.documentType === 'guarantor2_photo') {
-                                    deleteGuarantor2Photo(doc.id);
-                                  }
-                                }}
+                                onClick={() => handleDeleteDocument(doc)}
                               >
                                 <Trash2 className="h-4 w-4 text-red-600" />
                               </Button>

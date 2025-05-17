@@ -2,7 +2,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { DocumentType, documentToBucketMap } from '@/types/document';
+import { DocumentType } from '@/types/document';
+import { documentToBucketMap } from '@/types/document';
 
 export const useDocumentDeleter = () => {
   const [isDeleting, setIsDeleting] = useState(false);

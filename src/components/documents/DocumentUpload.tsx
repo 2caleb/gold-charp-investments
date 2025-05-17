@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,16 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Upload, X, FileText, Camera, Home, File, Video, ScanLine, Trash2, Printer } from 'lucide-react';
 import { useMediaCapture } from '@/hooks/use-media-capture';
 import { DocumentScanner } from '@/components/media/DocumentScanner';
-
-export type DocumentType = 
-  'id_document' | 
-  'collateral_photo' | 
-  'property_document' | 
-  'loan_agreement' | 
-  'video_evidence' | 
-  'passport_photo' | 
-  'guarantor1_photo' | 
-  'guarantor2_photo';
+import { DocumentType } from '@/types/document';
 
 interface UploadedFile {
   name: string;
@@ -37,7 +27,7 @@ interface DocumentUploadProps {
   enableScanning?: boolean;
   enableCapture?: boolean;
   uploadedFiles?: UploadedFile[];
-  onDelete?: (fileId: string) => Promise<void>;
+  onDelete?: (fileId: string, documentType?: DocumentType) => Promise<void>; // Updated to make documentType optional
   isPrintable?: boolean;
   isPrintReady?: boolean;
 }
@@ -150,7 +140,8 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
 
   const handleDeleteFile = async (fileId: string) => {
     if (onDelete && fileId) {
-      await onDelete(fileId);
+      // Pass the documentType if the implementation expects it
+      await onDelete(fileId, documentType);
     }
   };
 
