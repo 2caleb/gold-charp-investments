@@ -1,142 +1,164 @@
 
 import { useState, useEffect } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
-import { useDocumentUpload, DocumentType } from "@/hooks/use-document-upload";
-import { supabase } from "@/integrations/supabase/client";
-import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { DataCollectionFormValues } from '@/components/loans/data-collection/schema';
+import { useDocumentUpload, UploadedDocument } from '@/hooks/use-document-upload';
+import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
 export function useDataCollection() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  // Dialog state
   const [open, setOpen] = useState(false);
+  
+  // Form state
   const [activeTab, setActiveTab] = useState("client");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formReady, setFormReady] = useState(false);
-  const [generatedLoanId, setGeneratedLoanId] = useState("");
-  const { toast } = useToast();
-  const { user } = useAuth();
+  const [generatedLoanId, setGeneratedLoanId] = useState<string>('');
   
-  // Client and application state
+  // Application data
   const [clientId, setClientId] = useState<string | null>(null);
   const [applicationId, setApplicationId] = useState<string | null>(null);
   
   // Document upload hooks
   const {
-    isUploading: isUploadingId, 
+    isUploading: isUploadingId,
     uploadDocument: uploadIdDocument,
     uploadedDocuments: idDocuments,
-    deleteDocument: deleteIdDocument
+    deleteDocument: deleteIdDocument,
+    setUploadedDocuments: setIdDocuments
   } = useDocumentUpload();
   
   const {
     isUploading: isUploadingPassport,
     uploadDocument: uploadPassportPhoto,
     uploadedDocuments: passportPhotos,
-    deleteDocument: deletePassportPhoto
+    deleteDocument: deletePassportPhoto,
+    setUploadedDocuments: setPassportPhotos
   } = useDocumentUpload();
   
   const {
     isUploading: isUploadingGuarantor1,
     uploadDocument: uploadGuarantor1Photo,
     uploadedDocuments: guarantor1Photos,
-    deleteDocument: deleteGuarantor1Photo
+    deleteDocument: deleteGuarantor1Photo,
+    setUploadedDocuments: setGuarantor1Photos
   } = useDocumentUpload();
   
   const {
     isUploading: isUploadingGuarantor2,
     uploadDocument: uploadGuarantor2Photo,
     uploadedDocuments: guarantor2Photos,
-    deleteDocument: deleteGuarantor2Photo
+    deleteDocument: deleteGuarantor2Photo,
+    setUploadedDocuments: setGuarantor2Photos
   } = useDocumentUpload();
+
+  // Has the required documents
+  const hasAllRequiredDocuments = idDocuments.length > 0 && passportPhotos.length > 0 && guarantor1Photos.length > 0;
   
-  // Generate loan ID on component mount
+  // Generate loan ID when component mounts
   useEffect(() => {
-    const newId = generateLoanIdentificationNumber();
-    setGeneratedLoanId(newId);
+    setGeneratedLoanId(generateLoanIdentificationNumber());
   }, []);
   
-  // Check if form is ready for printing
+  // Handle opening the dialog
   useEffect(() => {
-    setFormReady(Boolean(clientId) && Boolean(applicationId) && idDocuments.length > 0);
-  }, [clientId, applicationId, idDocuments.length]);
+    if (open) {
+      // Reset state when dialog opens
+      setActiveTab("client");
+      setFormReady(false);
+      if (!generatedLoanId) {
+        setGeneratedLoanId(generateLoanIdentificationNumber());
+      }
+    }
+  }, [open]);
   
   // Handle form submission
   const onSubmit = async (values: DataCollectionFormValues) => {
     if (!user) {
       toast({
         title: "Authentication required",
-        description: "You must be logged in to submit client data",
+        description: "You must be logged in to submit an application",
         variant: "destructive",
       });
       return;
     }
-    
+
     setIsSubmitting(true);
     
     try {
-      // Create client record
-      const { data: clientData, error: clientError } = await supabase
-        .from("client_name")
-        .insert({
-          full_name: values.full_name,
-          phone_number: values.phone_number,
-          id_number: values.id_number,
-          address: values.address,
-          employment_status: values.employment_status,
-          monthly_income: parseFloat(values.monthly_income),
-          user_id: user.id,
-          email: values.email || null
-        })
-        .select()
-        .single();
-        
-      if (clientError) throw clientError;
+      // First, create or find the client
+      let client_id = values.clientId;
       
-      setClientId(clientData.id);
+      if (values.isNewClient) {
+        // Create new client
+        const { data: newClient, error: clientError } = await supabase
+          .from('client_name')
+          .insert({
+            full_name: values.fullName,
+            phone_number: values.phoneNumber,
+            id_number: values.idNumber,
+            address: values.address || '',
+            employment_status: values.employmentStatus || 'employed',
+            monthly_income: parseFloat(values.monthlyIncome || '0'),
+            email: values.email || null,
+            user_id: user.id
+          })
+          .select()
+          .single();
+          
+        if (clientError) throw clientError;
+        client_id = newClient.id;
+        setClientId(newClient.id);
+      } else {
+        setClientId(client_id || null);
+      }
       
       // Create loan application
-      const { data: applicationData, error: applicationError } = await supabase
-        .from("loan_applications")
-        .insert({
-          client_id: clientData.id,
-          client_name: values.full_name,
-          phone_number: values.phone_number,
-          id_number: values.id_number,
-          address: values.address,
-          employment_status: values.employment_status,
-          monthly_income: values.monthly_income,
-          loan_type: values.loan_type,
-          loan_amount: values.loan_amount,
-          loan_term: `${values.loan_term} ${values.term_unit}`,
-          purpose_of_loan: values.purpose_of_loan,
-          created_by: user.id,
-          current_approver: user.id,
-          loan_id: generatedLoanId,
-          email: values.email || null,
-          notes: `Guarantor 1: ${values.guarantor1_name} (${values.guarantor1_phone}, ID: ${values.guarantor1_id_number})${
-            values.guarantor2_name ? `\nGuarantor 2: ${values.guarantor2_name} (${values.guarantor2_phone}, ID: ${values.guarantor2_id_number})` : ''
-          }`
-        })
-        .select()
-        .single();
+      if (client_id) {
+        const { data: application, error: applicationError } = await supabase
+          .from('loan_applications')
+          .insert({
+            client_name: values.fullName || '',
+            phone_number: values.phoneNumber || '',
+            id_number: values.idNumber || '',
+            address: values.address || '',
+            employment_status: values.employmentStatus || '',
+            monthly_income: values.monthlyIncome?.toString() || '',
+            loan_type: values.loanType || 'personal',
+            loan_amount: values.loanAmount?.toString() || '',
+            loan_id: generatedLoanId,
+            purpose_of_loan: values.loanPurpose || '',
+            notes: values.additionalNotes || '',
+            created_by: user.id,
+            current_approver: user.id, // Default to self for demo
+            status: 'submitted'
+          })
+          .select()
+          .single();
+          
+        if (applicationError) throw applicationError;
         
-      if (applicationError) throw applicationError;
-      
-      setApplicationId(applicationData.id);
-      
-      setActiveTab("documents");
-      
-      toast({
-        title: "Client data collected",
-        description: "Client data has been successfully saved",
-        variant: "default",
-      });
-      
+        setApplicationId(application.id);
+        setFormReady(true);
+        setActiveTab("documents");
+        
+        toast({
+          title: "Application saved",
+          description: "Client information has been saved successfully.",
+        });
+      }
     } catch (error: any) {
-      console.error("Error submitting client data:", error);
+      console.error('Submission error:', error);
       toast({
-        title: "Error",
-        description: error.message || "An error occurred while saving client data",
+        title: "Error saving application",
+        description: error.message || "An unexpected error occurred",
         variant: "destructive",
       });
     } finally {
@@ -144,73 +166,80 @@ export function useDataCollection() {
     }
   };
   
+  // Handle document uploads
   const handleUploadIdDocument = async (file: File, description?: string) => {
     if (!applicationId) {
       toast({
-        title: "Submit client data first",
-        description: "Please submit the client data before uploading documents",
+        title: "Client information required",
+        description: "Please save client information first",
         variant: "destructive",
       });
       return;
     }
     
-    await uploadIdDocument(file, 'id_document' as DocumentType, applicationId, description);
+    await uploadIdDocument(file, 'id_document', applicationId, description);
   };
   
   const handleUploadPassportPhoto = async (file: File, description?: string) => {
     if (!applicationId) {
       toast({
-        title: "Submit client data first",
-        description: "Please submit the client data before uploading documents",
+        title: "Client information required",
+        description: "Please save client information first",
         variant: "destructive",
       });
       return;
     }
     
-    await uploadPassportPhoto(file, 'passport_photo' as DocumentType, applicationId, description);
+    await uploadPassportPhoto(file, 'passport_photo', applicationId, description);
   };
   
   const handleUploadGuarantor1Photo = async (file: File, description?: string) => {
     if (!applicationId) {
       toast({
-        title: "Submit client data first",
-        description: "Please submit the client data before uploading documents",
+        title: "Client information required",
+        description: "Please save client information first",
         variant: "destructive",
       });
       return;
     }
     
-    await uploadGuarantor1Photo(file, 'guarantor1_photo' as DocumentType, applicationId, description);
+    await uploadGuarantor1Photo(file, 'guarantor1_photo', applicationId, description);
   };
   
   const handleUploadGuarantor2Photo = async (file: File, description?: string) => {
     if (!applicationId) {
       toast({
-        title: "Submit client data first",
-        description: "Please submit the client data before uploading documents",
+        title: "Client information required",
+        description: "Please save client information first",
         variant: "destructive",
       });
       return;
     }
     
-    await uploadGuarantor2Photo(file, 'guarantor2_photo' as DocumentType, applicationId, description);
+    await uploadGuarantor2Photo(file, 'guarantor2_photo', applicationId, description);
   };
   
+  // Handle finish button
   const handleFinish = () => {
     setOpen(false);
+    
     toast({
       title: "Process complete",
-      description: "Client data and documents have been collected successfully",
+      description: "Client onboarding process completed successfully",
     });
+    
+    // Optionally navigate somewhere
+    // navigate('/dashboard');
   };
   
+  // Handle regenerate loan ID
   const handleRegenerateLoanId = () => {
     const newId = generateLoanIdentificationNumber();
     setGeneratedLoanId(newId);
     
     toast({
-      title: "Loan ID Generated",
-      description: `New ID: ${newId}`,
+      title: "ID regenerated",
+      description: `New reference ID: ${newId}`,
     });
   };
 
@@ -242,6 +271,7 @@ export function useDataCollection() {
     deleteGuarantor1Photo,
     deleteGuarantor2Photo,
     handleFinish,
-    handleRegenerateLoanId
+    handleRegenerateLoanId,
+    hasAllRequiredDocuments
   };
 }
