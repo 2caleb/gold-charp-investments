@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -14,10 +13,10 @@ import {
   RotateCw, 
   Printer, 
   Camera, 
-  VideoCamera,
   ScanLine,
   FileText,
-  Percent
+  Percent,
+  Video
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';

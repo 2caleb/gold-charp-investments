@@ -9,6 +9,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,32 +18,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { LoanApplication } from '@/types/schema';
+import { LoanApplication, LoanDetailsFormProps } from '@/types/loan';
 import { dataCollectionFormSchema, DataCollectionFormValues } from './data-collection/schema';
 import { supabase } from '@/integrations/supabase/client';
 import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
-interface LoanDetailsFormProps {
-  loanApplication?: LoanApplication;
-  isUpdateMode?: boolean;
-}
-
-interface LoanDetailsFormValues extends DataCollectionFormValues {
-  client_type: string;
-  has_collateral: boolean;
-  client_id: string;
-}
-
 const LoanDetailsForm = ({
   loanApplication,
-  isUpdateMode = false
+  isUpdateMode = false,
+  onSubmit: submitHandler,
+  isSubmitting: isSubmittingProp = false,
+  clients,
+  isLoadingClients,
+  preselectedClientId
 }: LoanDetailsFormProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(isSubmittingProp);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [generatedLoanId, setGeneratedLoanId] = useState(generateLoanIdentificationNumber());
 
-  const form = useForm<LoanDetailsFormValues>({
+  const form = useForm<DataCollectionFormValues>({
     resolver: zodResolver(dataCollectionFormSchema),
     defaultValues: {
       client_type: loanApplication ? 'existing' : 'new',
@@ -104,7 +99,12 @@ const LoanDetailsForm = ({
     }
   }, [loanApplication, form]);
 
-  const onSubmit = async (values: LoanDetailsFormValues) => {
+  const onSubmit = async (values: DataCollectionFormValues) => {
+    if (submitHandler) {
+      submitHandler(values);
+      return;
+    }
+    
     setIsSubmitting(true);
 
     const loanApplicationData = {
@@ -117,7 +117,6 @@ const LoanDetailsForm = ({
       has_collateral: values.has_collateral || false,
       
       // Client fields
-      client_id: values.client_id,
       full_name: values.full_name,
       phone_number: values.phone_number,
       id_number: values.id_number,
@@ -145,7 +144,18 @@ const LoanDetailsForm = ({
         // Update existing loan application
         const { data, error } = await supabase
           .from('loan_applications')
-          .update(loanApplicationData)
+          .update({
+            loan_type: values.loan_type,
+            loan_amount: values.loan_amount,
+            purpose_of_loan: values.purpose_of_loan,
+            client_name: values.full_name,
+            phone_number: values.phone_number,
+            address: values.address,
+            id_number: values.id_number,
+            employment_status: values.employment_status,
+            monthly_income: values.monthly_income,
+            notes: values.purpose_of_loan
+          })
           .eq('id', loanApplication.id);
 
         if (error) {
@@ -167,9 +177,9 @@ const LoanDetailsForm = ({
             id_number: values.id_number,
             address: values.address,
             employment_status: values.employment_status,
-            monthly_income: parseFloat(values.monthly_income),
+            monthly_income: parseFloat(values.monthly_income || '0'),
           })
-          .select()
+          .select();
 
         if (clientError) {
           throw new Error(clientError.message);
@@ -180,16 +190,20 @@ const LoanDetailsForm = ({
         const { data, error } = await supabase
           .from('loan_applications')
           .insert({
-            ...loanApplicationData,
-            client_id: newClientId,
-            client_name: values.full_name,
-            client_phone: values.phone_number,
-            client_address: values.address,
-            client_id_number: values.id_number,
-            client_employment_status: values.employment_status,
-            client_monthly_income: values.monthly_income,
-            client_email: values.email,
+            loan_type: values.loan_type,
+            loan_amount: values.loan_amount,
+            purpose_of_loan: values.purpose_of_loan,
             loan_id: generatedLoanId,
+            client_name: values.full_name,
+            phone_number: values.phone_number,
+            address: values.address,
+            id_number: values.id_number,
+            employment_status: values.employment_status,
+            monthly_income: values.monthly_income,
+            notes: values.purpose_of_loan,
+            created_by: '00000000-0000-0000-0000-000000000000', // This should be replaced with actual user ID
+            current_approver: '00000000-0000-0000-0000-000000000000', // This should be replaced with actual approver ID
+            status: 'submitted'
           })
           .select();
 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Check, Printer, Camera, ScanLine, File, Video, Eye, Download, Trash2 } from 'lucide-react';
@@ -250,7 +249,10 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
                         <tr key={doc.id}>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900 dark:text-white">{doc.fileName}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(doc.uploadedAt)}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {/* Use the upload date if available, or a placeholder */}
+                              {formatDate(doc.uploadedAt || new Date().toISOString())}
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="text-sm text-gray-900 dark:text-white">{doc.category}</span>

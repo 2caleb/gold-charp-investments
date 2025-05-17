@@ -94,19 +94,19 @@ export function useDataCollection() {
     
     try {
       // First, create or find the client
-      let client_id = values.clientId;
+      let client_id = values.client_id;
       
       if (values.isNewClient) {
         // Create new client
         const { data: newClient, error: clientError } = await supabase
           .from('client_name')
           .insert({
-            full_name: values.fullName,
-            phone_number: values.phoneNumber,
-            id_number: values.idNumber,
+            full_name: values.full_name,
+            phone_number: values.phone_number,
+            id_number: values.id_number,
             address: values.address || '',
-            employment_status: values.employmentStatus || 'employed',
-            monthly_income: parseFloat(values.monthlyIncome || '0'),
+            employment_status: values.employment_status || 'employed',
+            monthly_income: parseFloat(values.monthly_income || '0'),
             email: values.email || null,
             user_id: user.id
           })
@@ -125,17 +125,17 @@ export function useDataCollection() {
         const { data: application, error: applicationError } = await supabase
           .from('loan_applications')
           .insert({
-            client_name: values.fullName || '',
-            phone_number: values.phoneNumber || '',
-            id_number: values.idNumber || '',
+            client_name: values.full_name || '',
+            phone_number: values.phone_number || '',
+            id_number: values.id_number || '',
             address: values.address || '',
-            employment_status: values.employmentStatus || '',
-            monthly_income: values.monthlyIncome?.toString() || '',
-            loan_type: values.loanType || 'personal',
-            loan_amount: values.loanAmount?.toString() || '',
+            employment_status: values.employment_status || '',
+            monthly_income: values.monthly_income?.toString() || '',
+            loan_type: values.loan_type || 'personal',
+            loan_amount: values.loan_amount?.toString() || '',
             loan_id: generatedLoanId,
-            purpose_of_loan: values.loanPurpose || '',
-            notes: values.additionalNotes || '',
+            purpose_of_loan: values.purpose_of_loan || '',
+            notes: values.purpose_of_loan || '',
             created_by: user.id,
             current_approver: user.id, // Default to self for demo
             status: 'submitted'

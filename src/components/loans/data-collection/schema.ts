@@ -2,6 +2,7 @@
 import { z } from "zod";
 
 export const dataCollectionFormSchema = z.object({
+  client_type: z.string().optional().default("new"),
   full_name: z.string().min(2, { message: "Full name is required" }),
   phone_number: z.string().min(10, { message: "Phone number must be at least 10 characters" }),
   address: z.string().min(5, { message: "Address is required" }),
@@ -27,6 +28,10 @@ export const dataCollectionFormSchema = z.object({
     message: "You must accept the terms and conditions",
   }),
   email: z.string().email().optional().or(z.literal("")),
+  client_id: z.string().optional(),
+  has_collateral: z.boolean().optional().default(false),
+  isNewClient: z.boolean().optional().default(true),
+  interest_rate: z.number().optional().default(18)
 });
 
 export type DataCollectionFormValues = z.infer<typeof dataCollectionFormSchema>;
