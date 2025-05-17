@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
@@ -56,50 +56,48 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <NotificationsProvider>
-            <BrowserRouter>
-              <Toaster />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/properties" element={<Properties />} />
-                <Route path="/calculator" element={<Calculator />} />
-                
-                {/* Service Routes */}
-                <Route path="/services" element={<ServicesPage />} />
-                <Route path="/services/insurance" element={<Insurance />} />
-                <Route path="/services/fast-track" element={<FastTrack />} />
-                <Route path="/services/business-support" element={<BusinessSupport />} />
-                
-                {/* Loan Routes */}
-                <Route path="/loans" element={<Loans />} />
-                
-                {/* Auth Routes */}
-                <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-                <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-                
-                {/* Protected Routes */}
-                <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-                <Route path="/new-loan-application" element={<PrivateRoute><NewLoanApplication /></PrivateRoute>} />
-                <Route path="/loan-applications" element={<PrivateRoute><LoanApplicationsList /></PrivateRoute>} />
-                <Route path="/loan-approval/:id" element={<PrivateRoute><LoanApprovalPage /></PrivateRoute>} />
-                <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
-                <Route path="/clients" element={<PrivateRoute><ClientsList /></PrivateRoute>} />
-                <Route path="/clients/new" element={<PrivateRoute><NewClient /></PrivateRoute>} />
-                <Route path="/clients/:id" element={<PrivateRoute><ClientDetail /></PrivateRoute>} />
-                
-                {/* Staff Routes - fix the roles prop issue by updating the components */}
-                <Route path="/staff/data-collection" element={<StaffRoute><DataCollection /></StaffRoute>} />
-                <Route path="/staff/data-collection-dashboard" element={<StaffRoute><DataCollectionDashboard /></StaffRoute>} />
-                <Route path="/staff/manager-review" element={<StaffRoute><ManagerReviewDashboard /></StaffRoute>} />
-                <Route path="/staff/risk-assessment" element={<StaffRoute><DirectorRiskDashboard /></StaffRoute>} />
-                <Route path="/staff/ceo-approval" element={<StaffRoute><CEOApprovalDashboard /></StaffRoute>} />
-                <Route path="/staff/chairperson-final" element={<StaffRoute><ChairpersonFinalDashboard /></StaffRoute>} />
-                
-                {/* 404 Route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
+            <Toaster />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/properties" element={<Properties />} />
+              <Route path="/calculator" element={<Calculator />} />
+              
+              {/* Service Routes */}
+              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/services/insurance" element={<Insurance />} />
+              <Route path="/services/fast-track" element={<FastTrack />} />
+              <Route path="/services/business-support" element={<BusinessSupport />} />
+              
+              {/* Loan Routes */}
+              <Route path="/loans" element={<Loans />} />
+              
+              {/* Auth Routes */}
+              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+              <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+              
+              {/* Protected Routes */}
+              <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+              <Route path="/new-loan-application" element={<PrivateRoute><NewLoanApplication /></PrivateRoute>} />
+              <Route path="/loan-applications" element={<PrivateRoute><LoanApplicationsList /></PrivateRoute>} />
+              <Route path="/loan-approval/:id" element={<PrivateRoute><LoanApprovalPage /></PrivateRoute>} />
+              <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
+              <Route path="/clients" element={<PrivateRoute><ClientsList /></PrivateRoute>} />
+              <Route path="/clients/new" element={<PrivateRoute><NewClient /></PrivateRoute>} />
+              <Route path="/clients/:id" element={<PrivateRoute><ClientDetail /></PrivateRoute>} />
+              
+              {/* Staff Routes */}
+              <Route path="/staff/data-collection" element={<StaffRoute><DataCollection /></StaffRoute>} />
+              <Route path="/staff/data-collection-dashboard" element={<StaffRoute><DataCollectionDashboard /></StaffRoute>} />
+              <Route path="/staff/manager-review" element={<StaffRoute><ManagerReviewDashboard /></StaffRoute>} />
+              <Route path="/staff/risk-assessment" element={<StaffRoute><DirectorRiskDashboard /></StaffRoute>} />
+              <Route path="/staff/ceo-approval" element={<StaffRoute><CEOApprovalDashboard /></StaffRoute>} />
+              <Route path="/staff/chairperson-final" element={<StaffRoute><ChairpersonFinalDashboard /></StaffRoute>} />
+              
+              {/* 404 Route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </NotificationsProvider>
         </AuthProvider>
       </QueryClientProvider>
