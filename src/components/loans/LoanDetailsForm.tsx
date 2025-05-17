@@ -1,370 +1,292 @@
 import React, { useState, useEffect } from 'react';
-import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2 } from 'lucide-react';
-import { Client } from '@/types/schema';
-
-export interface LoanApplicationValues {
-  client_type: "existing" | "new";
-  loan_type: string;
-  loan_amount: string;
-  loan_term: string;
-  term_unit: "daily" | "weekly" | "monthly";
-  purpose_of_loan: string;
-  client_id?: string;
-  full_name?: string;
-  phone_number?: string; 
-  id_number?: string;
-  address?: string;
-  email?: string;
-  employment_status?: string;
-  monthly_income?: string;
-  applicant_name?: string;
-  has_collateral: boolean;
-  collateral_description?: string;
-  notes?: string;
-  terms_accepted: boolean;
-}
-
-const formSchema = z.object({
-  client_type: z.enum(['existing', 'new']),
-  client_id: z.string().optional(),
-  full_name: z.string().min(2, { message: 'Name is required' }).optional(),
-  phone_number: z.string().min(10, { message: 'Valid phone number is required' }).optional(),
-  id_number: z.string().min(1, { message: 'ID number is required' }).optional(),
-  address: z.string().optional(),
-  employment_status: z.string().optional(),
-  monthly_income: z.string().optional(),
-  email: z.string().email({ message: 'Invalid email address' }).optional().or(z.literal('')),
-  loan_type: z.string(),
-  loan_amount: z.string().min(1, { message: 'Loan amount is required' }),
-  loan_term: z.string().min(1, { message: 'Loan term is required' }),
-  term_unit: z.enum(['daily', 'weekly', 'monthly']),
-  purpose_of_loan: z.string().min(1, { message: 'Purpose of loan is required' }),
-  applicant_name: z.string().optional(),
-  has_collateral: z.boolean().default(false),
-  collateral_description: z.string().optional(),
-  notes: z.string().optional(),
-  terms_accepted: z.literal(true, {
-    errorMap: () => ({ message: 'You must accept the terms and conditions to proceed' }),
-  }),
-});
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { LoanApplication } from '@/types/schema';
+import { dataCollectionFormSchema, DataCollectionFormValues } from './data-collection/schema';
+import { supabase } from '@/integrations/supabase/client';
+import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
 interface LoanDetailsFormProps {
-  onSubmit: (values: LoanApplicationValues) => void;
-  isSubmitting: boolean;
-  clients: Client[];
-  isLoadingClients: boolean;
-  preselectedClientId?: string | null;
+  loanApplication?: LoanApplication;
+  isUpdateMode?: boolean;
 }
 
-const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
-  onSubmit,
-  isSubmitting,
-  clients,
-  isLoadingClients,
-  preselectedClientId,
-}) => {
-  const [showCollateralFields, setShowCollateralFields] = useState(false);
-  
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+interface LoanDetailsFormValues extends DataCollectionFormValues {
+  client_type: string;
+  has_collateral: boolean;
+  client_id: string;
+}
+
+const LoanDetailsForm = ({
+  loanApplication,
+  isUpdateMode = false
+}: LoanDetailsFormProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [generatedLoanId, setGeneratedLoanId] = useState(generateLoanIdentificationNumber());
+
+  const form = useForm<LoanDetailsFormValues>({
+    resolver: zodResolver(dataCollectionFormSchema),
     defaultValues: {
-      client_type: 'existing',  // This is now set as a default value
-      loan_type: 'personal',
-      loan_amount: '',
-      loan_term: '12',
-      term_unit: 'monthly',
-      purpose_of_loan: '',
-      has_collateral: false,
-      terms_accepted: true,
+      client_type: loanApplication ? 'existing' : 'new',
+      full_name: loanApplication?.client_name || "",
+      phone_number: loanApplication?.client_phone || "",
+      address: loanApplication?.client_address || "",
+      id_number: loanApplication?.client_id_number || "",
+      employment_status: loanApplication?.client_employment_status || "employed",
+      monthly_income: loanApplication?.client_monthly_income || "",
+      loan_amount: loanApplication?.loan_amount || "",
+      loan_type: loanApplication?.loan_type || "",
+      loan_term: loanApplication?.loan_term || "",
+      term_unit: loanApplication?.term_unit || "monthly",
+      guarantor1_name: loanApplication?.guarantor1_name || "",
+      guarantor1_phone: loanApplication?.guarantor1_phone || "",
+      guarantor1_id_number: loanApplication?.guarantor1_id_number || "",
+      guarantor1_consent: loanApplication?.guarantor1_consent || false,
+      guarantor2_name: loanApplication?.guarantor2_name || "",
+      guarantor2_phone: loanApplication?.guarantor2_phone || "",
+      guarantor2_id_number: loanApplication?.guarantor2_id_number || "",
+      guarantor2_consent: loanApplication?.guarantor2_consent || false,
+      purpose_of_loan: loanApplication?.purpose_of_loan || "",
+      terms_accepted: loanApplication?.terms_accepted || false,
+      client_id: loanApplication?.client_id || "",
+      email: loanApplication?.client_email || "",
+      has_collateral: loanApplication?.has_collateral || false,
     },
+    mode: "onChange",
   });
-  
-  // Watch client type to conditionally show fields
-  const clientType = form.watch('client_type');
-  const hasCollateral = form.watch('has_collateral');
-  
-  // Update collateral fields visibility when checkbox changes
+
   useEffect(() => {
-    setShowCollateralFields(hasCollateral);
-  }, [hasCollateral]);
-  
-  // Set preselected client if provided
-  useEffect(() => {
-    if (preselectedClientId) {
-      form.setValue('client_type', 'existing');
-      form.setValue('client_id', preselectedClientId);
+    if (loanApplication) {
+      form.reset({
+        client_type: loanApplication ? 'existing' : 'new',
+        full_name: loanApplication?.client_name || "",
+        phone_number: loanApplication?.client_phone || "",
+        address: loanApplication?.client_address || "",
+        id_number: loanApplication?.client_id_number || "",
+        employment_status: loanApplication?.client_employment_status || "employed",
+        monthly_income: loanApplication?.client_monthly_income || "",
+        loan_amount: loanApplication?.loan_amount || "",
+        loan_type: loanApplication?.loan_type || "",
+        loan_term: loanApplication?.loan_term || "",
+        term_unit: loanApplication?.term_unit || "monthly",
+        guarantor1_name: loanApplication?.guarantor1_name || "",
+        guarantor1_phone: loanApplication?.guarantor1_phone || "",
+        guarantor1_id_number: loanApplication?.guarantor1_id_number || "",
+        guarantor1_consent: loanApplication?.guarantor1_consent || false,
+        guarantor2_name: loanApplication?.guarantor2_name || "",
+        guarantor2_phone: loanApplication?.guarantor2_phone || "",
+        guarantor2_id_number: loanApplication?.guarantor2_id_number || "",
+        guarantor2_consent: loanApplication?.guarantor2_consent || false,
+        purpose_of_loan: loanApplication?.purpose_of_loan || "",
+        terms_accepted: loanApplication?.terms_accepted || false,
+        client_id: loanApplication?.client_id || "",
+        email: loanApplication?.client_email || "",
+        has_collateral: loanApplication?.has_collateral || false,
+      });
     }
-  }, [preselectedClientId, form]);
-  
-  const handleFormSubmit = (values: z.infer<typeof formSchema>) => {
-    // Ensure all required properties are included
-    const formattedValues: LoanApplicationValues = {
-      ...values,
-      client_type: values.client_type || 'existing',
-      loan_type: values.loan_type || 'personal',  // Ensure loan_type is always set
-      loan_amount: values.loan_amount || '',
-      loan_term: values.loan_term || '',
-      term_unit: values.term_unit || 'monthly',
-      purpose_of_loan: values.purpose_of_loan || ''
+  }, [loanApplication, form]);
+
+  const onSubmit = async (values: LoanDetailsFormValues) => {
+    setIsSubmitting(true);
+
+    const loanApplicationData = {
+      client_type: values.client_type,
+      loan_type: values.loan_type,
+      loan_amount: values.loan_amount,
+      loan_term: values.loan_term,
+      term_unit: values.term_unit,
+      purpose_of_loan: values.purpose_of_loan,
+      has_collateral: values.has_collateral || false,
+      
+      // Client fields
+      client_id: values.client_id,
+      full_name: values.full_name,
+      phone_number: values.phone_number,
+      id_number: values.id_number,
+      address: values.address,
+      employment_status: values.employment_status || 'employed',
+      monthly_income: values.monthly_income,
+      email: values.email,
+      
+      // Guarantor fields
+      guarantor1_name: values.guarantor1_name,
+      guarantor1_phone: values.guarantor1_phone,
+      guarantor1_id_number: values.guarantor1_id_number,
+      guarantor1_consent: values.guarantor1_consent,
+      guarantor2_name: values.guarantor2_name,
+      guarantor2_phone: values.guarantor2_phone,
+      guarantor2_id_number: values.guarantor2_id_number,
+      guarantor2_consent: values.guarantor2_consent,
+      
+      // Terms
+      terms_accepted: values.terms_accepted,
     };
-    onSubmit(formattedValues);
+
+    try {
+      if (isUpdateMode && loanApplication) {
+        // Update existing loan application
+        const { data, error } = await supabase
+          .from('loan_applications')
+          .update(loanApplicationData)
+          .eq('id', loanApplication.id);
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        toast({
+          title: "Loan Application Updated",
+          description: "The loan application has been successfully updated.",
+        });
+      } else {
+        // Create new loan application
+        const { data: clientData, error: clientError } = await supabase
+          .from('client_name')
+          .insert({
+            full_name: values.full_name,
+            phone_number: values.phone_number,
+            email: values.email,
+            id_number: values.id_number,
+            address: values.address,
+            employment_status: values.employment_status,
+            monthly_income: parseFloat(values.monthly_income),
+          })
+          .select()
+
+        if (clientError) {
+          throw new Error(clientError.message);
+        }
+
+        const newClientId = clientData?.[0]?.id;
+
+        const { data, error } = await supabase
+          .from('loan_applications')
+          .insert({
+            ...loanApplicationData,
+            client_id: newClientId,
+            client_name: values.full_name,
+            client_phone: values.phone_number,
+            client_address: values.address,
+            client_id_number: values.id_number,
+            client_employment_status: values.employment_status,
+            client_monthly_income: values.monthly_income,
+            client_email: values.email,
+            loan_id: generatedLoanId,
+          })
+          .select();
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        toast({
+          title: "Loan Application Created",
+          description: "The loan application has been successfully created.",
+        });
+      }
+
+      navigate('/loan-applications');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
-  
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-        {/* Client Information Section */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700 shadow-sm">
-          <h2 className="text-lg md:text-xl font-medium mb-4 text-purple-800 dark:text-purple-400">Client Information</h2>
-          
-          <FormField
-            control={form.control}
-            name="client_type"
-            render={({ field }) => (
-              <FormItem className="mb-6">
-                <FormLabel>Client Type</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="existing" id="existing" />
-                      <Label htmlFor="existing">Existing Client</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="new" id="new" />
-                      <Label htmlFor="new">New Client</Label>
-                    </div>
-                  </RadioGroup>
-                </FormControl>
-                <FormDescription>
-                  Select whether this is an existing client or a new client
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Show client selection for existing clients */}
-          {clientType === 'existing' && (
-            <FormField
-              control={form.control}
-              name="client_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Select Client</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a client" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {isLoadingClients ? (
-                        <div className="flex justify-center p-4">
-                          <Loader2 className="h-6 w-6 animate-spin" />
-                        </div>
-                      ) : clients.length === 0 ? (
-                        <div className="p-4 text-center">No clients found</div>
-                      ) : (
-                        clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id}>
-                            {client.full_name} - {client.phone_number}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Select an existing client from the database
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-          
-          {/* Show new client fields */}
-          {clientType === 'new' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="full_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
+    <Card>
+      <CardHeader>
+        <CardTitle>{isUpdateMode ? "Edit Loan Application" : "New Loan Application"}</CardTitle>
+        <CardDescription>Fill in the details for the loan application.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="client_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Client Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <Input placeholder="John Doe" {...field} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select client type" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="phone_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
+                      <SelectContent>
+                        <SelectItem value="new">New Client</SelectItem>
+                        <SelectItem value="existing">Existing Client</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="loan_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Loan Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <Input placeholder="+256 700 000000" {...field} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select loan type" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="id_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ID Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="CM12345678" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email (Optional)</FormLabel>
-                      <FormControl>
-                        <Input type="email" placeholder="johndoe@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Input placeholder="123 Main St, Kampala" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="employment_status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Employment Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value || 'employed'}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="employed">Employed</SelectItem>
-                          <SelectItem value="self_employed">Self Employed</SelectItem>
-                          <SelectItem value="unemployed">Unemployed</SelectItem>
-                          <SelectItem value="student">Student</SelectItem>
-                          <SelectItem value="retired">Retired</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="monthly_income"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Monthly Income (UGX)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="1,000,000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      <SelectContent>
+                        <SelectItem value="personal">Personal Loan</SelectItem>
+                        <SelectItem value="mortgage">Mortgage Loan</SelectItem>
+                        <SelectItem value="business">Business Loan</SelectItem>
+                        <SelectItem value="education">Education Loan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-          )}
-        </div>
-        
-        {/* Loan Details Section */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700 shadow-sm">
-          <h2 className="text-lg md:text-xl font-medium mb-4 text-purple-800 dark:text-purple-400">Loan Details</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField
-              control={form.control}
-              name="loan_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Loan Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="loan_amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Loan Amount</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select loan type" />
-                      </SelectTrigger>
+                      <Input placeholder="Loan amount" {...field} />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="personal">Personal Loan</SelectItem>
-                      <SelectItem value="business">Business Loan</SelectItem>
-                      <SelectItem value="mortgage">Mortgage Loan</SelectItem>
-                      <SelectItem value="auto">Auto Loan</SelectItem>
-                      <SelectItem value="education">Education Loan</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Select the type of loan you are applying for
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="loan_amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Loan Amount (UGX)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="5,000,000" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Enter the amount you wish to borrow
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="loan_term"
@@ -372,13 +294,15 @@ const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
                   <FormItem>
                     <FormLabel>Loan Term</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input placeholder="Loan term" type="number" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="term_unit"
@@ -392,179 +316,325 @@ const LoanDetailsForm: React.FC<LoanDetailsFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="daily">Days</SelectItem>
-                        <SelectItem value="weekly">Weeks</SelectItem>
-                        <SelectItem value="monthly">Months</SelectItem>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="purpose_of_loan"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Purpose of Loan</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Purpose of loan" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            
+
             <FormField
               control={form.control}
-              name="purpose_of_loan"
+              name="has_collateral"
               render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Purpose of Loan</FormLabel>
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
                   <FormControl>
-                    <Textarea 
-                      placeholder="Describe how you plan to use this loan"
-                      className="min-h-[100px]" 
-                      {...field} 
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Please provide details on how you plan to use the loan
-                  </FormDescription>
-                  <FormMessage />
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Has Collateral</FormLabel>
+                    <FormDescription>
+                      Check if the loan has collateral.
+                    </FormDescription>
+                  </div>
                 </FormItem>
               )}
             />
-            
+
+            <h3 className="text-xl font-semibold mt-4">Client Information</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="full_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Full name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Phone number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="id_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ID Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ID number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="employment_status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Employment Status</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Employment status" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="monthly_income"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Monthly Income</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Monthly income" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
-              name="applicant_name"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Applicant Name (if different from client)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Leave blank if same as client" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Fill only if the applicant is different from the client
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-        
-        {/* Collateral Section */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700 shadow-sm">
-          <h2 className="text-lg md:text-xl font-medium mb-4 text-purple-800 dark:text-purple-400">Collateral Information</h2>
-          
-          <FormField
-            control={form.control}
-            name="has_collateral"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0 mb-4">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel>
-                    This loan application includes collateral
-                  </FormLabel>
-                  <FormDescription>
-                    Check this if you are providing assets as security for the loan
-                  </FormDescription>
-                </div>
-              </FormItem>
-            )}
-          />
-          
-          {showCollateralFields && (
-            <FormField
-              control={form.control}
-              name="collateral_description"
+              name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Collateral Description</FormLabel>
+                  <FormLabel>Email (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Describe the assets you are providing as collateral"
-                      className="min-h-[100px]" 
-                      {...field} 
-                    />
+                    <Input placeholder="Email" type="email" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    Provide detailed information about the collateral being offered
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
-        </div>
-        
-        {/* Additional Notes */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700 shadow-sm">
-          <h2 className="text-lg md:text-xl font-medium mb-4 text-purple-800 dark:text-purple-400">Additional Information</h2>
-          
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Additional Notes (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea 
-                    placeholder="Enter any additional information that may be relevant"
-                    className="min-h-[100px]" 
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        {/* Terms and Conditions */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-md border border-gray-200 dark:border-gray-700 shadow-sm">
-          <FormField
-            control={form.control}
-            name="terms_accepted"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={(checked) => {
-                      field.onChange(checked === true);
-                    }}
-                  />
-                </FormControl>
-                <div className="space-y-1 leading-none">
-                  <FormLabel>
-                    I agree to the terms and conditions
-                  </FormLabel>
-                  <FormDescription>
-                    By checking this box, you confirm that all provided information is accurate and you agree to the loan terms.
-                  </FormDescription>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        {/* Submit Button */}
-        <div className="flex justify-end">
-          <Button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="bg-purple-700 hover:bg-purple-800 text-white"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              'Submit Loan Application'
-            )}
-          </Button>
-        </div>
-      </form>
-    </Form>
+
+            <h3 className="text-xl font-semibold mt-4">Guarantor 1 Information</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="guarantor1_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guarantor 1 Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Guarantor 1 name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="guarantor1_phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guarantor 1 Phone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Guarantor 1 phone" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="guarantor1_id_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guarantor 1 ID Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Guarantor 1 ID number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="guarantor1_consent"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Guarantor 1 Consent</FormLabel>
+                      <FormDescription>
+                        Confirm that guarantor 1 has consented to be a guarantor.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <h3 className="text-xl font-semibold mt-4">Guarantor 2 Information (Optional)</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="guarantor2_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guarantor 2 Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Guarantor 2 name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="guarantor2_phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guarantor 2 Phone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Guarantor 2 phone" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="guarantor2_id_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Guarantor 2 ID Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Guarantor 2 ID number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="guarantor2_consent"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={!!field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Guarantor 2 Consent</FormLabel>
+                      <FormDescription>
+                        Confirm that guarantor 2 has consented to be a guarantor.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="terms_accepted"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Terms and Conditions</FormLabel>
+                    <FormDescription>
+                      I agree to the terms and conditions.
+                    </FormDescription>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button disabled={isSubmitting} type="submit">
+              {isSubmitting ? "Submitting..." : (isUpdateMode ? "Update Application" : "Submit Application")}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };
 
