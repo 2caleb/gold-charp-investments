@@ -31,8 +31,8 @@ const Navbar = () => {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-300 
-        ${scrolled ? 'glass-navbar shadow-md py-2' : 'bg-transparent py-4'}`}
+      className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-500 
+        ${scrolled ? 'glass-navbar shadow-lg py-2' : 'bg-transparent py-4'}`}
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
         <Link to="/" className="flex items-center group transition-transform duration-300 hover:scale-105">
@@ -48,7 +48,7 @@ const Navbar = () => {
             onClick={() => setIsOpen(!isOpen)}
             variant="ghost"
             size="icon"
-            className="ml-2 text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400"
+            className="ml-2 text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 transition-colors duration-300"
             aria-label="Toggle menu"
           >
             <Menu size={24} />

@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import NavLinks from './NavLinks';
 import UserSection from './UserSection';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Props type for the MobileNav component
 interface MobileNavProps {
@@ -37,15 +38,33 @@ const MobileNav = ({ isOpen, onClose }: MobileNavProps) => {
 
   return (
     <Sheet open={sheetOpen} onOpenChange={handleSheetOpenChange}>
-      <SheetContent>
+      <SheetContent className="border-none bg-white dark:bg-gray-900 shadow-xl">
         <SheetHeader className="mb-6">
-          <SheetTitle>Navigation</SheetTitle>
-          <SheetDescription>Explore our services</SheetDescription>
+          <SheetTitle className="text-2xl font-serif text-purple-700 dark:text-purple-400">Navigation</SheetTitle>
+          <SheetDescription className="text-gray-600 dark:text-gray-400">Explore our premium banking services</SheetDescription>
         </SheetHeader>
         
         <div className="flex flex-col gap-6">
-          <NavLinks isMobile={true} onClick={handleActionComplete} />
-          <UserSection onActionComplete={handleActionComplete} />
+          <AnimatePresence>
+            {sheetOpen && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3, staggerChildren: 0.1 }}
+                className="space-y-6"
+              >
+                <NavLinks isMobile={true} onClick={handleActionComplete} />
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
+                >
+                  <UserSection onActionComplete={handleActionComplete} />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </SheetContent>
     </Sheet>

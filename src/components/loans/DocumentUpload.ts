@@ -1,14 +1,15 @@
 
-// This is a simple re-export file to maintain backward compatibility
-// and avoid modifying too much code
-export { DocumentUpload } from '@/components/documents/DocumentUpload';
-// Import and re-export DocumentType from the correct location
-export type { DocumentType } from '@/types/document';
+import { DocumentUpload } from '@/components/documents/DocumentUpload';
+import { DocumentType } from '@/types/document';
 
-// Add types to fix TypeScript errors if needed
+// Re-export the DocumentUpload component
+export { DocumentUpload };
+export type { DocumentType };
+
+// Add types to fix TypeScript errors
 export type DocumentUploadProps = {
   documentType: DocumentType;
-  title: string; // Make sure this is required
+  title: string;
   onUpload: (file: File, description?: string, tags?: string[]) => Promise<void>;
   isUploading: boolean;
   uploadedFiles?: Array<{

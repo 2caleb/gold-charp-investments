@@ -113,15 +113,15 @@
   
   /* Enhanced animations */
   .animate-fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
+    animation: fadeIn 0.7s ease-out forwards;
   }
   
   .animate-slide-up {
-    animation: slideUp 0.5s ease-out forwards;
+    animation: slideUp 0.7s ease-out forwards;
   }
   
   .animate-slide-in {
-    animation: slideIn 0.5s ease-out forwards;
+    animation: slideIn 0.7s ease-out forwards;
   }
   
   /* Hover animations */
@@ -135,6 +135,27 @@
   
   .hover-glow {
     @apply transition-all duration-300 hover:shadow-lg hover:shadow-primary/10;
+  }
+  
+  /* Banking premium UI utilities */
+  .premium-card {
+    @apply rounded-xl border border-gray-200/60 dark:border-gray-800/60 shadow-sm bg-white dark:bg-gray-900 overflow-hidden transition-all duration-500;
+  }
+  
+  .premium-button {
+    @apply rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 text-white font-medium shadow-md transition-all duration-300 hover:shadow-lg hover:from-purple-600 hover:to-purple-800 hover:-translate-y-0.5;
+  }
+  
+  .premium-input {
+    @apply rounded-lg border border-gray-300 focus:border-purple-500 focus:ring focus:ring-purple-200 focus:ring-opacity-50 transition-all duration-300;
+  }
+  
+  .glass-effect {
+    @apply bg-white/80 dark:bg-gray-900/80 backdrop-blur-md backdrop-saturate-150 border border-white/10 dark:border-gray-800/10;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-700 to-blue-600 dark:from-purple-400 dark:to-blue-400;
   }
 }
 
@@ -151,7 +172,7 @@
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
@@ -162,7 +183,7 @@
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateX(-20px);
+    transform: translateX(-30px);
   }
   to {
     opacity: 1;
@@ -170,19 +191,39 @@
   }
 }
 
-/* Premium UI elements */
+/* Enhanced glass effect for navbar */
+.glass-navbar {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  transition: all 0.5s ease;
+}
+
+.dark .glass-navbar {
+  background: rgba(17, 24, 39, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* Premium card styles */
 .premium-card {
-  @apply border border-gray-200 dark:border-gray-800 shadow-md rounded-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-blue-300 dark:hover:border-blue-700;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  transition: all 0.3s ease;
 }
 
-.premium-button {
-  @apply bg-blue-700 hover:bg-blue-800 text-white font-medium py-2 px-4 rounded shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105;
+.premium-card:hover {
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
 }
 
-.premium-input {
-  @apply border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 rounded-md shadow-sm;
-}
-
-.premium-section {
-  @apply bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 border border-gray-100 dark:border-gray-800 rounded-lg shadow-md p-6;
+.dark .premium-card {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, rgba(30, 41, 59, 0.3) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
