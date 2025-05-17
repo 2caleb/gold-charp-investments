@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Check, Printer, Camera, ScanLine, File, Video, Eye, Download, Trash2 } from 'lucide-react';
 import { DocumentUpload } from "@/components/documents/DocumentUpload";
-import { UploadedDocument } from "@/hooks/use-document-upload";
+import { UploadedDocument } from "@/types/document";
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -29,6 +30,8 @@ interface DocumentsTabProps {
   enableScanning?: boolean;
   enableMediaCapture?: boolean;
   showAttachments?: boolean;
+  recordingOnsite?: boolean;
+  setRecordingOnsite?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const DocumentsTab: React.FC<DocumentsTabProps> = ({
@@ -53,7 +56,9 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
   formReady,
   enableScanning = false,
   enableMediaCapture = false,
-  showAttachments = false
+  showAttachments = false,
+  recordingOnsite = false,
+  setRecordingOnsite = () => {}
 }) => {
   const [activeDocTab, setActiveDocTab] = useState<string>("upload");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -251,7 +256,7 @@ export const DocumentsTab: React.FC<DocumentsTabProps> = ({
                             <div className="text-sm font-medium text-gray-900 dark:text-white">{doc.fileName}</div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">
                               {/* Use the upload date if available, or a placeholder */}
-                              {formatDate(doc.uploadedAt || new Date().toISOString())}
+                              {formatDate(doc.uploadedAt)}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">

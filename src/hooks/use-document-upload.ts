@@ -11,7 +11,7 @@ export function useDocumentUpload() {
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
   const { isUploading, uploadProgress, uploadDocument: uploaderFunction } = useDocumentUploader();
   const { getDocumentUrl } = useDocumentUrl();
-  const { deleteDocument: deleterFunction } = useDocumentDeleter();
+  const { deleteDocument: deleterFunction, isDeleting } = useDocumentDeleter();
 
   const uploadDocument = async (
     file: File,
@@ -23,15 +23,19 @@ export function useDocumentUpload() {
     const result = await uploaderFunction(file, documentType, loanApplicationId, description, tags);
     
     if (result) {
-      setUploadedDocuments(prev => [...prev, result]);
-      return result;
+      const newDoc: UploadedDocument = {
+        ...result,
+        uploadedAt: new Date().toISOString()
+      };
+      setUploadedDocuments(prev => [...prev, newDoc]);
+      return newDoc;
     }
     
     return null;
   };
 
-  const deleteDocument = async (documentId: string): Promise<void> => {
-    const success = await deleterFunction(documentId);
+  const deleteDocument = async (documentId: string, documentType: DocumentType): Promise<void> => {
+    const success = await deleterFunction(documentId, documentType);
     
     if (success) {
       setUploadedDocuments(prev => prev.filter(doc => doc.id !== documentId));
@@ -40,6 +44,7 @@ export function useDocumentUpload() {
 
   return {
     isUploading,
+    isDeleting,
     uploadProgress,
     uploadedDocuments,
     uploadDocument,

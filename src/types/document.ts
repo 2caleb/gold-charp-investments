@@ -6,7 +6,8 @@ export type DocumentType =
   | 'guarantor2_photo'
   | 'collateral_photo'
   | 'property_document'
-  | 'loan_agreement';
+  | 'loan_agreement'
+  | 'video_evidence';
 
 export type BucketType =
   | 'client_documents'
@@ -23,7 +24,8 @@ export const documentToBucketMap: Record<DocumentType, BucketType> = {
   'guarantor2_photo': 'guarantor_documents',
   'collateral_photo': 'collateral_documents',
   'property_document': 'property_documents',
-  'loan_agreement': 'loan_documents'
+  'loan_agreement': 'loan_documents',
+  'video_evidence': 'client_documents'
 };
 
 export interface UploadedDocument {

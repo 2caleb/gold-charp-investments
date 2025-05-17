@@ -17,6 +17,7 @@ export type UploadResult = {
 
 export const useDocumentUploader = () => {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
   const uploadDocument = async (
@@ -29,11 +30,20 @@ export const useDocumentUploader = () => {
     if (!file) return null;
 
     setIsUploading(true);
+    setUploadProgress(0);
     try {
       // Generate a unique ID for the document
       const documentId = uuidv4();
       const bucketName = documentToBucketMap[documentType];
       const filePath = `documents/${documentId}`;
+      
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          const newProgress = prev + Math.random() * 15;
+          return newProgress >= 90 ? 90 : newProgress;
+        });
+      }, 300);
       
       // Upload file to Storage
       const { error: uploadError } = await supabase.storage
@@ -43,11 +53,27 @@ export const useDocumentUploader = () => {
           upsert: false
         });
 
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
       if (uploadError) {
         console.error('Error uploading document:', uploadError);
         toast({
           title: 'Upload Failed',
           description: `Could not upload ${file.name}: ${uploadError.message}`,
+          variant: 'destructive',
+        });
+        return null;
+      }
+
+      // Get current user's ID from auth
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+
+      if (!userId) {
+        toast({
+          title: 'Authentication Error',
+          description: 'You must be logged in to upload documents',
           variant: 'destructive',
         });
         return null;
@@ -65,7 +91,8 @@ export const useDocumentUploader = () => {
           document_type: documentType,
           loan_application_id: loanApplicationId || null,
           description: description || null,
-          tags: tags || null
+          tags: tags || null,
+          user_id: userId
         })
         .select('id')
         .single();
@@ -112,6 +139,7 @@ export const useDocumentUploader = () => {
 
   return {
     uploadDocument,
-    isUploading
+    isUploading,
+    uploadProgress
   };
 };
