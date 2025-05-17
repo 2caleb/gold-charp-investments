@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -103,12 +104,12 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-blue-700 hover:bg-blue-800 text-white">
+        <Button className="bg-blue-700 hover:bg-blue-800 text-white transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
           <UserPlus className="mr-2 h-4 w-4" />
           Client Onboarding
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 shadow-2xl border-0">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 shadow-2xl border-0 rounded-lg transition-all duration-300 ease-in-out">
         <DialogHeader className="border-b pb-4 mb-4">
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -126,7 +127,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                 variant="ghost" 
                 size="sm" 
                 onClick={handleRegenerateLoanId} 
-                className="ml-2"
+                className="ml-2 transition-all duration-200 hover:bg-blue-50"
                 title="Generate new reference ID"
               >
                 <RotateCw className="h-4 w-4" />
@@ -137,7 +138,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => window.print()}
-                  className="ml-2 border-blue-300"
+                  className="ml-2 border-blue-300 transition-all duration-200 hover:bg-blue-50"
                   title="Print client data"
                 >
                   <Printer className="h-4 w-4" />
@@ -163,21 +164,21 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
           <TabsList className="grid grid-cols-3 mb-6 bg-gray-100 p-1 rounded-lg">
-            <TabsTrigger value="client" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="client" className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200">
               <FileText className="h-4 w-4 mr-2" />
               Client Information
             </TabsTrigger>
-            <TabsTrigger value="documents" disabled={!clientId} className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="documents" disabled={!clientId} className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200">
               <Camera className="h-4 w-4 mr-2" />
               Documents & Media
             </TabsTrigger>
-            <TabsTrigger value="terms" disabled={!hasAllRequiredDocuments} className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+            <TabsTrigger value="terms" disabled={!hasAllRequiredDocuments} className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200">
               <Percent className="h-4 w-4 mr-2" />
               Terms & Rates
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="client">
+          <TabsContent value="client" className="animate-fade-in">
             <ClientInformationForm 
               onSubmit={handleSubmit} 
               isSubmitting={isSubmitting} 
@@ -185,7 +186,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
             />
           </TabsContent>
           
-          <TabsContent value="documents">
+          <TabsContent value="documents" className="animate-fade-in">
             <DocumentsTab
               applicationId={applicationId}
               onFinish={() => setActiveTab('terms')}
@@ -209,11 +210,13 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
               enableScanning={true}
               enableMediaCapture={true}
               showAttachments={true}
+              recordingOnsite={recordingOnsite}
+              setRecordingOnsite={setRecordingOnsite}
             />
           </TabsContent>
           
-          <TabsContent value="terms">
-            <Card className="mb-6 border-0 shadow-md">
+          <TabsContent value="terms" className="animate-fade-in">
+            <Card className="mb-6 border-0 shadow-md transform transition-all hover:shadow-lg">
               <CardContent className="p-6">
                 <div className="space-y-8">
                   <div>
@@ -238,7 +241,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                           </div>
                         </div>
                         <div>
-                          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+                          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 text-center transition-all duration-200 hover:border-blue-300">
                             <Label htmlFor="interest-rate-display" className="text-sm text-gray-500 block mb-2">Annual Interest Rate</Label>
                             <Input
                               id="interest-rate-display"
@@ -254,7 +257,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                   
                   <div className="border-t pt-6">
                     <h3 className="text-xl font-semibold mb-4 font-serif text-gray-800 dark:text-gray-200">Client Declarations</h3>
-                    <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 border border-blue-100 dark:border-blue-800">
+                    <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 border border-blue-100 dark:border-blue-800 transition-all duration-200 hover:border-blue-300">
                       <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
                         By proceeding, the client confirms that all information provided is accurate and complete to the best of their knowledge. 
                         The client authorizes the bank to verify all information provided, including credit history and employment verification.
@@ -265,7 +268,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                 </div>
                 
                 <div className="flex justify-end mt-8">
-                  <Button onClick={handleFinish} className="bg-blue-700 hover:bg-blue-800 text-white">
+                  <Button onClick={handleFinish} className="bg-blue-700 hover:bg-blue-800 text-white transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg">
                     Complete Onboarding
                   </Button>
                 </div>

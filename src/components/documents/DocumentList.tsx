@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileText, Download, Trash2, Eye, ShieldCheck } from 'lucide-react';
+import { Loader2, FileText, Download, Trash2, Eye, ShieldCheck, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-
-import { UploadedDocument } from '@/hooks/use-document-upload';
+import { Badge } from '@/components/ui/badge';
+import { UploadedDocument } from '@/types/document';
 
 interface DocumentListProps {
   documents: UploadedDocument[];
@@ -33,6 +33,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState<Record<string, boolean>>({});
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [verified, setVerified] = useState<Record<string, boolean>>({});
 
   const handlePreview = async (id: string) => {
     setPreviewLoading(true);
@@ -51,6 +52,8 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   const handleVerify = async (id: string) => {
     if (onVerify) {
       await onVerify(id);
+      // Simulate verification success
+      setVerified(prev => ({ ...prev, [id]: true }));
     }
   };
 
@@ -64,7 +67,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
   if (documents.length === 0 && !isLoading) {
     return (
-      <Card className="mb-6">
+      <Card className="mb-6 shadow-md hover:shadow-lg transition-all duration-300 bg-gray-50 dark:bg-gray-800/50">
         <CardContent className="p-6">
           <h3 className="text-lg font-medium mb-4">{title}</h3>
           <p className="text-gray-500 dark:text-gray-400">No documents uploaded yet.</p>
@@ -74,30 +77,42 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   }
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-6 shadow-md hover:shadow-lg transition-all duration-300">
       <CardContent className="p-6">
-        <h3 className="text-lg font-medium mb-4">{title}</h3>
+        <h3 className="text-lg font-medium mb-4 flex items-center">
+          <FileText className="mr-2 h-5 w-5 text-blue-600" />
+          {title}
+        </h3>
         
         {isLoading ? (
           <div className="flex items-center justify-center h-16">
-            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            <Loader2 className="h-6 w-6 animate-spin mr-2 text-blue-600" />
             <p>Loading documents...</p>
           </div>
         ) : (
           <div className="space-y-4">
             {documents.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3 rounded-md">
+              <div key={doc.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3 rounded-md border border-gray-100 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-200 transform hover:translate-y-[-2px] hover:shadow-md">
                 <div className="flex items-center">
-                  <FileText className="h-6 w-6 mr-3 text-gray-500" />
+                  <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full mr-3">
+                    <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
                   <div>
                     <div className="flex items-center">
                       <p className="text-sm font-medium truncate max-w-[200px]">
                         {doc.fileName}
                       </p>
                       {renderBadge && renderBadge(doc.id)}
+                      {verified[doc.id] && (
+                        <Badge className="ml-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 flex items-center gap-1">
+                          <Check className="h-3 w-3" />
+                          Verified
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {(doc.fileSize / 1024).toFixed(1)} KB • {doc.documentType.replace('_', ' ')}
+                      {doc.uploadedAt && ` • ${new Date(doc.uploadedAt).toLocaleDateString()}`}
                     </p>
                   </div>
                 </div>
@@ -108,8 +123,9 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                     size="sm"
                     onClick={() => handlePreview(doc.id)}
                     disabled={previewLoading}
+                    className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   </Button>
                   
                   {onVerify && (
@@ -117,10 +133,13 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleVerify(doc.id)}
-                      disabled={isVerifying}
+                      disabled={isVerifying || verified[doc.id]}
+                      className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
                     >
                       {isVerifying ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : verified[doc.id] ? (
+                        <Check className="h-4 w-4 text-green-500" />
                       ) : (
                         <ShieldCheck className="h-4 w-4 text-blue-500" />
                       )}
@@ -132,6 +151,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                     size="sm"
                     onClick={() => handleDelete(doc.id)}
                     disabled={isDeleting[doc.id]}
+                    className="hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200"
                   >
                     {isDeleting[doc.id] ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -174,7 +194,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                 <div className="flex flex-col items-center justify-center p-8">
                   <FileText className="h-16 w-16 mb-4 text-gray-400" />
                   <p className="mb-4">This file type can't be previewed directly.</p>
-                  <Button asChild>
+                  <Button asChild className="bg-blue-600 hover:bg-blue-700 transition-all duration-200">
                     <a href={activeDocument.url} target="_blank" rel="noopener noreferrer" download>
                       <Download className="h-4 w-4 mr-2" />
                       Download File
@@ -184,7 +204,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
               )
             ) : (
               <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin" />
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
               </div>
             )}
           </DialogContent>

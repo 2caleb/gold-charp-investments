@@ -1,58 +1,64 @@
 
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { documentToBucketMap } from '@/types/document';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { DocumentType, documentToBucketMap } from '@/types/document';
 
-export function useDocumentDeleter() {
+export const useDocumentDeleter = () => {
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
-  const deleteDocument = async (documentId: string): Promise<boolean> => {
+  const deleteDocument = async (
+    documentId: string,
+    documentType: DocumentType
+  ): Promise<boolean> => {
+    setIsDeleting(true);
     try {
-      // Get document metadata
-      const { data: metaData, error: metaError } = await supabase
-        .from('document_metadata')
-        .select('storage_path, document_type')
-        .eq('id', documentId)
-        .single();
+      // Get the bucket name for this document type
+      const bucketName = documentToBucketMap[documentType];
+      const filePath = `documents/${documentId}`;
 
-      if (metaError) throw metaError;
-      if (!metaData) throw new Error('Document not found');
-
-      const bucketId = documentToBucketMap[metaData.document_type];
-      
-      // Delete from storage
+      // Delete the file from storage
       const { error: storageError } = await supabase.storage
-        .from(bucketId)
-        .remove([metaData.storage_path]);
+        .from(bucketName)
+        .remove([filePath]);
 
-      if (storageError) throw storageError;
+      if (storageError) {
+        console.error('Error deleting document from storage:', storageError);
+      }
 
-      // Delete metadata
-      const { error: deleteError } = await supabase
+      // Delete the metadata from the database
+      const { error: metadataError } = await supabase
         .from('document_metadata')
         .delete()
         .eq('id', documentId);
 
-      if (deleteError) throw deleteError;
+      if (metadataError) {
+        console.error('Error deleting document metadata:', metadataError);
+        throw metadataError;
+      }
 
       toast({
-        title: 'Document deleted',
+        title: 'Document Deleted',
         description: 'The document has been successfully deleted',
       });
       
       return true;
     } catch (error: any) {
-      console.error('Error deleting document:', error);
+      console.error('Error in deleteDocument:', error);
       toast({
-        title: 'Delete failed',
-        description: error?.message || 'An unexpected error occurred',
+        title: 'Delete Failed',
+        description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
       return false;
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   return {
-    deleteDocument
+    deleteDocument,
+    isDeleting
   };
-}
+};

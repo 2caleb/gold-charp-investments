@@ -1,117 +1,117 @@
 
-import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import { DocumentType, BucketType, documentToBucketMap, UploadedDocument } from '@/types/document';
+import { v4 as uuidv4 } from 'uuid';
+import { DocumentType, BucketType, documentToBucketMap } from '@/types/document';
 
-export function useDocumentUploader() {
+export type UploadResult = {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  documentType: DocumentType;
+  description?: string;
+  tags?: string[];
+};
+
+export const useDocumentUploader = () => {
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
-  const { user } = useAuth();
 
   const uploadDocument = async (
     file: File,
     documentType: DocumentType,
-    loanApplicationId?: string,
+    loanApplicationId?: string | null,
     description?: string,
     tags?: string[]
-  ): Promise<UploadedDocument | null> => {
-    if (!user) {
-      toast({
-        title: 'Authentication required',
-        description: 'You must be logged in to upload documents',
-        variant: 'destructive',
-      });
-      return null;
-    }
+  ): Promise<UploadResult | null> => {
+    if (!file) return null;
 
-    const bucketId = documentToBucketMap[documentType];
-    if (!bucketId) {
-      toast({
-        title: 'Error',
-        description: 'Invalid document type',
-        variant: 'destructive',
-      });
-      return null;
-    }
-
+    setIsUploading(true);
     try {
-      setIsUploading(true);
-      setUploadProgress(0);
-
-      // Create a unique file path
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${documentType}/${fileName}`;
-
-      // Upload file to storage
-      const { data, error } = await supabase.storage
-        .from(bucketId)
+      // Generate a unique ID for the document
+      const documentId = uuidv4();
+      const bucketName = documentToBucketMap[documentType];
+      const filePath = `documents/${documentId}`;
+      
+      // Upload file to Storage
+      const { error: uploadError } = await supabase.storage
+        .from(bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false,
+          upsert: false
         });
 
-      if (error) throw error;
+      if (uploadError) {
+        console.error('Error uploading document:', uploadError);
+        toast({
+          title: 'Upload Failed',
+          description: `Could not upload ${file.name}: ${uploadError.message}`,
+          variant: 'destructive',
+        });
+        return null;
+      }
 
-      if (!data) throw new Error('Upload failed');
-
-      console.log('File uploaded successfully to bucket:', bucketId, data);
-
-      // Save metadata to database
-      const { data: metaData, error: metaError } = await supabase
+      // Store document metadata in the database
+      const { data: metadataData, error: metadataError } = await supabase
         .from('document_metadata')
         .insert({
-          user_id: user.id,
-          loan_application_id: loanApplicationId,
-          document_type: documentType,
-          storage_path: data.path,
+          id: documentId,
           file_name: file.name,
-          content_type: file.type,
           file_size: file.size,
-          description,
-          tags,
+          content_type: file.type,
+          storage_path: filePath,
+          document_type: documentType,
+          loan_application_id: loanApplicationId || null,
+          description: description || null,
+          tags: tags || null
         })
-        .select()
+        .select('id')
         .single();
 
-      if (metaError) throw metaError;
+      if (metadataError) {
+        console.error('Error storing document metadata:', metadataError);
+        // Try to delete the uploaded file if metadata storage failed
+        await supabase.storage.from(bucketName).remove([filePath]);
+        
+        toast({
+          title: 'Upload Failed',
+          description: `Could not store metadata for ${file.name}`,
+          variant: 'destructive',
+        });
+        return null;
+      }
 
-      const newDocument: UploadedDocument = {
-        id: metaData.id,
+      toast({
+        title: 'Document Uploaded',
+        description: `${file.name} has been uploaded successfully`,
+      });
+
+      return {
+        id: documentId,
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
-        documentType: documentType,
+        documentType,
         description,
-        tags,
+        tags
       };
-
-      toast({
-        title: 'Upload successful',
-        description: `${file.name} was uploaded successfully to ${bucketId}`,
-      });
-
-      return newDocument;
     } catch (error: any) {
-      console.error('Error uploading document:', error);
+      console.error('Error in document upload:', error);
       toast({
-        title: 'Upload failed',
-        description: error?.message || 'An unexpected error occurred',
+        title: 'Upload Failed',
+        description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
       return null;
     } finally {
       setIsUploading(false);
-      setUploadProgress(0);
     }
   };
 
   return {
-    isUploading,
-    uploadProgress,
-    uploadDocument
+    uploadDocument,
+    isUploading
   };
-}
+};
