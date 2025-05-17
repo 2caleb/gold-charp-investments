@@ -38,6 +38,8 @@ import Notifications from '@/pages/Notifications';
 import ClientsList from '@/pages/ClientsList';
 import NewClient from '@/pages/NewClient';
 import ClientDetail from '@/pages/ClientDetail';
+import Documents from '@/pages/Documents';
+import Payments from '@/pages/Payments';
 
 // Staff Pages
 import DataCollection from '@/pages/staff/DataCollection';
@@ -86,6 +88,8 @@ function App() {
               <Route path="/clients" element={<PrivateRoute><ClientsList /></PrivateRoute>} />
               <Route path="/clients/new" element={<PrivateRoute><NewClient /></PrivateRoute>} />
               <Route path="/clients/:id" element={<PrivateRoute><ClientDetail /></PrivateRoute>} />
+              <Route path="/documents" element={<PrivateRoute><Documents /></PrivateRoute>} />
+              <Route path="/payments" element={<PrivateRoute><Payments /></PrivateRoute>} />
               
               {/* Staff Routes */}
               <Route path="/staff/data-collection" element={<StaffRoute><DataCollection /></StaffRoute>} />
