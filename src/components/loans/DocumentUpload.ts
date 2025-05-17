@@ -2,7 +2,8 @@
 // This is a simple re-export file to maintain backward compatibility
 // and avoid modifying too much code
 export { DocumentUpload } from '@/components/documents/DocumentUpload';
-export type { DocumentType } from '@/components/documents/DocumentUpload';
+// Import and re-export DocumentType from the correct location
+export type { DocumentType } from '@/types/document';
 
 // Add types to fix TypeScript errors if needed
 export type DocumentUploadProps = {
@@ -17,8 +18,10 @@ export type DocumentUploadProps = {
     id: string;
     documentType: DocumentType;
   }>;
-  onDelete?: (id: string) => Promise<void>;
+  onDelete?: (id: string, documentType?: DocumentType) => Promise<void>;
   iconType?: string;
   enableScanning?: boolean;
   enableCapture?: boolean;
+  isPrintable?: boolean;
+  isPrintReady?: boolean;
 };
