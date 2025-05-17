@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { v4 as uuidv4 } from 'uuid';
-import { DocumentType, BucketType, documentToBucketMap } from '@/types/document';
+import { DocumentType, documentToBucketMap } from '@/types/document';
 
 export type UploadResult = {
   id: string;
