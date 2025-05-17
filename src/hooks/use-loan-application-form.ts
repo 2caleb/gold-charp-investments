@@ -1,11 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Client } from '@/types/schema';
+import { Client, LoanApplicationValues } from '@/types/loan';
 import { useDocumentUpload, UploadedDocument } from '@/hooks/use-document-upload';
-import { LoanApplicationValues } from '@/components/loans/LoanDetailsForm';
 import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 
 export function useLoanApplicationForm() {

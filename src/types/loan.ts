@@ -58,3 +58,28 @@ export interface LoanDetailsFormProps {
   isLoadingClients?: boolean;
   preselectedClientId?: string;
 }
+
+export type LoanApplicationValues = {
+  client_type: string;
+  client_id?: string;
+  full_name?: string;
+  phone_number?: string;
+  email?: string;
+  id_number?: string;
+  address?: string;
+  employment_status?: string;
+  monthly_income?: string;
+  loan_type: string;
+  loan_amount: string;
+  loan_term?: string;
+  term_unit?: 'daily' | 'weekly' | 'monthly';
+  purpose_of_loan: string;
+  applicant_name?: string;
+  has_collateral?: boolean;
+  collateral_description?: string;
+  notes?: string;
+  terms_accepted: boolean;
+  guarantor1_name?: string;
+  guarantor1_phone?: string;
+  guarantor1_id_number?: string;
+};
