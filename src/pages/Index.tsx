@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import Hero from '@/components/home/Hero';
@@ -9,6 +10,7 @@ import CTASection from '@/components/home/CTASection';
 import ContactForm from '@/components/contact/ContactForm';
 import { motion } from 'framer-motion';
 import { Shield, Clock, Building, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   // Add scroll animation effect
@@ -109,15 +111,15 @@ const Index = () => {
                     {service.icon === "Clock" && <Clock className="h-6 w-6 text-purple-600 dark:text-purple-400" />}
                     {service.icon === "Building" && <Building className="h-6 w-6 text-purple-600 dark:text-purple-400" />}
                   </div>
-                  <h3 className="text-xl font-serif font-bold mb-2">{service.title}</h3>
+                  <h3 className="text-xl font-serif font-bold mb-2 dark:text-white">{service.title}</h3>
                   <p className="text-gray-600 dark:text-gray-300 mb-4">{service.description}</p>
-                  <a 
-                    href={service.link} 
+                  <Link 
+                    to={service.link} 
                     className="inline-flex items-center text-purple-600 dark:text-purple-400 font-medium hover:underline"
                   >
                     Learn more
                     <ChevronRight className="h-4 w-4 ml-1" />
-                  </a>
+                  </Link>
                 </motion.div>
               ))}
             </div>
