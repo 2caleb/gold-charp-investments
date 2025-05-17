@@ -6,7 +6,7 @@ import LoanApplicationForm from '@/components/loans/LoanApplicationForm';
 import { Button } from '@/components/ui/button';
 import { BarChart3, ClipboardList, UserPlus, Calendar, Table, ChevronRight, FileText, Shield, Clock, Building } from 'lucide-react';
 import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
-import { DataCollectionButton } from '@/components/loans/DataCollectionButton';
+import { DataCollectionButton } from '@/components/loans/data-collection/DataCollectionButton';
 import { Card, CardContent } from '@/components/ui/card';
 
 const NewLoanApplication = () => {
@@ -120,24 +120,30 @@ const NewLoanApplication = () => {
             <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-900/50 dark:to-transparent rounded-lg border border-gray-100 dark:border-gray-800">
               <h3 className="text-lg font-medium mb-4">Additional Services</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button variant="outline" className="flex items-center justify-center py-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
-                  <Shield className="h-5 w-5 mr-2 text-blue-700" />
-                  <span>Insurance Options</span>
+                <Button variant="outline" asChild className="flex items-center justify-center py-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
+                  <Link to="/services/insurance">
+                    <Shield className="h-5 w-5 mr-2 text-blue-700" />
+                    <span>Insurance Options</span>
+                  </Link>
                 </Button>
-                <Button variant="outline" className="flex items-center justify-center py-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
-                  <Clock className="h-5 w-5 mr-2 text-blue-700" />
-                  <span>Fast Track Approval</span>
+                <Button variant="outline" asChild className="flex items-center justify-center py-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
+                  <Link to="/services/fast-track">
+                    <Clock className="h-5 w-5 mr-2 text-blue-700" />
+                    <span>Fast Track Approval</span>
+                  </Link>
                 </Button>
-                <Button variant="outline" className="flex items-center justify-center py-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
-                  <Building className="h-5 w-5 mr-2 text-blue-700" />
-                  <span>Business Support</span>
+                <Button variant="outline" asChild className="flex items-center justify-center py-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
+                  <Link to="/services/business-support">
+                    <Building className="h-5 w-5 mr-2 text-blue-700" />
+                    <span>Business Support</span>
+                  </Link>
                 </Button>
               </div>
             </div>
             
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Need assistance? Contact our support team at <a href="mailto:support@example.com" className="text-blue-600 hover:underline transition-all duration-200">support@example.com</a>
+                Need assistance? Contact our support team at <a href="mailto:support@goldcharp.com" className="text-blue-600 hover:underline transition-all duration-200">support@goldcharp.com</a> or call us at +254-700-123-456
               </p>
             </div>
           </div>
