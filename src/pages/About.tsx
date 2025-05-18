@@ -136,6 +136,7 @@ const About = () => {
             <div className="text-center">
               <div className="mb-4">
                 <Avatar className="w-40 h-40 mx-auto">
+                  <AvatarImage src="/lovable-uploads/db9623bc-a03d-4540-ab36-44ec0e7344e9.png" alt="Geofrey Mubiru" className="object-cover" />
                   <AvatarFallback className="bg-purple-100 text-purple-700 text-4xl">GM</AvatarFallback>
                 </Avatar>
               </div>
@@ -149,6 +150,7 @@ const About = () => {
             <div className="text-center">
               <div className="mb-4">
                 <Avatar className="w-40 h-40 mx-auto">
+                  <AvatarImage src="/lovable-uploads/854b9bda-1aea-4e1c-89bf-f6defcfa2dc3.png" alt="Paul Mubiru" className="object-cover" />
                   <AvatarFallback className="bg-purple-100 text-purple-700 text-4xl">PM</AvatarFallback>
                 </Avatar>
               </div>
