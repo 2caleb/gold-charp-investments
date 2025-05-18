@@ -2,8 +2,33 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const Hero = () => {
+  // Variants for staggered animations
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.3
+      }
+    }
+  };
+
+  const childVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 12
+      }
+    }
+  };
+
   return (
     <div className="relative text-white overflow-hidden">
       {/* Video Background with Overlay */}
@@ -22,15 +47,29 @@ const Hero = () => {
       </div>
       
       <div className="container mx-auto px-4 sm:px-6 py-20 md:py-32 relative z-10">
-        <div className="max-w-3xl animate-fade-in">
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight">
+        <motion.div
+          className="max-w-3xl"
+          initial="hidden"
+          animate="visible"
+          variants={containerVariants}
+        >
+          <motion.h1 
+            className="font-serif text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight"
+            variants={childVariants}
+          >
             Find Your Dream Home & Secure Your Future
-          </h1>
-          <p className="text-lg sm:text-xl md:text-2xl mb-8 text-gray-100">
+          </motion.h1>
+          <motion.p 
+            className="text-lg sm:text-xl md:text-2xl mb-8 text-gray-100"
+            variants={childVariants}
+          >
             Gold Charp Investments Limited offers the best properties and financial solutions in Uganda.
             Discover how we can help you achieve your real estate and financial goals.
-          </p>
-          <div className="flex flex-wrap gap-4">
+          </motion.p>
+          <motion.div 
+            className="flex flex-wrap gap-4"
+            variants={childVariants}
+          >
             <Link to="/properties">
               <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 sm:px-8 hover-scale">
                 Browse Properties
@@ -41,8 +80,8 @@ const Hero = () => {
                 Explore Loans
               </Button>
             </Link>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );
