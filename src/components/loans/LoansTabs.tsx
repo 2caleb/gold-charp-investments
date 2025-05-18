@@ -90,7 +90,7 @@ const LoansTabs = () => {
           <div className="mt-6 flex justify-center">
             <Button 
               onClick={handleDataCollectionClick}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3"
+              className="bg-purple-600 hover:bg-purple-700 text-white transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg py-3"
             >
               <FileText className="mr-2" size={18} />
               Collect Client Data

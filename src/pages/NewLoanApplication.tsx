@@ -4,14 +4,23 @@ import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import LoanApplicationForm from '@/components/loans/LoanApplicationForm';
 import { Button } from '@/components/ui/button';
-import { BarChart3, ClipboardList, UserPlus, Calendar, Table, ChevronRight, FileText, Shield, Clock, Building } from 'lucide-react';
+import { BarChart3, ClipboardList, UserPlus, Calendar, Table, FileText, Shield, Clock, Building } from 'lucide-react';
 import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
 import { DataCollectionButton } from '@/components/loans/data-collection/DataCollectionButton';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 const NewLoanApplication = () => {
   // Force desktop view for better UX
   useDesktopRedirect();
+  const { toast } = useToast();
+
+  const handleDataCollected = (data: any) => {
+    toast({
+      title: "Data Collection Complete",
+      description: `Client data for ${data.full_name || 'New Client'} has been successfully collected.`,
+    });
+  };
 
   return (
     <Layout>
@@ -25,7 +34,7 @@ const NewLoanApplication = () => {
               </p>
             </div>
             <div className="mt-4 md:mt-0 flex flex-wrap gap-3 animate-fade-in">
-              <DataCollectionButton />
+              <DataCollectionButton onDataCollected={handleDataCollected} />
               
               <Button variant="outline" asChild className="flex items-center transition-all duration-300 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20">
                 <Link to="/loan-applications">
@@ -53,7 +62,7 @@ const NewLoanApplication = () => {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                   Complete guided client onboarding with document collection
                 </p>
-                <DataCollectionButton />
+                <DataCollectionButton onDataCollected={handleDataCollected} />
               </CardContent>
             </Card>
             

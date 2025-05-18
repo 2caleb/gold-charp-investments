@@ -14,10 +14,8 @@ import {
   RotateCw, 
   Printer, 
   Camera, 
-  ScanLine,
   FileText,
   Percent,
-  Video
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
@@ -29,6 +27,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { useNavigate } from 'react-router-dom';
 
 export interface DataCollectionButtonProps {
   onDataCollected?: (data: any) => void;
@@ -39,6 +38,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
 }) => {
   // Force desktop view for better UX
   useDesktopRedirect();
+  const navigate = useNavigate();
   
   // Use the data collection hook
   const {
@@ -78,21 +78,25 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
   
   // Handle form submission and notify parent component
   const handleSubmit = async (values: DataCollectionFormValues) => {
-    // Include interest rate with the submission
-    const enrichedValues = {
-      ...values,
-      interest_rate: interestRate
-    };
-    
-    await onSubmit(enrichedValues);
-    
-    // Notify parent component if needed
-    if (clientId) {
-      onDataCollected({
-        ...enrichedValues,
-        client_id: clientId,
-        application_id: applicationId
-      });
+    try {
+      // Include interest rate with the submission
+      const enrichedValues = {
+        ...values,
+        interest_rate: interestRate
+      };
+      
+      await onSubmit(enrichedValues);
+      
+      // Notify parent component if needed
+      if (clientId) {
+        onDataCollected({
+          ...enrichedValues,
+          client_id: clientId,
+          application_id: applicationId
+        });
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
     }
   };
   
@@ -100,9 +104,27 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
   const formatInterestRate = (value: number) => {
     return `${value.toFixed(2)}%`;
   };
+
+  // Handle dialog closing to prevent state issues
+  const handleOpenChange = (open: boolean) => {
+    setOpen(open);
+    if (!open) {
+      // Reset state if dialog is closed without completing
+      setActiveTab('client');
+    }
+  };
+
+  // Improved finish handler with navigation
+  const handleCompleteOnboarding = () => {
+    handleFinish();
+    setOpen(false);
+    
+    // Navigate to loan applications or dashboard
+    navigate('/loan-applications');
+  };
   
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="bg-blue-700 hover:bg-blue-800 text-white transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
           <UserPlus className="mr-2 h-4 w-4" />
@@ -163,7 +185,7 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mt-4">
-          <TabsList className="grid grid-cols-3 mb-6 bg-gray-100 p-1 rounded-lg">
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-gray-100 p-1 rounded-lg">
             <TabsTrigger value="client" className="data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-200">
               <FileText className="h-4 w-4 mr-2" />
               Client Information
@@ -268,7 +290,10 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
                 </div>
                 
                 <div className="flex justify-end mt-8">
-                  <Button onClick={handleFinish} className="bg-blue-700 hover:bg-blue-800 text-white transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg">
+                  <Button 
+                    onClick={handleCompleteOnboarding} 
+                    className="bg-blue-700 hover:bg-blue-800 text-white transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg"
+                  >
                     Complete Onboarding
                   </Button>
                 </div>

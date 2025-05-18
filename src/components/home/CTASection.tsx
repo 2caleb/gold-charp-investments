@@ -22,18 +22,18 @@ const CTASection = () => {
             our experts at Gold Charp Investments Limited are here to guide you every step of the way.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <Link to="/contact">
-              <Button size="lg" className="bg-white text-purple-700 hover:bg-purple-50 transition-all duration-300 transform hover:scale-105 hover:shadow-lg shadow-md group px-6 py-6">
+            <Button asChild size="lg" className="bg-white text-purple-700 hover:bg-purple-50 transition-all duration-300 transform hover:scale-105 hover:shadow-lg shadow-md group px-6 py-6">
+              <Link to="/contact">
                 <span>Contact an Advisor</span>
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-              </Button>
-            </Link>
-            <Link to="/calculator">
-              <Button size="lg" variant="outline" className="text-white border-white hover:bg-purple-600 transition-all duration-300 transform hover:scale-105 hover:shadow-lg shadow-md group px-6 py-6">
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="text-white border-white hover:bg-purple-600 transition-all duration-300 transform hover:scale-105 hover:shadow-lg shadow-md group px-6 py-6">
+              <Link to="/calculator">
                 <span>Calculate Your Mortgage</span>
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
       </div>

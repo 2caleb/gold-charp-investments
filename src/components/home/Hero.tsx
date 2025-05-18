@@ -71,12 +71,12 @@ const Hero = () => {
             variants={childVariants}
           >
             <Link to="/properties">
-              <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 sm:px-8 hover-scale">
+              <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 sm:px-8 transition-all duration-300 hover:scale-105 transform">
                 Browse Properties
               </Button>
             </Link>
             <Link to="/loans">
-              <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-purple-900 font-medium px-6 sm:px-8 hover-scale">
+              <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-purple-900 font-medium px-6 sm:px-8 transition-all duration-300 hover:scale-105 transform">
                 Explore Loans
               </Button>
             </Link>
