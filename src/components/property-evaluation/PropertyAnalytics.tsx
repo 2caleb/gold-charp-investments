@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Search, PieChart, BarChart3, DollarSign, ArrowUpRight, ArrowDownRight, Map } from 'lucide-react';
+import { Search, PieChart, BarChart3, DollarSign, ArrowUpRight, ArrowDownRight, Map, Clock } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 
 const PropertyAnalytics = () => {
