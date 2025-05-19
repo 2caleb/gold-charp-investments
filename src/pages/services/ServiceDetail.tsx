@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ArrowRight, Clock, Shield, Building, Check, ChevronRight } from 'lucide-react';
+import { ArrowRight, Clock, Shield, Building, Check, ChevronRight, Home } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Service data - would typically come from a database
