@@ -22,7 +22,7 @@ const services = [
     title: "Mortgage Solutions",
     description: "Get personalized mortgage options with competitive rates designed to fit your financial situation in the Ugandan market.",
     icon: Landmark,
-    link: "/loans"
+    link: "/services/mortgage"
   },
   {
     title: "Investment Opportunities",

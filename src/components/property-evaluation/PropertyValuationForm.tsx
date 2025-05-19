@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -89,6 +88,9 @@ const PropertyValuationForm = () => {
       case 'industrial':
         typeMultiplier = 1.8;
         break;
+      case 'land':
+        typeMultiplier = 0.5;
+        break;
       default:
         typeMultiplier = 1;
     }
@@ -124,6 +126,7 @@ const PropertyValuationForm = () => {
     { label: "Agricultural", value: "agricultural" },
     { label: "Industrial", value: "industrial" },
     { label: "Mixed Use", value: "mixed-use" },
+    { label: "Land", value: "land" }
   ];
   
   const districts = [
@@ -398,7 +401,7 @@ const PropertyValuationForm = () => {
                       UGX {valuationResults.forcedPrice.toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      Minimum value for quick liquidation
+                      Minimum value for quick-sale scenarios
                     </p>
                   </div>
                 </div>

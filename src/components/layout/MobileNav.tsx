@@ -54,7 +54,7 @@ const MobileNav = ({ isOpen, onClose }: MobileNavProps) => {
                 transition={{ duration: 0.3, staggerChildren: 0.1 }}
                 className="space-y-6"
               >
-                <NavLinks isMobile={true} onClick={handleActionComplete} />
+                <NavLinks type="mobile" onItemClick={handleActionComplete} />
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}

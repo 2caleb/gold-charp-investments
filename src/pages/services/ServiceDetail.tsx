@@ -65,6 +65,114 @@ const services = {
       { name: 'Commercial Property Analysis', price: 'Custom Pricing', description: 'In-depth evaluation of potential properties' },
     ]
   },
+  'property-management': {
+    title: 'Property Management',
+    description: 'Comprehensive property management services for landlords and property owners in Uganda.',
+    longDescription: 'Our Property Management services take the stress out of owning rental properties. We handle everything from tenant screening and rent collection to maintenance coordination and financial reporting, allowing you to enjoy the benefits of property ownership without the day-to-day hassles.',
+    icon: Building,
+    benefits: [
+      'Professional tenant screening and placement',
+      'Regular property inspections and maintenance',
+      'Efficient rent collection and financial reporting',
+      'Legal compliance and documentation management',
+      '24/7 emergency response system',
+    ],
+    offerings: [
+      { name: 'Basic Management', price: '8% of monthly rent', description: 'Core property management services' },
+      { name: 'Premium Management', price: '12% of monthly rent', description: 'Comprehensive management with priority maintenance' },
+      { name: 'Commercial Property Management', price: 'Custom Pricing', description: 'Specialized services for commercial properties' },
+    ]
+  },
+  'consulting': {
+    title: 'Real Estate Consulting',
+    description: 'Expert guidance for property investment decisions and market analysis in Uganda.',
+    longDescription: 'Our Real Estate Consulting services provide in-depth market analysis and expert guidance to help you make informed property investment decisions. Whether you\'re looking to diversify your portfolio, enter the Ugandan market, or optimize your existing real estate assets, our consultants offer tailored advice based on current market conditions and trends.',
+    icon: Building,
+    benefits: [
+      'Comprehensive market analysis and trend forecasting',
+      'Investment strategy development and optimization',
+      'Property portfolio review and recommendations',
+      'Risk assessment and mitigation planning',
+      'Return on investment calculations and projections',
+    ],
+    offerings: [
+      { name: 'Investment Consultation', price: 'UGX 500,000', description: 'One-time consultation for investment guidance' },
+      { name: 'Market Analysis Report', price: 'From UGX 750,000', description: 'Detailed market analysis for specific regions' },
+      { name: 'Portfolio Optimization', price: 'From UGX 1,500,000', description: 'Comprehensive review of property investments' },
+    ]
+  },
+  'mortgage': {
+    title: 'Mortgage Loans',
+    description: 'Competitive mortgage options for home buyers in the Ugandan market.',
+    longDescription: 'Our Mortgage Loan services offer competitive financing options for home buyers in Uganda. We work with multiple lending partners to find the best rates and terms suited to your financial situation, whether you\'re a first-time buyer or looking to refinance your existing home.',
+    icon: Building,
+    benefits: [
+      'Competitive interest rates tailored to your credit profile',
+      'Flexible down payment options for various financial situations',
+      'Multiple term length options from 10 to 30 years',
+      'Specialized programs for first-time home buyers',
+      'Fast pre-approval process for stronger purchase offers',
+    ],
+    offerings: [
+      { name: 'Standard Mortgage', price: 'From 9% interest', description: 'Traditional mortgage with fixed or variable rates' },
+      { name: 'First-Time Buyer Program', price: 'From 8.5% interest', description: 'Special terms for first-time homeowners' },
+      { name: 'Premium Property Mortgage', price: 'Custom Rates', description: 'Specialized terms for high-value properties' },
+    ]
+  },
+  'commercial': {
+    title: 'Commercial Loans',
+    description: 'Financing solutions for business properties and commercial real estate in Uganda.',
+    longDescription: 'Our Commercial Loan services provide financing solutions specifically for business properties and commercial real estate in Uganda. We understand the unique needs of business owners and investors, offering competitive rates and favorable terms for property acquisition, development, or refinancing.',
+    icon: Building,
+    benefits: [
+      'Higher loan amounts for substantial commercial projects',
+      'Flexible repayment schedules aligned with business cash flow',
+      'Options for both owner-occupied and investment properties',
+      'Specialized terms for different commercial property types',
+      'Expert guidance through complex commercial lending requirements',
+    ],
+    offerings: [
+      { name: 'Commercial Property Loan', price: 'From 10% interest', description: 'For purchasing existing commercial properties' },
+      { name: 'Development Financing', price: 'From 11% interest', description: 'For construction and development projects' },
+      { name: 'Commercial Refinancing', price: 'Custom Rates', description: 'Restructure existing commercial property loans' },
+    ]
+  },
+  'refinance': {
+    title: 'Refinancing',
+    description: 'Optimize your existing loans with competitive refinancing options in Uganda.',
+    longDescription: 'Our Refinancing services help you optimize your existing loans by taking advantage of better interest rates or more favorable terms. Whether you\'re looking to lower your monthly payments, reduce your overall interest costs, or access equity in your property, our refinancing options are designed to meet your financial goals.',
+    icon: Clock,
+    benefits: [
+      'Potential for lower monthly payments through reduced interest rates',
+      'Option to shorten loan term while maintaining similar payments',
+      'Ability to convert variable rates to fixed rates for stability',
+      'Cash-out options to access equity for major expenses',
+      'Consolidation of multiple loans into a single, manageable payment',
+    ],
+    offerings: [
+      { name: 'Rate Reduction Refinance', price: 'From 8.5% interest', description: 'Lower your current interest rate' },
+      { name: 'Cash-Out Refinance', price: 'From 9% interest', description: 'Access equity while refinancing your loan' },
+      { name: 'Term Adjustment Refinance', price: 'Custom Rates', description: 'Change your loan term to better suit your needs' },
+    ]
+  },
+  'firsttime': {
+    title: 'First-Time Buyer Programs',
+    description: 'Special financing options and assistance for first-time property buyers in Uganda.',
+    longDescription: 'Our First-Time Buyer Programs are specifically designed to help new property owners navigate the complex process of purchasing their first home in Uganda. We offer special financing terms, educational resources, and personalized guidance to make your first property purchase a smooth and successful experience.',
+    icon: Home,
+    benefits: [
+      'Lower down payment requirements for qualified buyers',
+      'Competitive interest rates for first-time purchasers',
+      'Educational workshops on property ownership and maintenance',
+      'Guidance through the entire buying process from offer to closing',
+      'Post-purchase support and resources for new homeowners',
+    ],
+    offerings: [
+      { name: 'First Home Advantage', price: 'From 8% interest', description: 'Specialized mortgage for first-time buyers' },
+      { name: 'Starter Home Program', price: 'From 7.5% interest', description: 'For affordable starter properties under UGX 100M' },
+      { name: 'New Buyer Education Package', price: 'UGX 200,000', description: 'Comprehensive guidance and educational resources' },
+    ]
+  },
   'other': {
     title: 'Custom Service Request',
     description: 'Tailored financial and real estate solutions for your unique needs in the Ugandan market.',
@@ -95,19 +203,15 @@ const ServiceDetail = () => {
     : services.other;
 
   useEffect(() => {
-    // If an invalid service ID is provided, redirect to the services page
-    if (serviceId && !services[serviceId as keyof typeof services] && serviceId !== 'other') {
-      toast({
-        title: "Service Not Found",
-        description: "The requested service does not exist.",
-        variant: "destructive",
-      });
-      navigate('/services');
+    // If an invalid service ID is provided, redirect to the services page with a toast notification
+    if (serviceId && !services[serviceId as keyof typeof services]) {
+      // Instead of showing an error toast, redirect to the "other" service which is our custom request page
+      navigate('/services/other');
     }
     
     // Update the form visibility when serviceId changes
     setShowCustomForm(serviceId === 'other');
-  }, [serviceId, navigate, toast]);
+  }, [serviceId, navigate]);
 
   const handleRequestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
