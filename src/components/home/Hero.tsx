@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { BarChart3, Home, Calculator } from 'lucide-react';
 
 const Hero = () => {
   // Variants for staggered animations
@@ -72,12 +73,19 @@ const Hero = () => {
           >
             <Link to="/properties">
               <Button size="lg" className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 sm:px-8 transition-all duration-300 hover:scale-105 transform">
+                <Home className="mr-2" size={18} />
                 Browse Properties
               </Button>
             </Link>
             <Link to="/loans">
               <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-purple-900 font-medium px-6 sm:px-8 transition-all duration-300 hover:scale-105 transform">
                 Explore Loans
+              </Button>
+            </Link>
+            <Link to="/property-evaluation">
+              <Button size="lg" className="bg-yellow-500 text-purple-900 hover:bg-yellow-400 font-medium px-6 sm:px-8 transition-all duration-300 hover:scale-105 transform">
+                <BarChart3 className="mr-2" size={18} />
+                Evaluate Property
               </Button>
             </Link>
           </motion.div>

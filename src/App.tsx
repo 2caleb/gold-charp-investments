@@ -22,6 +22,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import NotFound from '@/pages/NotFound';
 import Loans from '@/pages/Loans';
+import PropertyEvaluation from '@/pages/PropertyEvaluation';
 
 // Service Pages
 import ServicesPage from '@/pages/services';
@@ -65,6 +66,7 @@ function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/properties" element={<Properties />} />
               <Route path="/calculator" element={<Calculator />} />
+              <Route path="/property-evaluation" element={<PropertyEvaluation />} />
               
               {/* Service Routes */}
               <Route path="/services" element={<ServicesPage />} />

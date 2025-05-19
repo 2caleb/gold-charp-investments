@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, BarChart3, Calculator } from 'lucide-react';
 
 const CTASection = () => {
   return (
@@ -21,7 +21,7 @@ const CTASection = () => {
             Whether you're buying your first home, investing in property, or looking to refinance,
             our experts at Gold Charp Investments Limited are here to guide you every step of the way.
           </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+          <div className="flex flex-wrap justify-center gap-4">
             <Button asChild size="lg" className="bg-white text-purple-700 hover:bg-purple-50 transition-all duration-300 transform hover:scale-105 hover:shadow-lg shadow-md group px-6 py-6">
               <Link to="/contact">
                 <span>Contact an Advisor</span>
@@ -30,7 +30,14 @@ const CTASection = () => {
             </Button>
             <Button asChild size="lg" variant="outline" className="text-white border-white hover:bg-purple-600 transition-all duration-300 transform hover:scale-105 hover:shadow-lg shadow-md group px-6 py-6">
               <Link to="/calculator">
+                <Calculator className="mr-2 h-5 w-5" />
                 <span>Calculate Your Mortgage</span>
+              </Link>
+            </Button>
+            <Button asChild size="lg" className="bg-yellow-500 text-purple-900 hover:bg-yellow-400 transition-all duration-300 transform hover:scale-105 hover:shadow-lg shadow-md group px-6 py-6">
+              <Link to="/property-evaluation">
+                <BarChart3 className="mr-2 h-5 w-5" />
+                <span>Evaluate Property</span>
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </Button>
