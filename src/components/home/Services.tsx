@@ -34,32 +34,34 @@ const services = [
 
 const Services = () => {
   return (
-    <section className="bg-gray-50 py-16 md:py-24">
+    <section className="bg-gray-50 py-16 md:py-24 dark:bg-gray-900/50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4">Our Services</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto dark:text-gray-300">
             Gold Charp Investments Limited offers comprehensive real estate and financial services to meet all your property needs in Uganda.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {services.map((service, index) => (
-            <Card key={index} className="flex flex-col h-full hover:shadow-lg transition-shadow">
+            <Card key={index} className="flex flex-col h-full hover:shadow-lg transition-shadow dark:bg-gray-800 border-gray-100 dark:border-gray-700">
               <CardHeader>
-                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-purple-100 text-purple-700 mb-4">
+                <div className="w-12 h-12 flex items-center justify-center rounded-full bg-purple-100 text-purple-700 mb-4 dark:bg-purple-900/30 dark:text-purple-300">
                   <service.icon size={24} />
                 </div>
-                <CardTitle className="text-xl">{service.title}</CardTitle>
+                <CardTitle className="text-xl dark:text-white">{service.title}</CardTitle>
               </CardHeader>
               <CardContent className="flex-grow">
-                <CardDescription className="text-gray-600">
+                <CardDescription className="text-gray-600 dark:text-gray-300">
                   {service.description}
                 </CardDescription>
               </CardContent>
               <CardFooter>
                 <Link to={service.link} className="w-full">
-                  <Button variant="outline" className="w-full">Learn More</Button>
+                  <Button variant="outline" className="w-full hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">
+                    Learn More
+                  </Button>
                 </Link>
               </CardFooter>
             </Card>

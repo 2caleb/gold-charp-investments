@@ -31,7 +31,7 @@ const ServicesPage = () => {
         { name: "Insurance Options", link: "/services/insurance" },
         { name: "Fast Track Approval", link: "/services/fast-track" },
         { name: "Business Support", link: "/services/business-support" },
-        { name: "Investment Advisory", link: "/services/investment" }
+        { name: "Other Services", link: "/services/other" }
       ]
     }
   ];
@@ -137,7 +137,19 @@ const ServicesPage = () => {
           <p className="text-gray-600 dark:text-gray-300 mb-6 max-w-2xl mx-auto">
             Don't see what you're looking for? Contact our team to discuss customized solutions for your specific needs.
           </p>
-          <div className="text-gray-600 dark:text-gray-400">
+          <div className="flex justify-center">
+            <Link to="/services/other">
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.98 }}
+                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-md hover:shadow-lg flex items-center"
+              >
+                Request Custom Service
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </motion.button>
+            </Link>
+          </div>
+          <div className="text-gray-600 dark:text-gray-400 mt-8">
             Contact our support team at{' '}
             <a href="mailto:info@goldcharpinvestments.com" className="text-purple-600 dark:text-purple-400 hover:underline transition-colors">
               info@goldcharpinvestments.com

@@ -26,6 +26,7 @@ import PropertyEvaluation from '@/pages/PropertyEvaluation';
 
 // Service Pages
 import ServicesPage from '@/pages/services';
+import ServiceDetail from '@/pages/services/ServiceDetail';
 import Insurance from '@/pages/services/Insurance';
 import FastTrack from '@/pages/services/FastTrack';
 import BusinessSupport from '@/pages/services/BusinessSupport';
@@ -70,12 +71,16 @@ function App() {
               
               {/* Service Routes */}
               <Route path="/services" element={<ServicesPage />} />
+              <Route path="/services/:serviceId" element={<ServiceDetail />} />
               <Route path="/services/insurance" element={<Insurance />} />
               <Route path="/services/fast-track" element={<FastTrack />} />
               <Route path="/services/business-support" element={<BusinessSupport />} />
               
               {/* Loan Routes */}
               <Route path="/loans" element={<Loans />} />
+              <Route path="/loan-applications" element={<LoanApplicationsList />} />
+              <Route path="/new-loan-application" element={<NewLoanApplication />} />
+              <Route path="/loan-applications/:id" element={<LoanApprovalPage />} />
               
               {/* Auth Routes */}
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -83,9 +88,6 @@ function App() {
               
               {/* Protected Routes */}
               <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-              <Route path="/new-loan-application" element={<PrivateRoute><NewLoanApplication /></PrivateRoute>} />
-              <Route path="/loan-applications" element={<PrivateRoute><LoanApplicationsList /></PrivateRoute>} />
-              <Route path="/loan-approval/:id" element={<PrivateRoute><LoanApprovalPage /></PrivateRoute>} />
               <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
               <Route path="/clients" element={<PrivateRoute><ClientsList /></PrivateRoute>} />
               <Route path="/clients/new" element={<PrivateRoute><NewClient /></PrivateRoute>} />

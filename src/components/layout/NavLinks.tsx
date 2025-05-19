@@ -7,6 +7,7 @@ type NavLinksProps = {
   type?: 'mobile' | 'desktop';
   className?: string;
   onItemClick?: () => void; // For mobile menu to close after clicking
+  isMobile?: boolean; // Added this prop to fix the type error
 };
 
 export const links = [
@@ -20,8 +21,8 @@ export const links = [
   { name: 'Contact', href: '/contact' },
 ];
 
-const NavLinks = ({ type = 'desktop', className = '', onItemClick }: NavLinksProps) => {
-  if (type === 'mobile') {
+const NavLinks = ({ type = 'desktop', className = '', onItemClick, isMobile }: NavLinksProps) => {
+  if (type === 'mobile' || isMobile === true) {
     return (
       <div className={cn('flex flex-col space-y-4', className)}>
         {links.map((link) => (

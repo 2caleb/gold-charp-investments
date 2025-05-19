@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import LoanApplicationForm from '@/components/loans/LoanApplicationForm';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,15 @@ const NewLoanApplication = () => {
   // Force desktop view for better UX
   useDesktopRedirect();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleDataCollected = (data: any) => {
     toast({
       title: "Data Collection Complete",
       description: `Client data for ${data.full_name || 'New Client'} has been successfully collected.`,
     });
+    // Redirect to loan applications list after data collection
+    setTimeout(() => navigate('/loan-applications'), 1500);
   };
 
   return (
