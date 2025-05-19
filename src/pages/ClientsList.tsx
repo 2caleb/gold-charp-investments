@@ -6,17 +6,41 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Search, UserRound, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+  UserPlus, 
+  Search, 
+  UserRound, 
+  Loader2, 
+  ChevronLeft, 
+  ChevronRight, 
+  Eye, 
+  Trash2, 
+  RotateCcw
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Client } from '@/types/schema';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const ClientsList = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [deletedClients, setDeletedClients] = useState<Client[]>([]);
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const { toast } = useToast();
   const itemsPerPage = 10;
 
@@ -30,7 +54,20 @@ const ClientsList = () => {
       
       if (error) throw error;
       
-      setClients(data || []);
+      // Separate active and deleted clients
+      const activeClients: Client[] = [];
+      const deletedClients: Client[] = [];
+      
+      data?.forEach(client => {
+        if (client.deleted_at) {
+          deletedClients.push(client as Client);
+        } else {
+          activeClients.push(client as Client);
+        }
+      });
+      
+      setClients(activeClients);
+      setDeletedClients(deletedClients);
     } catch (error: any) {
       console.error('Error fetching clients:', error);
       toast({
@@ -47,7 +84,76 @@ const ClientsList = () => {
     fetchClients();
   }, []);
 
-  const filteredClients = clients.filter(client => 
+  const handleDeleteClient = async (client: Client) => {
+    setClientToDelete(client);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteClient = async () => {
+    if (!clientToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from('client_name')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', clientToDelete.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Client removed',
+        description: `${clientToDelete.full_name} has been removed from active clients`,
+      });
+      
+      // Update local state
+      setClients(clients.filter(c => c.id !== clientToDelete.id));
+      setDeletedClients([...deletedClients, {...clientToDelete, deleted_at: new Date().toISOString()}]);
+    } catch (error: any) {
+      toast({
+        title: 'Error removing client',
+        description: error.message || 'Failed to remove client',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setClientToDelete(null);
+    }
+  };
+
+  const handleRestoreClient = async (client: Client) => {
+    try {
+      const { error } = await supabase
+        .from('client_name')
+        .update({ deleted_at: null })
+        .eq('id', client.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Client restored',
+        description: `${client.full_name} has been restored to active clients`,
+      });
+      
+      // Update local state
+      setDeletedClients(deletedClients.filter(c => c.id !== client.id));
+      setClients([{...client, deleted_at: null}, ...clients]);
+    } catch (error: any) {
+      toast({
+        title: 'Error restoring client',
+        description: error.message || 'Failed to restore client',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const toggleShowDeleted = () => {
+    setShowDeleted(!showDeleted);
+    setCurrentPage(1); // Reset to first page when switching views
+  };
+
+  const displayedClients = showDeleted ? deletedClients : clients;
+  
+  const filteredClients = displayedClients.filter(client => 
     client.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.id_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
     client.phone_number.toLowerCase().includes(searchQuery.toLowerCase())
@@ -91,7 +197,7 @@ const ClientsList = () => {
             </p>
           </div>
 
-          <div className="flex space-x-4">
+          <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
               <Input
@@ -105,18 +211,41 @@ const ClientsList = () => {
                 }}
               />
             </div>
-            <Button asChild className="bg-purple-700 hover:bg-purple-800">
-              <Link to="/clients/new">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add Client
-              </Link>
-            </Button>
+            
+            <div className="flex space-x-3">
+              <Button 
+                variant="outline" 
+                onClick={toggleShowDeleted}
+                className={showDeleted ? "border-red-300" : ""}
+              >
+                {showDeleted ? (
+                  <>
+                    <UserRound className="mr-2 h-4 w-4" />
+                    Show Active
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Show Deleted
+                  </>
+                )}
+              </Button>
+              
+              <Button asChild className="bg-purple-700 hover:bg-purple-800">
+                <Link to="/clients/new">
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add Client
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle>All Clients ({filteredClients.length})</CardTitle>
+            <CardTitle>
+              {showDeleted ? 'Deleted Clients' : 'All Clients'} ({filteredClients.length})
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -134,8 +263,8 @@ const ClientsList = () => {
                         <TableHead>ID Number</TableHead>
                         <TableHead>Contact</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Added On</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead>{showDeleted ? 'Deleted On' : 'Added On'}</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -162,13 +291,40 @@ const ClientsList = () => {
                               {client.employment_status}
                             </Badge>
                           </TableCell>
-                          <TableCell>{formatDate(client.created_at)}</TableCell>
+                          <TableCell>
+                            {formatDate(showDeleted ? client.deleted_at || client.created_at : client.created_at)}
+                          </TableCell>
                           <TableCell className="text-right">
-                            <Button variant="outline" size="sm" asChild>
-                              <Link to={`/loan-applications/new?client=${client.id}`}>
-                                Create Loan
-                              </Link>
-                            </Button>
+                            <div className="flex justify-end space-x-2">
+                              {showDeleted ? (
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleRestoreClient(client)}
+                                  className="border-green-500 text-green-600 hover:bg-green-50"
+                                >
+                                  <RotateCcw className="h-4 w-4 mr-1" />
+                                  Restore
+                                </Button>
+                              ) : (
+                                <>
+                                  <Button variant="outline" size="sm" asChild>
+                                    <Link to={`/clients/${client.id}`}>
+                                      <Eye className="h-4 w-4 mr-1" />
+                                      View Data
+                                    </Link>
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => handleDeleteClient(client)}
+                                    className="border-red-300 text-red-600 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -197,6 +353,7 @@ const ClientsList = () => {
                           variant={currentPage === page ? "default" : "outline"} 
                           size="sm"
                           onClick={() => setCurrentPage(page)}
+                          className={currentPage === page ? "bg-purple-700 hover:bg-purple-800" : ""}
                         >
                           {page}
                         </Button>
@@ -216,21 +373,54 @@ const ClientsList = () => {
             ) : (
               <div className="text-center py-12">
                 <UserRound className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                <h3 className="text-xl font-medium mb-2">No clients found</h3>
+                <h3 className="text-xl font-medium mb-2">
+                  {showDeleted 
+                    ? 'No deleted clients found' 
+                    : searchQuery 
+                      ? 'No clients match your search query' 
+                      : 'You have not added any clients yet'}
+                </h3>
                 <p className="text-gray-500 mb-6">
-                  {searchQuery ? 'No clients match your search query' : 'You have not added any clients yet'}
+                  {showDeleted 
+                    ? 'All your clients are currently active' 
+                    : searchQuery 
+                      ? 'Try adjusting your search terms'
+                      : 'Start by adding your first client to the system'}
                 </p>
-                <Button asChild className="bg-purple-700 hover:bg-purple-800">
-                  <Link to="/clients/new">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add Your First Client
-                  </Link>
-                </Button>
+                {!showDeleted && (
+                  <Button asChild className="bg-purple-700 hover:bg-purple-800">
+                    <Link to="/clients/new">
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Add Your First Client
+                    </Link>
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Client</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove {clientToDelete?.full_name}? You can restore this client later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteClient}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };

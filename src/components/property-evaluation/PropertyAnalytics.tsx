@@ -45,12 +45,12 @@ const PropertyAnalytics = () => {
     { type: "Industrial", percentage: 5, color: "bg-red-500" },
   ];
   
-  // Define Uganda regions with coordinates and color coding
+  // Define Uganda regions with coordinates and enhanced color coding for premium look
   const ugandaRegions = [
-    { id: "central", name: "Central", color: "#8884d8", path: "M180,180 L220,180 L240,210 L200,240 L160,220 Z", x: 200, y: 200 },
-    { id: "eastern", name: "Eastern", color: "#82ca9d", path: "M240,210 L270,170 L310,200 L290,230 L240,240 Z", x: 270, y: 205 },
-    { id: "northern", name: "Northern", color: "#ffc658", path: "M170,120 L250,120 L290,170 L240,210 L200,180 L180,180 Z", x: 220, y: 150 },
-    { id: "western", name: "Western", color: "#ff8042", path: "M130,170 L180,180 L200,240 L150,250 L120,220 Z", x: 150, y: 210 },
+    { id: "central", name: "Central", color: "#9b87f5", path: "M180,180 L220,180 L240,210 L200,240 L160,220 Z", x: 200, y: 200 },
+    { id: "eastern", name: "Eastern", color: "#7E69AB", path: "M240,210 L270,170 L310,200 L290,230 L240,240 Z", x: 270, y: 205 },
+    { id: "northern", name: "Northern", color: "#1EAEDB", path: "M170,120 L250,120 L290,170 L240,210 L200,180 L180,180 Z", x: 220, y: 150 },
+    { id: "western", name: "Western", color: "#F97316", path: "M130,170 L180,180 L200,240 L150,250 L120,220 Z", x: 150, y: 210 },
   ];
   
   // Filter neighborhoods based on search term and selected region
@@ -84,44 +84,44 @@ const PropertyAnalytics = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
             <CardTitle className="text-sm font-medium">Average Property Price</CardTitle>
-            <DollarSign className="h-4 w-4 text-gray-500" />
+            <DollarSign className="h-4 w-4 text-purple-500" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="text-2xl font-bold">{propertyStats.averagePrice}</div>
             <div className="flex items-center pt-1">
               <span className={`text-xs ${propertyStats.priceChange > 0 ? 'text-green-500' : 'text-red-500'} font-medium flex items-center`}>
                 {propertyStats.priceChange > 0 ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
-                {Math.abs(propertyStats.priceChange)}% from last year
+                {Math.abs(Math.round(propertyStats.priceChange))}% from last year
               </span>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-gray-800 dark:to-gray-900">
             <CardTitle className="text-sm font-medium">Property Inventory</CardTitle>
-            <BarChart3 className="h-4 w-4 text-gray-500" />
+            <BarChart3 className="h-4 w-4 text-blue-500" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="text-2xl font-bold">{propertyStats.totalListings} listings</div>
             <div className="flex items-center pt-1">
               <span className={`text-xs ${propertyStats.inventoryChange > 0 ? 'text-green-500' : 'text-red-500'} font-medium flex items-center`}>
                 {propertyStats.inventoryChange > 0 ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
-                {Math.abs(propertyStats.inventoryChange)}% from last month
+                {Math.abs(Math.round(propertyStats.inventoryChange))}% from last month
               </span>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <Card className="overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-gray-800 dark:to-gray-900">
             <CardTitle className="text-sm font-medium">Days on Market</CardTitle>
-            <Clock className="h-4 w-4 text-gray-500" />
+            <Clock className="h-4 w-4 text-amber-500" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
             <div className="text-2xl font-bold">{propertyStats.averageDaysOnMarket} days</div>
             <p className="text-xs text-gray-500">Average time to sell a property</p>
           </CardContent>
@@ -129,23 +129,23 @@ const PropertyAnalytics = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 border-0 shadow-lg">
           <CardHeader>
             <CardTitle>Neighborhood Price Comparison</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {filteredNeighborhoods.map((hood, index) => (
-                <div key={index} className="flex items-center justify-between">
+                <div key={index} className="flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 p-2 rounded-md transition-colors">
                   <div className="flex-1">
                     <div className="text-sm font-medium">{hood.name}</div>
                     <div className="text-xs text-gray-500">{hood.averagePrice}</div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className={`text-xs ${hood.positive ? 'text-green-500' : 'text-red-500'} font-medium`}>
-                      {hood.positive ? '+' : ''}{hood.priceChange}%
+                      {hood.positive ? '+' : ''}{Math.round(hood.priceChange)}%
                     </span>
-                    <div className="w-24 bg-gray-100 dark:bg-gray-800 rounded-full h-2">
+                    <div className="w-24 bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
                       <div 
                         className={`${hood.positive ? 'bg-green-500' : 'bg-red-500'} h-2 rounded-full`} 
                         style={{ width: `${Math.min(Math.abs(hood.priceChange) * 8, 100)}%` }}
@@ -164,7 +164,7 @@ const PropertyAnalytics = () => {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle>Property Types</CardTitle>
           </CardHeader>
@@ -176,7 +176,7 @@ const PropertyAnalytics = () => {
                     <div className="text-sm font-medium">{type.type}</div>
                     <div className="text-xs font-medium">{type.percentage}%</div>
                   </div>
-                  <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2">
+                  <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
                     <div 
                       className={`${type.color} h-2 rounded-full`} 
                       style={{ width: `${type.percentage}%` }}
@@ -189,8 +189,8 @@ const PropertyAnalytics = () => {
         </Card>
       </div>
       
-      <Card>
-        <CardHeader>
+      <Card className="border-0 shadow-lg overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
           <CardTitle>Regional Market Map</CardTitle>
           <div className="flex items-center text-sm text-muted-foreground">
             <Info className="h-4 w-4 mr-1" />
@@ -201,17 +201,59 @@ const PropertyAnalytics = () => {
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="md:w-1/2">
-              <div className="border rounded-md p-4 bg-slate-50 dark:bg-slate-900">
+              <div className="border rounded-md p-4 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 shadow-inner">
                 <svg viewBox="0 0 400 300" width="100%" height="300">
-                  <g stroke="gray" strokeWidth="1">
+                  <defs>
+                    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur in="SourceAlpha" stdDeviation="3" />
+                      <feOffset dx="2" dy="2" result="offsetblur" />
+                      <feComponentTransfer>
+                        <feFuncA type="linear" slope="0.3" />
+                      </feComponentTransfer>
+                      <feMerge>
+                        <feMergeNode />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                    
+                    <linearGradient id="waterGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#EBF4FF" stopOpacity="0.8" />
+                      <stop offset="100%" stopColor="#C3DAFE" stopOpacity="0.9" />
+                    </linearGradient>
+                    
+                    {ugandaRegions.map(region => (
+                      <linearGradient 
+                        key={`gradient-${region.id}`} 
+                        id={`${region.id}Gradient`} 
+                        x1="0%" 
+                        y1="0%" 
+                        x2="100%" 
+                        y2="100%"
+                      >
+                        <stop offset="0%" stopColor={`${region.color}40`} />
+                        <stop offset="100%" stopColor={`${region.color}80`} />
+                      </linearGradient>
+                    ))}
+                  </defs>
+                  
+                  <g>
+                    {/* Water body */}
+                    <path 
+                      d="M100,150 C120,140 140,180 160,170 C180,160 200,190 220,180 C240,170 260,200 280,190 C300,180 320,210 340,200 L340,300 L100,300 Z" 
+                      fill="url(#waterGradient)"
+                      opacity="0.7"
+                    />
+                  </g>
+                  
+                  <g filter="url(#dropShadow)">
                     {/* Background outline of Uganda */}
                     <path 
                       d="M130,120 L250,120 L310,200 L290,230 L200,280 L120,220 Z" 
-                      fill="#f0f0f0" 
-                      stroke="#ccc" 
+                      fill="#f8fafc" 
+                      stroke="#e2e8f0" 
                       strokeWidth="2"
                     />
                     
@@ -222,14 +264,20 @@ const PropertyAnalytics = () => {
                           <TooltipTrigger asChild>
                             <path
                               d={region.path}
-                              fill={selectedRegion === region.name ? region.color : `${region.color}80`}
+                              fill={selectedRegion === region.name 
+                                ? `url(#${region.id}Gradient)` 
+                                : `${region.color}40`}
                               stroke={selectedRegion === region.name ? "#333" : "#666"}
                               strokeWidth={selectedRegion === region.name ? "2" : "1"}
-                              style={{ cursor: 'pointer', transition: 'all 0.3s ease' }}
+                              style={{ 
+                                cursor: 'pointer', 
+                                transition: 'all 0.3s ease',
+                                filter: selectedRegion === region.name ? 'brightness(1.1)' : 'none'
+                              }}
                               onClick={() => handleRegionClick(region.name)}
                             />
                           </TooltipTrigger>
-                          <TooltipContent>
+                          <TooltipContent className="bg-white dark:bg-gray-800 border-0 shadow-lg p-3">
                             <div className="font-medium">{region.name} Region</div>
                             <div className="text-xs text-muted-foreground">
                               Click to {selectedRegion === region.name ? 'reset filter' : 'filter neighborhoods'}
@@ -239,52 +287,61 @@ const PropertyAnalytics = () => {
                       </TooltipProvider>
                     ))}
                     
-                    {/* Region labels */}
+                    {/* Region labels with enhanced style */}
                     {ugandaRegions.map((region) => (
                       <text
                         key={`label-${region.id}`}
                         x={region.x}
                         y={region.y}
                         textAnchor="middle"
-                        fontSize="12"
+                        fontSize={selectedRegion === region.name ? "14" : "12"}
                         fontWeight={selectedRegion === region.name ? "bold" : "normal"}
                         fill={selectedRegion === region.name ? "#333" : "#666"}
+                        style={{ 
+                          textShadow: selectedRegion === region.name ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
+                          transition: 'all 0.3s ease'
+                        }}
                       >
                         {region.name}
                       </text>
                     ))}
                     
-                    {/* Major cities */}
+                    {/* Major cities with enhanced style */}
                     <g>
-                      <circle cx="200" cy="210" r="4" fill="#333" />
-                      <text x="208" y="214" fontSize="10" fill="#333">Kampala</text>
+                      <circle cx="200" cy="210" r="4" fill="#9b87f5" />
+                      <text x="208" y="214" fontSize="10" fill="#333" fontWeight="500">Kampala</text>
                       
-                      <circle cx="270" cy="210" r="3" fill="#333" />
+                      <circle cx="270" cy="210" r="3" fill="#7E69AB" />
                       <text x="278" y="214" fontSize="9" fill="#333">Jinja</text>
                       
-                      <circle cx="220" cy="150" r="3" fill="#333" />
+                      <circle cx="220" cy="150" r="3" fill="#1EAEDB" />
                       <text x="228" y="154" fontSize="9" fill="#333">Gulu</text>
                       
-                      <circle cx="150" cy="210" r="3" fill="#333" />
+                      <circle cx="150" cy="210" r="3" fill="#F97316" />
                       <text x="158" y="214" fontSize="9" fill="#333">Mbarara</text>
                     </g>
                   </g>
                 </svg>
               </div>
-              <div className="mt-4 flex flex-wrap gap-4 justify-center">
+              <div className="mt-4 flex flex-wrap gap-3 justify-center">
                 {ugandaRegions.map(region => (
                   <div key={region.id} 
-                    className={`flex items-center px-3 py-1 rounded-full text-xs cursor-pointer 
-                    ${selectedRegion === region.name ? 'bg-primary text-white' : 'bg-muted hover:bg-muted/80'}`}
+                    className={`flex items-center px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all
+                    ${selectedRegion === region.name 
+                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' 
+                      : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
                     onClick={() => handleRegionClick(region.name)}
                   >
-                    <div className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: region.color }}></div>
+                    <div 
+                      className="w-2 h-2 rounded-full mr-1.5" 
+                      style={{ backgroundColor: region.color }}
+                    ></div>
                     {region.name}
                   </div>
                 ))}
                 {selectedRegion && (
                   <div 
-                    className="flex items-center px-3 py-1 rounded-full text-xs cursor-pointer bg-secondary hover:bg-secondary/80"
+                    className="flex items-center px-3 py-1.5 rounded-full text-xs cursor-pointer bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                     onClick={() => setSelectedRegion(null)}
                   >
                     Clear Filter
@@ -294,17 +351,17 @@ const PropertyAnalytics = () => {
             </div>
             
             <div className="md:w-1/2">
-              <div className="h-full border rounded-md p-4">
-                <h3 className="text-lg font-medium mb-3">
+              <div className="h-full border rounded-md p-6 bg-white dark:bg-gray-800 shadow-sm">
+                <h3 className="text-lg font-medium mb-4 pb-2 border-b">
                   {selectedRegion ? `${selectedRegion} Region Stats` : 'Uganda Property Market Stats'}
                 </h3>
                 
-                <div className="space-y-4">
-                  {/* Region-specific data */}
+                <div className="space-y-6">
+                  {/* Region-specific data with enhanced styling */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-muted p-3 rounded-md">
-                      <div className="text-sm text-muted-foreground">Avg. Price</div>
-                      <div className="font-bold text-lg">
+                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 p-4 rounded-lg shadow-sm">
+                      <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Average Price</div>
+                      <div className="font-bold text-lg text-gray-900 dark:text-white">
                         {selectedRegion 
                           ? `UGX ${Math.round(filteredNeighborhoods.reduce((acc, hood) => 
                               acc + parseInt(hood.averagePrice.replace(/[^\d]/g, '')) / 1000000, 0) / 
@@ -313,29 +370,29 @@ const PropertyAnalytics = () => {
                       </div>
                     </div>
                     
-                    <div className="bg-muted p-3 rounded-md">
-                      <div className="text-sm text-muted-foreground">Growth Rate</div>
-                      <div className="font-bold text-lg">
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-gray-800 dark:to-gray-700 p-4 rounded-lg shadow-sm">
+                      <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Growth Rate</div>
+                      <div className="font-bold text-lg text-gray-900 dark:text-white">
                         {selectedRegion
-                          ? `${filteredNeighborhoods.reduce((acc, hood) => 
+                          ? `${Math.round(filteredNeighborhoods.reduce((acc, hood) => 
                               acc + hood.priceChange, 0) / Math.max(filteredNeighborhoods.length, 1)
-                              .toFixed(1)}%`
-                          : "4.2%"}
+                              )}%`
+                          : "4%"}
                       </div>
                     </div>
                     
-                    <div className="bg-muted p-3 rounded-md">
-                      <div className="text-sm text-muted-foreground">Areas</div>
-                      <div className="font-bold text-lg">
+                    <div className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-gray-800 dark:to-gray-700 p-4 rounded-lg shadow-sm">
+                      <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Areas</div>
+                      <div className="font-bold text-lg text-gray-900 dark:text-white">
                         {selectedRegion
                           ? filteredNeighborhoods.length
                           : neighborhoodData.length}
                       </div>
                     </div>
                     
-                    <div className="bg-muted p-3 rounded-md">
-                      <div className="text-sm text-muted-foreground">Days on Market</div>
-                      <div className="font-bold text-lg">
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-800 dark:to-gray-700 p-4 rounded-lg shadow-sm">
+                      <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Days on Market</div>
+                      <div className="font-bold text-lg text-gray-900 dark:text-white">
                         {selectedRegion
                           ? Math.round(Math.random() * 20 + 50)  // Mock data
                           : propertyStats.averageDaysOnMarket}
@@ -343,7 +400,22 @@ const PropertyAnalytics = () => {
                     </div>
                   </div>
                   
-                  <div className="text-sm text-muted-foreground mt-4">
+                  {/* Regional insights */}
+                  <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                    <h4 className="text-sm font-medium mb-2">Regional Insights</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {selectedRegion
+                        ? `The ${selectedRegion} region shows ${
+                            Math.round(filteredNeighborhoods.reduce((acc, hood) => acc + hood.priceChange, 0) / 
+                            Math.max(filteredNeighborhoods.length, 1)) > 3 
+                              ? 'strong' 
+                              : 'moderate'
+                          } growth potential with ${filteredNeighborhoods.length} active markets.`
+                        : "Uganda's property market continues to show resilience with moderate growth across all regions. Central areas command premium prices while northern regions offer better value opportunities."}
+                    </p>
+                  </div>
+                  
+                  <div className="text-sm text-gray-500 dark:text-gray-400 mt-4 text-center italic">
                     {selectedRegion
                       ? `Showing data for ${filteredNeighborhoods.length} neighborhoods in the ${selectedRegion} Region`
                       : "Showing nationwide data across all regions"}
