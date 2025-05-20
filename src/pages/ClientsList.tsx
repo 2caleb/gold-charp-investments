@@ -136,7 +136,7 @@ const ClientsList = () => {
       
       // Update local state
       setDeletedClients(deletedClients.filter(c => c.id !== client.id));
-      setClients([{...client, deleted_at: null}, ...clients]);
+      setClients([{...client, deleted_at: undefined}, ...clients]);
     } catch (error: any) {
       toast({
         title: 'Error restoring client',

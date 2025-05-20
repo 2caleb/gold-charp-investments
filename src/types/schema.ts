@@ -1,11 +1,10 @@
-
 // Custom type definitions to work with our database schema
 
 export interface Client {
   id: string;
   full_name: string;
   phone_number: string;
-  email?: string | null;
+  email?: string;
   id_number: string;
   address: string;
   employment_status: string;
@@ -13,6 +12,7 @@ export interface Client {
   created_at: string;
   updated_at?: string;
   user_id?: string;
+  deleted_at?: string; // Added this field to fix TypeScript errors
 }
 
 export interface Loan {

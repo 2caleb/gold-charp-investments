@@ -185,7 +185,7 @@ export type Database = {
           loan_amount: string
           loan_id: string | null
           loan_type: string
-          monthly_income: string
+          monthly_income: number
           notes: string | null
           phone_number: string
           purpose_of_loan: string
@@ -206,7 +206,7 @@ export type Database = {
           loan_amount: string
           loan_id?: string | null
           loan_type: string
-          monthly_income: string
+          monthly_income: number
           notes?: string | null
           phone_number: string
           purpose_of_loan: string
@@ -227,7 +227,7 @@ export type Database = {
           loan_amount?: string
           loan_id?: string | null
           loan_type?: string
-          monthly_income?: string
+          monthly_income?: number
           notes?: string | null
           phone_number?: string
           purpose_of_loan?: string
@@ -266,7 +266,7 @@ export type Database = {
         }
         Relationships: []
       }
-      Permissions: {
+      permissions: {
         Row: {
           full_name: string | null
           id: string
@@ -293,6 +293,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          new_column_name: string | null
           phone: string | null
           role: string | null
           updated_at: string | null
@@ -302,6 +303,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          new_column_name?: string | null
           phone?: string | null
           role?: string | null
           updated_at?: string | null
@@ -311,13 +313,14 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          new_column_name?: string | null
           phone?: string | null
           role?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
-      Roles: {
+      roles: {
         Row: {
           full_name: string | null
           id: string

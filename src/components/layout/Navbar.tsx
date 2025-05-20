@@ -32,14 +32,14 @@ const Navbar = () => {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-500 
-        ${scrolled ? 'glass-navbar shadow-lg py-2' : 'bg-transparent py-4'}`}
+        ${scrolled ? 'glass-navbar shadow-lg py-1' : 'bg-transparent py-2'}`}
     >
       <div className="container mx-auto px-4 flex items-center justify-between">
         <Link to="/" className="flex items-center group transition-transform duration-300 hover:scale-105">
-          <span className="text-2xl font-serif font-bold text-purple-700 dark:text-purple-400">Gold<span className="text-amber-500">Charp</span></span>
+          <span className="text-xl md:text-2xl font-serif font-bold text-purple-700 dark:text-purple-400">Gold<span className="text-amber-500">Charp</span></span>
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Navigation - More compact */}
         <DesktopNav />
 
         {/* Mobile menu button */}
