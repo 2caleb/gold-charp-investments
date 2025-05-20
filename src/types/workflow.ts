@@ -17,22 +17,23 @@ export interface LoanWorkflow {
   updated_at: string;
 }
 
-export type WorkflowStage = 'field_officer' | 'manager' | 'director' | 'ceo' | 'chairperson';
+export type WorkflowStage = 'field_officer' | 'manager' | 'director' | 'chairperson' | 'ceo';
 
+// Updated workflow stages to reflect CEO as final approver
 export const WORKFLOW_STAGES: WorkflowStage[] = [
   'field_officer',
   'manager',
   'director',
-  'ceo',
-  'chairperson'
+  'chairperson',
+  'ceo'
 ];
 
 export const workflowStageNames: Record<WorkflowStage, string> = {
   'field_officer': 'Field Officer Review',
   'manager': 'Manager Review',
   'director': 'Director Risk Assessment',
-  'ceo': 'CEO Approval',
-  'chairperson': 'Chairperson Final Approval'
+  'chairperson': 'Chairperson Review',
+  'ceo': 'CEO Final Approval'
 };
 
 export const getNextStage = (currentStage: WorkflowStage): WorkflowStage | null => {

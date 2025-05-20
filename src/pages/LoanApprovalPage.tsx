@@ -5,15 +5,17 @@ import Layout from '@/components/layout/Layout';
 import LoanApprovalWorkflow from '@/components/workflow/LoanApprovalWorkflow';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Loader2 } from 'lucide-react';
+import { ChevronLeft, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
 
 interface LoanApplicationData {
   id: string;
   client_name: string;
   loan_amount: string;
   loan_type: string;
+  purpose_of_loan: string;
   status: string;
   created_at: string;
 }
@@ -40,7 +42,7 @@ const LoanApprovalPage = () => {
         
         const { data, error } = await supabase
           .from('loan_applications')
-          .select('*')
+          .select('id, client_name, loan_amount, loan_type, purpose_of_loan, status, created_at')
           .eq('id', id)
           .single();
           
@@ -98,7 +100,8 @@ const LoanApprovalPage = () => {
             
             <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8">
               <div className="flex flex-col items-center justify-center text-center">
-                <div className="text-red-500 mb-4 text-xl">
+                <div className="flex items-center text-red-500 mb-4 text-xl">
+                  <AlertTriangle className="h-8 w-8 mr-2" />
                   {error || "Application ID is missing"}
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
@@ -119,7 +122,12 @@ const LoanApprovalPage = () => {
 
   return (
     <Layout>
-      <section className="bg-gray-50 dark:bg-gray-900 py-8 md:py-16">
+      <motion.section 
+        className="bg-gray-50 dark:bg-gray-900 py-8 md:py-16"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="container mx-auto px-4">
           <div className="mb-6">
             <Button variant="outline" size="sm" asChild>
@@ -130,26 +138,37 @@ const LoanApprovalPage = () => {
             </Button>
           </div>
           
-          <div className="mb-8">
+          <motion.div 
+            className="mb-8"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
             <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4 dark:text-white">Loan Application Review</h1>
             {application && (
               <div className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mb-4">
                 <p><span className="font-medium">Client:</span> {application.client_name}</p>
                 <p><span className="font-medium">Amount:</span> {parseFloat(application.loan_amount).toLocaleString()} UGX</p>
                 <p><span className="font-medium">Type:</span> {application.loan_type}</p>
-                <p><span className="font-medium">Status:</span> {application.status.toUpperCase()}</p>
+                <p><span className="font-medium">Purpose:</span> {application.purpose_of_loan}</p>
+                <p><span className="font-medium">Status:</span> <span className="uppercase font-semibold">{application.status}</span></p>
               </div>
             )}
             <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
               Review and process this loan application according to your role's responsibilities.
             </p>
-          </div>
+          </motion.div>
           
-          <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8">
+          <motion.div 
+            className="bg-white dark:bg-gray-800 shadow-md rounded-lg"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
             <LoanApprovalWorkflow applicationId={id} />
-          </div>
+          </motion.div>
         </div>
-      </section>
+      </motion.section>
     </Layout>
   );
 };

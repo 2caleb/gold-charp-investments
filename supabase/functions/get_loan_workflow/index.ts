@@ -45,6 +45,8 @@ serve(async (req) => {
 
     // Check if workflow was found
     if (!data || data.length === 0) {
+      console.log("No workflow found, creating default workflow for application:", application_id);
+      
       // Create a default workflow record if none exists
       const { data: newWorkflow, error: createError } = await supabaseClient
         .from('loan_application_workflow')

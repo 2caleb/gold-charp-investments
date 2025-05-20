@@ -8,8 +8,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Define workflow stages in order
-const WORKFLOW_STAGES = ['field_officer', 'manager', 'director', 'ceo', 'chairperson'];
+// Define workflow stages in order - CEO is the final approver
+const WORKFLOW_STAGES = ['field_officer', 'manager', 'director', 'chairperson', 'ceo'];
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -73,6 +73,11 @@ serve(async (req) => {
     } else {
       // If rejected, set status to rejected
       applicationStatus = 'rejected';
+      
+      // If CEO rejects, mark as final rejection
+      if (stage === 'ceo') {
+        applicationStatus = 'rejected_final';
+      }
     }
 
     // Update the workflow record with approval/rejection
@@ -125,6 +130,10 @@ serve(async (req) => {
       }
     } else {
       notificationMessage = `Loan application was rejected at ${stage} stage.`;
+      
+      if (stage === 'ceo') {
+        notificationMessage = `FINAL REJECTION: Loan application was rejected by the CEO.`;
+      }
     }
     
     await supabaseClient
