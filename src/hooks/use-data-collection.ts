@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -126,7 +127,7 @@ export function useDataCollection() {
         const monthlyIncomeValue = parseFloat(values.monthly_income || '0');
         
         // Insert application with the proper types
-        const { data, error } = await supabase
+        const { data: application, error: applicationError } = await supabase
           .from('loan_applications')
           .insert({
             client_name: values.full_name || '',
@@ -134,7 +135,7 @@ export function useDataCollection() {
             id_number: values.id_number || '',
             address: values.address || '',
             employment_status: values.employment_status || '',
-            monthly_income: monthlyIncomeValue.toString(), // Convert to string to match the expected type
+            monthly_income: monthlyIncomeValue, // Use the parsed number
             loan_type: values.loan_type || 'personal',
             loan_amount: values.loan_amount || '0',
             loan_id: generatedLoanId,
@@ -143,21 +144,19 @@ export function useDataCollection() {
             created_by: user.id,
             current_approver: user.id // Default to self for demo
           })
-          .select();
-
-        if (error) throw error;
-        
-        // Get the loan application ID
-        if (data && data[0] && data[0].id) {
-          setApplicationId(data[0].id);
-          setFormReady(true);
-          setActiveTab("documents");
+          .select()
+          .single();
           
-          toast({
-            title: "Application saved",
-            description: "Client information has been saved successfully.",
-          });
-        }
+        if (applicationError) throw applicationError;
+        
+        setApplicationId(application.id);
+        setFormReady(true);
+        setActiveTab("documents");
+        
+        toast({
+          title: "Application saved",
+          description: "Client information has been saved successfully.",
+        });
       }
     } catch (error: any) {
       console.error('Submission error:', error);
@@ -248,124 +247,6 @@ export function useDataCollection() {
     });
   };
 
-  const handleAddClient = async (values) => {
-    if (!user) return;
-    
-    setIsAddingClient(true);
-    
-    try {
-      // Parse and convert monthly income to a number
-      const parsedIncome = parseFloat(values.monthly_income.replace(/,/g, ''));
-      
-      const { data, error } = await supabase
-        .from('client_name')
-        .insert({
-          full_name: values.full_name,
-          phone_number: values.phone_number,
-          id_number: values.id_number,
-          address: values.address || '',
-          employment_status: values.employment_status || 'employed',
-          monthly_income: parsedIncome, // Ensure this is a number
-          email: values.email || null,
-          user_id: user.id
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Client added successfully",
-      });
-      
-      return data;
-    } catch (error) {
-      console.error("Error adding client:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add client",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setIsAddingClient(false);
-    }
-  };
-
-  const handleSubmitApplication = async (values, clientData) => {
-    if (!user) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      const loanId = generateLoanIdentificationNumber();
-      
-      // Parse loan amount as string (keep as string for database)
-      const loanAmountString = values.loan_amount.toString();
-      
-      // Get the manager as approver
-      const { data: managers } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('role', 'manager')
-        .limit(1);
-      
-      const managerId = managers && managers.length > 0 
-        ? managers[0].id 
-        : user.id; // Fallback to current user if no manager
-      
-      // Prepare loan application data
-      const loanData = {
-        client_name: clientData.full_name,
-        phone_number: clientData.phone_number,
-        id_number: clientData.id_number,
-        address: clientData.address,
-        employment_status: clientData.employment_status,
-        monthly_income: clientData.monthly_income.toString(), // Convert to string for database
-        email: clientData.email || null,
-        loan_type: values.loan_type,
-        loan_amount: loanAmountString,
-        loan_term: values.loan_term,
-        term_unit: values.term_unit || 'monthly',
-        purpose_of_loan: values.purpose_of_loan,
-        created_by: user.id,
-        current_approver: managerId,
-        status: 'submitted',
-        loan_id: loanId,
-        client_id: clientData.id,
-        has_collateral: values.has_collateral || false,
-        notes: values.purpose_of_loan || ''
-      };
-      
-      // Insert loan application
-      const { data: loanApplication, error } = await supabase
-        .from('loan_applications')
-        .insert(loanData)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Loan application submitted successfully",
-      });
-      
-      return loanApplication;
-    } catch (error) {
-      console.error("Error submitting loan application:", error);
-      toast({
-        title: "Error",
-        description: "Failed to submit loan application",
-        variant: "destructive",
-      });
-      return null;
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return {
     open,
     setOpen,
@@ -395,8 +276,6 @@ export function useDataCollection() {
     deleteGuarantor2Photo,
     handleFinish,
     handleRegenerateLoanId,
-    hasAllRequiredDocuments,
-    handleAddClient,
-    handleSubmitApplication
+    hasAllRequiredDocuments
   };
 }

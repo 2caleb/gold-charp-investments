@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -8,7 +9,6 @@ import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
 import { DataCollectionButton } from '@/components/loans/data-collection/DataCollectionButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import InstallmentCalculator from '@/components/loans/InstallmentCalculator';
 
 const NewLoanApplication = () => {
   // Force desktop view for better UX
@@ -127,10 +127,6 @@ const NewLoanApplication = () => {
                 </p>
               </div>
               <LoanApplicationForm />
-            </div>
-            
-            <div className="mt-8">
-              <InstallmentCalculator />
             </div>
             
             <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-900/50 dark:to-transparent rounded-lg border border-gray-100 dark:border-gray-800">

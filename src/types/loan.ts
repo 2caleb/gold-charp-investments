@@ -1,4 +1,6 @@
 
+import { DocumentType } from './document';
+
 export interface LoanApplication {
   id?: string;
   client_name: string;
@@ -40,15 +42,15 @@ export interface Client {
   id: string;
   full_name: string;
   phone_number: string;
-  email?: string | undefined;
+  email?: string;
   id_number: string;
   address: string;
   employment_status: string;
   monthly_income: number;
   created_at: string;
-  updated_at?: string | undefined;
-  user_id?: string | undefined;
-  deleted_at?: string | undefined;
+  updated_at?: string;
+  user_id?: string;
+  deleted_at?: string;
 }
 
 export interface LoanDetailsFormProps {

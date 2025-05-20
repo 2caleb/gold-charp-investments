@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { FilePlus, Eye, Loader2, AlertTriangle } from 'lucide-react';
+import { FilePlus, Eye, Loader2, AlertTriangle, InfoIcon } from 'lucide-react';
 import { DataCollectionButton } from '@/components/loans/DataCollectionButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,14 +20,20 @@ interface LoanApplication {
   loan_id: string;
 }
 
+interface FilterOption {
+  label: string;
+  value: string;
+}
+
 const LoanApplicationsList = () => {
   useDesktopRedirect();
   const [loans, setLoans] = useState<LoanApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const permissions = useRolePermissions();
+  const permissions = useRolePermissions(); // Fix: don't destructure hasPermission
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
   const fetchLoans = async () => {
     setLoading(true);
@@ -60,8 +66,23 @@ const LoanApplicationsList = () => {
 
   const filteredLoans = loans.filter(loan => {
     const searchRegex = new RegExp(searchTerm, 'i');
-    return searchRegex.test(loan.client_name);
+    const statusMatch = statusFilter ? loan.status === statusFilter : true;
+
+    return searchRegex.test(loan.client_name) && statusMatch;
   });
+
+  const statusOptions: FilterOption[] = [
+    { label: 'All Statuses', value: '' },
+    { label: 'Submitted', value: 'submitted' },
+    { label: 'Pending Manager', value: 'pending_manager' },
+    { label: 'Pending Director', value: 'pending_director' },
+    { label: 'Pending CEO', value: 'pending_ceo' },
+    { label: 'Pending Chairperson', value: 'pending_chairperson' },
+    { label: 'Approved', value: 'approved' },
+    { label: 'Rejected', value: 'rejected' },
+    { label: 'Disbursed', value: 'disbursed' },
+    { label: 'Completed', value: 'completed' },
+  ];
 
   return (
     <Layout>
@@ -76,6 +97,12 @@ const LoanApplicationsList = () => {
                 description: "A new loan application has been created via client data collection"
               });
             }} />
+            <Button asChild>
+              <Link to="/loan-applications/new">
+                <FilePlus className="mr-2 h-4 w-4" />
+                New Application
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -87,6 +114,17 @@ const LoanApplicationsList = () => {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
+          <select
+            className="border rounded px-4 py-2"
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+          >
+            {statusOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {loading ? (

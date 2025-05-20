@@ -30,8 +30,7 @@ serve(async (req) => {
       applicationId, 
       stage, 
       approved, 
-      notes,
-      approverUserId // New field to track who approved/rejected
+      notes
     } = await req.json();
 
     if (!workflowId || !applicationId || !stage) {
@@ -56,20 +55,6 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         }
       );
-    }
-
-    // Get approver info
-    let approverName = "Unknown";
-    if (approverUserId) {
-      const { data: profileData } = await supabaseClient
-        .from('profiles')
-        .select('full_name')
-        .eq('id', approverUserId)
-        .single();
-      
-      if (profileData) {
-        approverName = profileData.full_name;
-      }
     }
 
     // Determine next stage
@@ -98,8 +83,7 @@ serve(async (req) => {
     // Update the workflow record with approval/rejection
     const updateObject: Record<string, any> = {
       [`${stage}_approved`]: approved,
-      [`${stage}_notes`]: notes,
-      [`${stage}_approver`]: approverName // Store approver name
+      [`${stage}_notes`]: notes
     };
     
     // Only update next stage if moving forward
@@ -135,20 +119,20 @@ serve(async (req) => {
       throw applicationError;
     }
 
-    // Create notification for application status change with approver name
+    // Create notification for application status change
     let notificationMessage = '';
     
     if (approved) {
       if (nextStage) {
-        notificationMessage = `Loan application was approved by ${approverName} at ${stage} stage and moved to ${nextStage} stage.`;
+        notificationMessage = `Loan application was approved at ${stage} stage and moved to ${nextStage} stage.`;
       } else {
-        notificationMessage = `Loan application has been fully approved by ${approverName}!`;
+        notificationMessage = `Loan application has been fully approved!`;
       }
     } else {
-      notificationMessage = `Loan application was rejected by ${approverName} at ${stage} stage.`;
+      notificationMessage = `Loan application was rejected at ${stage} stage.`;
       
       if (stage === 'ceo') {
-        notificationMessage = `FINAL REJECTION: Loan application was rejected by ${approverName} (CEO).`;
+        notificationMessage = `FINAL REJECTION: Loan application was rejected by the CEO.`;
       }
     }
     
@@ -167,14 +151,14 @@ serve(async (req) => {
         success: true,
         workflow: updatedWorkflow,
         application: updatedApplication,
-        message: `Workflow ${approved ? 'approved' : 'rejected'} successfully by ${approverName}`
+        message: `Workflow ${approved ? 'approved' : 'rejected'} successfully`
       }),
       { 
         status: 200, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error processing approval action:", error);
     
     return new Response(

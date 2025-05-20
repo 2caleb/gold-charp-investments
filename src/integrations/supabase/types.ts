@@ -189,7 +189,6 @@ export type Database = {
         Row: {
           address: string
           approval_notes: string | null
-          client_id: string | null
           client_name: string
           created_at: string | null
           created_by: string
@@ -211,7 +210,6 @@ export type Database = {
         Insert: {
           address: string
           approval_notes?: string | null
-          client_id?: string | null
           client_name: string
           created_at?: string | null
           created_by: string
@@ -233,7 +231,6 @@ export type Database = {
         Update: {
           address?: string
           approval_notes?: string | null
-          client_id?: string | null
           client_name?: string
           created_at?: string | null
           created_by?: string
@@ -252,15 +249,7 @@ export type Database = {
           rejection_reason?: string | null
           status?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "loan_applications_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "client_name"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       notifications: {
         Row: {
