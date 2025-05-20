@@ -15,6 +15,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Checkbox } from '@/components/ui/checkbox';
+import { LoanApplicationValues } from '@/types/loan';
 
 const guarantorSchema = z.object({
   guarantor1_consent: z.boolean().refine((val) => val === true, {
@@ -122,12 +123,13 @@ const LoanApplicationForm = () => {
           </div>
           
           <LoanDetailsForm
-            onSubmit={(values) => {
+            onSubmit={(values: any) => {
               // Add the missing properties expected by LoanApplicationValues
-              const enhancedValues = {
+              const enhancedValues: LoanApplicationValues = {
                 ...values,
                 client_type: values.client_id ? 'existing' : 'new',
                 terms_accepted: true,
+                loan_amount: values.loan_amount.toString(), // Convert to string to match the expected type
               };
               handleSubmit(enhancedValues);
               setIsFormCompleted(true);
