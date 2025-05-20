@@ -40,7 +40,9 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Navigation - More compact */}
-        <DesktopNav />
+        <div className="hidden md:block">
+          <DesktopNav />
+        </div>
 
         {/* Mobile menu button */}
         <div className="md:hidden flex items-center">

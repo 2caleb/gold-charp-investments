@@ -22,7 +22,7 @@ const ManagerReviewDashboard = () => {
       try {
         setIsLoading(true);
         
-        // Fetch applications pending manager review
+        // Fetch applications that need manager review
         const { data, error } = await supabase
           .from('loan_applications')
           .select(`
@@ -32,16 +32,36 @@ const ManagerReviewDashboard = () => {
             loan_type, 
             purpose_of_loan,
             created_at, 
-            status, 
-            loan_application_workflow(current_stage, field_officer_approved)
+            status
           `)
-          .eq('loan_application_workflow.current_stage', 'field_officer')
-          .eq('loan_application_workflow.field_officer_approved', true)
+          .eq('status', 'pending_manager')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-
-        setApplications(data || []);
+        
+        if (!data || data.length === 0) {
+          // If no pending applications, check for field officer approved ones
+          const { data: fieldOfficerApproved, error: secondError } = await supabase
+            .from('loan_applications')
+            .select(`
+              id, 
+              client_name, 
+              loan_amount, 
+              loan_type, 
+              purpose_of_loan,
+              created_at, 
+              status
+            `)
+            .eq('status', 'submitted')
+            .order('created_at', { ascending: false });
+            
+          if (secondError) throw secondError;
+          
+          // Set either the found applications or empty array
+          setApplications(fieldOfficerApproved || []);
+        } else {
+          setApplications(data);
+        }
       } catch (error: any) {
         console.error('Error fetching applications:', error);
         toast({
@@ -56,6 +76,8 @@ const ManagerReviewDashboard = () => {
 
     if (userRole === 'manager') {
       fetchPendingApplications();
+    } else {
+      setIsLoading(false);
     }
   }, [toast, userRole]);
 

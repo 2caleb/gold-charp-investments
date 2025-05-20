@@ -25,11 +25,11 @@ interface WorkflowResponse {
   id: string;
   loan_application_id: string;
   current_stage: string;
-  field_officer_approved: boolean;
-  manager_approved: boolean;
-  director_approved: boolean;
-  ceo_approved: boolean;
-  chairperson_approved: boolean;
+  field_officer_approved: boolean | null;
+  manager_approved: boolean | null;
+  director_approved: boolean | null;
+  ceo_approved: boolean | null;
+  chairperson_approved: boolean | null;
   field_officer_notes: string | null;
   manager_notes: string | null;
   director_notes: string | null;
@@ -48,13 +48,28 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
   const [notes, setNotes] = useState('');
   const [workflow, setWorkflow] = useState<WorkflowResponse | null>(null);
   const [application, setApplication] = useState<LoanApplication | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!applicationId) return;
     
     const fetchData = async () => {
       setIsLoading(true);
+      setErrorMessage(null);
       try {
+        // Fetch application data first
+        const { data: applicationData, error: applicationError } = await supabase
+          .from('loan_applications')
+          .select('id, client_name, loan_amount, loan_type, purpose_of_loan, status')
+          .eq('id', applicationId)
+          .single();
+
+        if (applicationError) {
+          throw new Error(`Failed to load application: ${applicationError.message}`);
+        }
+        
+        setApplication(applicationData);
+
         // Use the edge function to get workflow data
         const { data: workflowData, error: workflowError } = await supabase
           .functions
@@ -62,35 +77,26 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
             body: { application_id: applicationId }
           });
 
-        if (workflowError) throw workflowError;
+        if (workflowError) {
+          throw new Error(`Failed to load workflow: ${workflowError.message}`);
+        }
         
         if (workflowData) {
           setWorkflow(workflowData as WorkflowResponse);
-        } else {
-          throw new Error('No workflow data found');
+          
+          // Set initial notes based on current role if available
+          if (workflowData.current_stage && userRole) {
+            const notesKey = `${workflowData.current_stage}_notes` as keyof WorkflowResponse;
+            const currentNotes = workflowData[notesKey] as string | null;
+            setNotes(currentNotes || '');
+          }
         }
-
-        // Fetch application data
-        const { data: applicationData, error: applicationError } = await supabase
-          .from('loan_applications')
-          .select('id, client_name, loan_amount, loan_type, purpose_of_loan, status')
-          .eq('id', applicationId)
-          .single();
-
-        if (applicationError) throw applicationError;
-        setApplication(applicationData);
-
-        // Set initial notes based on current role
-        if (workflowData) {
-          // Just set notes from the current stage
-          setNotes(workflowData[`${workflowData.current_stage}_notes`] || '');
-        }
-
       } catch (error: any) {
         console.error('Error fetching workflow data:', error);
+        setErrorMessage(`Failed to load workflow data: ${error.message}`);
         toast({
           title: 'Error',
-          description: `Failed to load application data: ${error.message}`,
+          description: error.message || 'Failed to load application data',
           variant: 'destructive',
         });
       } finally {
@@ -99,7 +105,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
     };
 
     fetchData();
-  }, [applicationId, toast]);
+  }, [applicationId, toast, userRole]);
 
   const handleAction = async (approve: boolean) => {
     if (!workflow || !application) return;
@@ -161,6 +167,20 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
         <Loader2 className="h-8 w-8 animate-spin text-purple-700" />
         <span className="ml-2">Loading workflow data...</span>
       </div>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-red-600">Error</CardTitle>
+          <CardDescription>{errorMessage}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Please try again later or contact the system administrator.</p>
+        </CardContent>
+      </Card>
     );
   }
 

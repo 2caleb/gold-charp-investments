@@ -23,14 +23,21 @@ const LoanApprovalPage = () => {
   const { isLoading: isLoadingPermissions } = useRolePermissions();
   const [application, setApplication] = useState<LoanApplicationData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchLoanApplication = async () => {
-      if (!id) return;
+      if (!id) {
+        setError("No application ID provided");
+        setIsLoading(false);
+        return;
+      }
       
       try {
         setIsLoading(true);
+        setError(null);
+        
         const { data, error } = await supabase
           .from('loan_applications')
           .select('*')
@@ -41,9 +48,14 @@ const LoanApprovalPage = () => {
           throw error;
         }
         
+        if (!data) {
+          throw new Error("Application not found");
+        }
+        
         setApplication(data);
       } catch (error: any) {
         console.error('Error fetching loan application:', error);
+        setError(error.message || 'Could not load application data');
         toast({
           title: 'Error fetching application',
           description: error.message || 'Could not load application data',
@@ -66,6 +78,41 @@ const LoanApprovalPage = () => {
             <p>{isLoadingPermissions ? 'Loading permissions...' : 'Loading application data...'}</p>
           </div>
         </div>
+      </Layout>
+    );
+  }
+  
+  if (error || !id) {
+    return (
+      <Layout>
+        <section className="bg-gray-50 dark:bg-gray-900 py-8 md:py-16">
+          <div className="container mx-auto px-4">
+            <div className="mb-6">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/loan-applications">
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Back to Applications
+                </Link>
+              </Button>
+            </div>
+            
+            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8">
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="text-red-500 mb-4 text-xl">
+                  {error || "Application ID is missing"}
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  Please check the URL or return to the applications list.
+                </p>
+                <Button asChild>
+                  <Link to="/loan-applications">
+                    View All Applications
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
       </Layout>
     );
   }
@@ -99,11 +146,7 @@ const LoanApprovalPage = () => {
           </div>
           
           <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8">
-            {id ? (
-              <LoanApprovalWorkflow applicationId={id} />
-            ) : (
-              <p className="text-red-500">No application ID provided.</p>
-            )}
+            <LoanApprovalWorkflow applicationId={id} />
           </div>
         </div>
       </section>

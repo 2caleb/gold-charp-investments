@@ -37,16 +37,53 @@ serve(async (req) => {
     const { data, error } = await supabaseClient
       .from('loan_application_workflow')
       .select('*')
-      .eq('loan_application_id', application_id)
-      .single();
+      .eq('loan_application_id', application_id);
 
     if (error) {
       throw error;
     }
 
-    // Return the workflow data
+    // Check if workflow was found
+    if (!data || data.length === 0) {
+      // Create a default workflow record if none exists
+      const { data: newWorkflow, error: createError } = await supabaseClient
+        .from('loan_application_workflow')
+        .insert({
+          loan_application_id: application_id,
+          current_stage: 'field_officer',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("Error creating workflow:", createError);
+        return new Response(
+          JSON.stringify({ 
+            error: "No workflow found and couldn't create one", 
+            details: createError.message
+          }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+
+      // Return the newly created workflow
+      return new Response(
+        JSON.stringify(newWorkflow),
+        { 
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    // Return the first workflow data if multiple (should only be one)
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(data[0]),
       { 
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" }

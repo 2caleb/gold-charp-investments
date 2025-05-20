@@ -66,6 +66,21 @@ export type Database = {
         }
         Relationships: []
       }
+      delete_to: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
       document_metadata: {
         Row: {
           content_type: string
