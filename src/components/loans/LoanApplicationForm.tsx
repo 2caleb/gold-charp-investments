@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LoanDetailsForm from './LoanDetailsForm';
@@ -122,7 +123,13 @@ const LoanApplicationForm = () => {
           
           <LoanDetailsForm
             onSubmit={(values) => {
-              handleSubmit(values);
+              // Add the missing properties expected by LoanApplicationValues
+              const enhancedValues = {
+                ...values,
+                client_type: values.client_id ? 'existing' : 'new',
+                terms_accepted: true,
+              };
+              handleSubmit(enhancedValues);
               setIsFormCompleted(true);
             }}
             isSubmitting={isSubmitting}

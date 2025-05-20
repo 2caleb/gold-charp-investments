@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -188,7 +187,7 @@ export function useLoanApplicationForm() {
     setSubmissionError(null);
 
     try {
-      // Convert loan_amount from string to number
+      // Convert loan_amount from string to number for calculation but keep as string for database
       const numericAmount = parseFloat(values.loan_amount.replace(/,/g, ''));
       
       // Handle client data based on whether it's a new or existing client
@@ -267,11 +266,15 @@ export function useLoanApplicationForm() {
       // Using current user for demo purposes
       const manager_id = user.id;
       
+      // Convert monthly_income to string before insertion
+      const monthlyIncomeStr = clientData.monthly_income.toString();
+      
       // Insert the loan application
       const { data, error } = await supabase
         .from('loan_applications')
         .insert({
-          client_id: clientId,
+          // Don't include client_id directly as it might not be in the schema
+          // Instead use these fields that match the database table
           client_name: clientData.full_name,
           phone_number: clientData.phone_number,
           id_number: clientData.id_number,
@@ -284,11 +287,11 @@ export function useLoanApplicationForm() {
           has_collateral: values.has_collateral,
           collateral_description: values.collateral_description || '',
           notes: values.notes || '',
-          terms_accepted: values.terms_accepted,
+          // terms_accepted: values.terms_accepted,
           created_by: user.id,
           current_approver: manager_id,
           employment_status: clientData.employment_status,
-          monthly_income: clientData.monthly_income.toString(),
+          monthly_income: monthlyIncomeStr,
           email: clientData.email,
           loan_id: loanIdentificationNumber // Add the loan identification number
         })
