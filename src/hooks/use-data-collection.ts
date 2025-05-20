@@ -127,7 +127,7 @@ export function useDataCollection() {
         const monthlyIncomeValue = parseFloat(values.monthly_income || '0');
         
         // Insert application with the proper types
-        const { data: application, error: applicationError } = await supabase
+        const { data, error } = await supabase
           .from('loan_applications')
           .insert({
             client_name: values.full_name || '',
@@ -135,7 +135,7 @@ export function useDataCollection() {
             id_number: values.id_number || '',
             address: values.address || '',
             employment_status: values.employment_status || '',
-            monthly_income: monthlyIncomeValue, // Use the parsed number
+            monthly_income: monthlyIncomeValue.toString(), // Convert to string to match the expected type
             loan_type: values.loan_type || 'personal',
             loan_amount: values.loan_amount || '0',
             loan_id: generatedLoanId,
@@ -144,19 +144,21 @@ export function useDataCollection() {
             created_by: user.id,
             current_approver: user.id // Default to self for demo
           })
-          .select()
-          .single();
+          .select();
+
+        if (error) throw error;
+        
+        // Get the loan application ID
+        if (data && data[0] && data[0].id) {
+          setApplicationId(data[0].id);
+          setFormReady(true);
+          setActiveTab("documents");
           
-        if (applicationError) throw applicationError;
-        
-        setApplicationId(application.id);
-        setFormReady(true);
-        setActiveTab("documents");
-        
-        toast({
-          title: "Application saved",
-          description: "Client information has been saved successfully.",
-        });
+          toast({
+            title: "Application saved",
+            description: "Client information has been saved successfully.",
+          });
+        }
       }
     } catch (error: any) {
       console.error('Submission error:', error);

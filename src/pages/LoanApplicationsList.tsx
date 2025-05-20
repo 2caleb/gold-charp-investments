@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { FilePlus, Eye, Loader2, AlertTriangle, InfoIcon } from 'lucide-react';
+import { FilePlus, Eye, Loader2, AlertTriangle } from 'lucide-react';
 import { DataCollectionButton } from '@/components/loans/DataCollectionButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -31,7 +31,7 @@ const LoanApplicationsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const permissions = useRolePermissions(); // Fix: don't destructure hasPermission
+  const permissions = useRolePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -79,9 +79,7 @@ const LoanApplicationsList = () => {
     { label: 'Pending CEO', value: 'pending_ceo' },
     { label: 'Pending Chairperson', value: 'pending_chairperson' },
     { label: 'Approved', value: 'approved' },
-    { label: 'Rejected', value: 'rejected' },
-    { label: 'Disbursed', value: 'disbursed' },
-    { label: 'Completed', value: 'completed' },
+    { label: 'Rejected', value: 'rejected' }
   ];
 
   return (
@@ -97,12 +95,6 @@ const LoanApplicationsList = () => {
                 description: "A new loan application has been created via client data collection"
               });
             }} />
-            <Button asChild>
-              <Link to="/loan-applications/new">
-                <FilePlus className="mr-2 h-4 w-4" />
-                New Application
-              </Link>
-            </Button>
           </div>
         </div>
 

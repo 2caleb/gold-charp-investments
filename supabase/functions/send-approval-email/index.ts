@@ -13,7 +13,7 @@ const corsHeaders = {
 };
 
 // Workflow roles in order of approval hierarchy
-const WORKFLOW_CHAIN = ["field_officer", "manager", "director", "ceo"];
+const WORKFLOW_CHAIN = ["field_officer", "manager", "director", "chairperson", "ceo"];
 
 serve(async (req) => {
   // Handle CORS preflight requests

@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LoanApplicationValues } from '@/types/loan';
+import { InstallmentCalculator } from './InstallmentCalculator';
 
 const guarantorSchema = z.object({
   guarantor1_consent: z.boolean().refine((val) => val === true, {
@@ -61,6 +62,9 @@ const LoanApplicationForm = () => {
   const { toast } = useToast();
   const [isFormCompleted, setIsFormCompleted] = useState(false);
   const [hasNecessaryDocuments, setHasNecessaryDocuments] = useState(false);
+  const [loanAmount, setLoanAmount] = useState<number>(0);
+  const [loanDuration, setLoanDuration] = useState<number>(0);
+  const [termUnit, setTermUnit] = useState<'days' | 'weeks' | 'months' | 'years'>('months');
 
   const form = useForm({
     resolver: zodResolver(guarantorSchema),
@@ -131,6 +135,12 @@ const LoanApplicationForm = () => {
                 terms_accepted: true,
                 loan_amount: values.loan_amount.toString(), // Convert to string to match the expected type
               };
+              
+              // Store for installment calculator
+              setLoanAmount(parseFloat(values.loan_amount.replace(/,/g, '')));
+              setLoanDuration(parseInt(values.loan_term, 10));
+              setTermUnit(values.term_unit || 'months');
+              
               handleSubmit(enhancedValues);
               setIsFormCompleted(true);
             }}
@@ -139,6 +149,15 @@ const LoanApplicationForm = () => {
             isLoadingClients={isLoadingClients}
             preselectedClientId={preselectedClientId}
           />
+          
+          {loanAmount > 0 && loanDuration > 0 && (
+            <InstallmentCalculator 
+              loanAmount={loanAmount} 
+              duration={loanDuration} 
+              termUnit={termUnit} 
+              interestRate={15} 
+            />
+          )}
           
           {loanApplicationId && (
             <div className="flex justify-end mt-4">

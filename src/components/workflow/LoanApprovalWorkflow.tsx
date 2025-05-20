@@ -332,7 +332,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
                       <div className="w-6 h-6 rounded-full border-2 border-gray-300 mr-2"></div>
                     )}
                     <span className={workflow.current_stage === item.stage ? 'font-bold' : ''}>
-                      {item.label}: {item.approved ? 'Approved' : item.approved === false ? 'Rejected' : 'Pending'}
+                      {item.label}: {item.approved === true ? 'Approved' : item.approved === false ? 'Rejected' : 'Pending'}
                     </span>
                     {workflow.current_stage === item.stage && (
                       <span className="ml-2 inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">

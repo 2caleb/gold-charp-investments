@@ -72,7 +72,7 @@ export function useLoanApplicationForm() {
         // Changed from 'clients' to 'client_name' to match the actual table name
         const { data, error } = await supabase
           .from('client_name')
-          .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income, created_at, updated_at, user_id, email, deleted_at');
+          .select('*');
         
         if (error) throw error;
         
@@ -271,7 +271,7 @@ export function useLoanApplicationForm() {
       // Using current user for demo purposes
       const manager_id = user.id;
       
-      // Insert the loan application with proper types
+      // Insert application with the proper types
       const { data, error } = await supabase
         .from('loan_applications')
         .insert({
@@ -286,11 +286,11 @@ export function useLoanApplicationForm() {
           applicant_name: values.applicant_name || clientData.full_name,
           has_collateral: values.has_collateral,
           collateral_description: values.collateral_description || '',
-          notes: values.notes || '',
+          notes: values.purpose_of_loan || '',
           created_by: user.id,
           current_approver: manager_id,
           employment_status: clientData.employment_status,
-          monthly_income: clientData.monthly_income, // Pass as number
+          monthly_income: clientData.monthly_income.toString(), // Convert to string to match
           email: clientData.email,
           loan_id: loanIdentificationNumber
         })
@@ -433,79 +433,13 @@ export function useLoanApplicationForm() {
     
     // Methods
     handleSubmit,
-    handleLoanUpdate: (payload: any) => {
-      if (payload.eventType === 'INSERT') {
-        setRealtimeUpdate('New loan application has been submitted.');
-      } else if (payload.eventType === 'UPDATE') {
-        setRealtimeUpdate(`Loan application ${payload.new.id} was updated.`);
-      }
-    },
-    handleFinish: () => {
-      // Navigate to the loan applications list or another appropriate page
-      navigate('/loan-applications');
-      
-      toast({
-        title: "Process complete",
-        description: "Your loan application and documents have been submitted successfully",
-      });
-    },
-    regenerateLoanId: () => {
-      const newId = generateLoanIdentificationNumber();
-      setLoanIdentificationNumber(newId);
-      
-      toast({
-        title: "Loan ID Regenerated",
-        description: `New loan ID: ${newId}`,
-      });
-    },
-    handleUploadIdDocument: async (file: File, description?: string, tags?: string[]) => {
-      if (!loanApplicationId) {
-        toast({
-          title: "Submit application first",
-          description: "Please submit the loan application before uploading documents",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await uploadIdDocument(file, 'id_document', loanApplicationId, description, tags);
-    },
-    handleUploadCollateralPhoto: async (file: File, description?: string, tags?: string[]) => {
-      if (!loanApplicationId) {
-        toast({
-          title: "Submit application first",
-          description: "Please submit the loan application before uploading documents",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await uploadCollateralPhoto(file, 'collateral_photo', loanApplicationId, description, tags);
-    },
-    handleUploadPropertyDocument: async (file: File, description?: string, tags?: string[]) => {
-      if (!loanApplicationId) {
-        toast({
-          title: "Submit application first",
-          description: "Please submit the loan application before uploading documents",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await uploadPropertyDocument(file, 'property_document', loanApplicationId, description, tags);
-    },
-    handleUploadLoanAgreement: async (file: File, description?: string, tags?: string[]) => {
-      if (!loanApplicationId) {
-        toast({
-          title: "Submit application first",
-          description: "Please submit the loan application before uploading documents",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await uploadLoanAgreement(file, 'loan_agreement', loanApplicationId, description, tags);
-    },
+    handleLoanUpdate,
+    handleFinish,
+    regenerateLoanId,
+    handleUploadIdDocument,
+    handleUploadCollateralPhoto,
+    handleUploadPropertyDocument,
+    handleUploadLoanAgreement,
     handleDeleteIdDocument: deleteIdDocument,
     handleDeleteCollateralPhoto: deleteCollateralPhoto,
     handleDeletePropertyDocument: deletePropertyDocument,
