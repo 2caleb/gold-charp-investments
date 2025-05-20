@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -17,7 +18,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Client } from '@/types/loan';
+import { Client } from '@/types/schema';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -58,25 +59,10 @@ const ClientsList = () => {
       const deletedClients: Client[] = [];
       
       data?.forEach(client => {
-        const clientWithTypes: Client = {
-          id: client.id,
-          full_name: client.full_name,
-          phone_number: client.phone_number,
-          id_number: client.id_number,
-          address: client.address,
-          employment_status: client.employment_status,
-          monthly_income: client.monthly_income,
-          created_at: client.created_at,
-          updated_at: client.updated_at || undefined,
-          user_id: client.user_id || undefined,
-          email: client.email || undefined,
-          deleted_at: client.deleted_at || undefined
-        };
-        
         if (client.deleted_at) {
-          deletedClients.push(clientWithTypes);
+          deletedClients.push(client as Client);
         } else {
-          activeClients.push(clientWithTypes);
+          activeClients.push(client as Client);
         }
       });
       
@@ -119,14 +105,9 @@ const ClientsList = () => {
         description: `${clientToDelete.full_name} has been removed from active clients`,
       });
       
-      // Update local state with proper typing
-      const clientWithDeletedAt: Client = {
-        ...clientToDelete,
-        deleted_at: new Date().toISOString()
-      };
-      
+      // Update local state
       setClients(clients.filter(c => c.id !== clientToDelete.id));
-      setDeletedClients([...deletedClients, clientWithDeletedAt]);
+      setDeletedClients([...deletedClients, {...clientToDelete, deleted_at: new Date().toISOString()}]);
     } catch (error: any) {
       toast({
         title: 'Error removing client',
@@ -153,14 +134,9 @@ const ClientsList = () => {
         description: `${client.full_name} has been restored to active clients`,
       });
       
-      // Update local state with proper typing
-      const restoredClient: Client = {
-        ...client,
-        deleted_at: undefined
-      };
-      
+      // Update local state
       setDeletedClients(deletedClients.filter(c => c.id !== client.id));
-      setClients([restoredClient, ...clients]);
+      setClients([{...client, deleted_at: undefined}, ...clients]);
     } catch (error: any) {
       toast({
         title: 'Error restoring client',

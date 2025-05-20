@@ -47,10 +47,6 @@ export interface Client {
   address: string;
   employment_status: string;
   monthly_income: number;
-  created_at: string;
-  updated_at?: string;
-  user_id?: string;
-  deleted_at?: string;
 }
 
 export interface LoanDetailsFormProps {

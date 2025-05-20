@@ -72,7 +72,7 @@ export function useLoanApplicationForm() {
         // Changed from 'clients' to 'client_name' to match the actual table name
         const { data, error } = await supabase
           .from('client_name')
-          .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income, created_at, updated_at, user_id, email, deleted_at');
+          .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income, created_at, updated_at, user_id, email');
         
         if (error) throw error;
         
@@ -88,8 +88,7 @@ export function useLoanApplicationForm() {
           created_at: client.created_at,
           updated_at: client.updated_at || undefined,
           user_id: client.user_id || undefined,
-          email: client.email || undefined,
-          deleted_at: client.deleted_at || undefined
+          email: client.email || null
         }));
         
         setClients(typedClients);
@@ -239,11 +238,7 @@ export function useLoanApplicationForm() {
         };
         
         // Add the new client to the clients list
-        setClients(prevClients => [...prevClients, { 
-          ...newClientData, 
-          created_at: new Date().toISOString(),
-          id: newClientData.id 
-        }]);
+        setClients(prevClients => [...prevClients, { ...newClientData, created_at: new Date().toISOString() }]);
         
         toast({
           title: "New client created",
@@ -271,28 +266,34 @@ export function useLoanApplicationForm() {
       // Using current user for demo purposes
       const manager_id = user.id;
       
-      // Insert the loan application with proper types
+      // Convert monthly_income to string before insertion
+      const monthlyIncomeStr = clientData.monthly_income.toString();
+      
+      // Insert the loan application
       const { data, error } = await supabase
         .from('loan_applications')
         .insert({
+          // Don't include client_id directly as it might not be in the schema
+          // Instead use these fields that match the database table
           client_name: clientData.full_name,
           phone_number: clientData.phone_number,
           id_number: clientData.id_number,
           address: clientData.address,
           loan_type: values.loan_type,
-          loan_amount: values.loan_amount,
+          loan_amount: String(numericAmount),
           loan_term: values.loan_term,
           purpose_of_loan: values.purpose_of_loan,
           applicant_name: values.applicant_name || clientData.full_name,
           has_collateral: values.has_collateral,
           collateral_description: values.collateral_description || '',
           notes: values.notes || '',
+          // terms_accepted: values.terms_accepted,
           created_by: user.id,
           current_approver: manager_id,
           employment_status: clientData.employment_status,
-          monthly_income: clientData.monthly_income, // Pass as number
+          monthly_income: monthlyIncomeStr,
           email: clientData.email,
-          loan_id: loanIdentificationNumber
+          loan_id: loanIdentificationNumber // Add the loan identification number
         })
         .select();
 
@@ -433,79 +434,13 @@ export function useLoanApplicationForm() {
     
     // Methods
     handleSubmit,
-    handleLoanUpdate: (payload: any) => {
-      if (payload.eventType === 'INSERT') {
-        setRealtimeUpdate('New loan application has been submitted.');
-      } else if (payload.eventType === 'UPDATE') {
-        setRealtimeUpdate(`Loan application ${payload.new.id} was updated.`);
-      }
-    },
-    handleFinish: () => {
-      // Navigate to the loan applications list or another appropriate page
-      navigate('/loan-applications');
-      
-      toast({
-        title: "Process complete",
-        description: "Your loan application and documents have been submitted successfully",
-      });
-    },
-    regenerateLoanId: () => {
-      const newId = generateLoanIdentificationNumber();
-      setLoanIdentificationNumber(newId);
-      
-      toast({
-        title: "Loan ID Regenerated",
-        description: `New loan ID: ${newId}`,
-      });
-    },
-    handleUploadIdDocument: async (file: File, description?: string, tags?: string[]) => {
-      if (!loanApplicationId) {
-        toast({
-          title: "Submit application first",
-          description: "Please submit the loan application before uploading documents",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await uploadIdDocument(file, 'id_document', loanApplicationId, description, tags);
-    },
-    handleUploadCollateralPhoto: async (file: File, description?: string, tags?: string[]) => {
-      if (!loanApplicationId) {
-        toast({
-          title: "Submit application first",
-          description: "Please submit the loan application before uploading documents",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await uploadCollateralPhoto(file, 'collateral_photo', loanApplicationId, description, tags);
-    },
-    handleUploadPropertyDocument: async (file: File, description?: string, tags?: string[]) => {
-      if (!loanApplicationId) {
-        toast({
-          title: "Submit application first",
-          description: "Please submit the loan application before uploading documents",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await uploadPropertyDocument(file, 'property_document', loanApplicationId, description, tags);
-    },
-    handleUploadLoanAgreement: async (file: File, description?: string, tags?: string[]) => {
-      if (!loanApplicationId) {
-        toast({
-          title: "Submit application first",
-          description: "Please submit the loan application before uploading documents",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      await uploadLoanAgreement(file, 'loan_agreement', loanApplicationId, description, tags);
-    },
+    handleLoanUpdate,
+    handleFinish,
+    regenerateLoanId,
+    handleUploadIdDocument,
+    handleUploadCollateralPhoto,
+    handleUploadPropertyDocument,
+    handleUploadLoanAgreement,
     handleDeleteIdDocument: deleteIdDocument,
     handleDeleteCollateralPhoto: deleteCollateralPhoto,
     handleDeletePropertyDocument: deletePropertyDocument,

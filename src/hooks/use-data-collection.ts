@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -123,10 +122,10 @@ export function useDataCollection() {
       
       // Create loan application
       if (client_id) {
-        // Ensure monthly income is converted to a number for the database
-        const monthlyIncomeValue = parseFloat(values.monthly_income || '0');
-        
-        // Insert application with the proper types
+        // Convert loan_amount to string explicitly
+        const loanAmountStr = values.loan_amount?.toString() || '';
+        const monthlyIncomeStr = values.monthly_income?.toString() || '';
+
         const { data: application, error: applicationError } = await supabase
           .from('loan_applications')
           .insert({
@@ -135,14 +134,15 @@ export function useDataCollection() {
             id_number: values.id_number || '',
             address: values.address || '',
             employment_status: values.employment_status || '',
-            monthly_income: monthlyIncomeValue, // Use the parsed number
+            monthly_income: monthlyIncomeStr,
             loan_type: values.loan_type || 'personal',
-            loan_amount: values.loan_amount || '0',
+            loan_amount: loanAmountStr,
             loan_id: generatedLoanId,
             purpose_of_loan: values.purpose_of_loan || '',
             notes: values.purpose_of_loan || '',
             created_by: user.id,
-            current_approver: user.id // Default to self for demo
+            current_approver: user.id, // Default to self for demo
+            status: 'submitted'
           })
           .select()
           .single();
