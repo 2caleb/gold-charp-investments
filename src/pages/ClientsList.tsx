@@ -170,6 +170,76 @@ const ClientsList = () => {
     }
   };
 
+  const softDeleteClient = async (clientId: string) => {
+    try {
+      // Update the client with a deleted_at timestamp instead of actually deleting
+      const { error } = await supabase
+        .from('client_name')
+        .update({ 
+          deleted_at: new Date().toISOString() 
+        })
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      // Update the local state
+      setClients(prev => 
+        prev.map(client => 
+          client.id === clientId 
+            ? { ...client, deleted_at: new Date().toISOString() } 
+            : client
+        )
+      );
+
+      toast({
+        title: "Client archived",
+        description: "The client has been archived successfully",
+      });
+    } catch (error: any) {
+      console.error('Error archiving client:', error);
+      toast({
+        title: "Error",
+        description: "Failed to archive client",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const restoreClient = async (clientId: string) => {
+    try {
+      // Set deleted_at to null to restore the client
+      const { error } = await supabase
+        .from('client_name')
+        .update({ 
+          deleted_at: null 
+        })
+        .eq('id', clientId);
+
+      if (error) throw error;
+
+      // Update the local state
+      setClients(prev => 
+        prev.map(client => 
+          client.id === clientId 
+            ? { ...client, deleted_at: null } 
+            : client
+        )
+      );
+
+      toast({
+        title: "Client restored",
+        description: "The client has been restored successfully",
+      });
+    } catch (error: any) {
+      console.error('Error restoring client:', error);
+      toast({
+        title: "Error",
+        description: "Failed to restore client",
+        variant: "destructive",
+      });
+    }
+  };
+
   const toggleShowDeleted = () => {
     setShowDeleted(!showDeleted);
     setCurrentPage(1); // Reset to first page when switching views

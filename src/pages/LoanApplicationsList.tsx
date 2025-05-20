@@ -20,11 +20,6 @@ interface LoanApplication {
   loan_id: string;
 }
 
-interface FilterOption {
-  label: string;
-  value: string;
-}
-
 const LoanApplicationsList = () => {
   useDesktopRedirect();
   const [loans, setLoans] = useState<LoanApplication[]>([]);
@@ -33,7 +28,6 @@ const LoanApplicationsList = () => {
   const { toast } = useToast();
   const permissions = useRolePermissions();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
 
   const fetchLoans = async () => {
     setLoading(true);
@@ -66,21 +60,8 @@ const LoanApplicationsList = () => {
 
   const filteredLoans = loans.filter(loan => {
     const searchRegex = new RegExp(searchTerm, 'i');
-    const statusMatch = statusFilter ? loan.status === statusFilter : true;
-
-    return searchRegex.test(loan.client_name) && statusMatch;
+    return searchRegex.test(loan.client_name);
   });
-
-  const statusOptions: FilterOption[] = [
-    { label: 'All Statuses', value: '' },
-    { label: 'Submitted', value: 'submitted' },
-    { label: 'Pending Manager', value: 'pending_manager' },
-    { label: 'Pending Director', value: 'pending_director' },
-    { label: 'Pending CEO', value: 'pending_ceo' },
-    { label: 'Pending Chairperson', value: 'pending_chairperson' },
-    { label: 'Approved', value: 'approved' },
-    { label: 'Rejected', value: 'rejected' }
-  ];
 
   return (
     <Layout>
@@ -106,17 +87,6 @@ const LoanApplicationsList = () => {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-          <select
-            className="border rounded px-4 py-2"
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-          >
-            {statusOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
         </div>
 
         {loading ? (

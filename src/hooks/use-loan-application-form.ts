@@ -209,6 +209,9 @@ export function useLoanApplicationForm() {
           throw new Error("Missing required client information");
         }
         
+        // Parse monthly income to ensure it's a number
+        const parsedIncome = parseFloat(values.monthly_income || '0');
+        
         // Create new client - changed from 'clients' to 'client_name'
         const { data: newClientData, error: newClientError } = await supabase
           .from('client_name')
@@ -218,7 +221,7 @@ export function useLoanApplicationForm() {
             id_number: values.id_number,
             address: values.address || '',
             employment_status: values.employment_status || 'employed',
-            monthly_income: parseFloat(values.monthly_income || '0'),
+            monthly_income: parsedIncome, // Ensure this is a number
             email: values.email || null,
             user_id: user.id
           })
@@ -292,7 +295,8 @@ export function useLoanApplicationForm() {
           employment_status: clientData.employment_status,
           monthly_income: clientData.monthly_income.toString(), // Convert to string to match
           email: clientData.email,
-          loan_id: loanIdentificationNumber
+          loan_id: loanIdentificationNumber,
+          client_id: clientId // Link to the client database record
         })
         .select();
 
