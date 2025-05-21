@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Label } from '@/components/ui/label';
 import NoActionRequired from './NoActionRequired';
-import { InstallmentCalculator } from '@/components/loans/InstallmentCalculator';
+import InstallmentCalculator from '@/components/loans/InstallmentCalculator';
 
 // Define workflow stages
 export type WorkflowStage = 'field_officer' | 'manager' | 'director' | 'ceo' | 'chairman' | 'completed';
@@ -67,7 +67,7 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>('details');
   const { toast } = useToast();
-  const { user, userRole } = useAuth();
+  const { user, userRole = '' } = useAuth();
 
   useEffect(() => {
     if (loanData?.approval_notes) {
@@ -122,14 +122,19 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
       'completed': ''
     };
     
-    const { data } = await supabase
-      .from('users')
-      .select('id')
-      .eq('role', roleMap[nextStage])
-      .limit(1)
-      .single();
-      
-    return data ? data.id : '';
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', roleMap[nextStage])
+        .limit(1)
+        .single();
+        
+      return data ? data.id : '';
+    } catch (error) {
+      console.error("Error fetching next approver:", error);
+      return '';
+    }
   };
   
   const handleApprove = async () => {
@@ -354,22 +359,30 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
     const status = getApprovalStatus(stage);
     const current = loanData.current_stage === stage;
     
+    // Type guard to ensure we're dealing with the correct shape
+    const hasApproved = (obj: any): obj is { approved: boolean | undefined, date: string | undefined, by: string | undefined } => {
+      return 'approved' in obj;
+    };
+    
+    // Get approved status safely
+    const isApproved = hasApproved(status) ? status.approved : undefined;
+    
     return (
       <div className={`flex items-center py-2 px-4 rounded-md ${current ? 'bg-blue-50 dark:bg-blue-900/10' : ''}`}>
         <div className="w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
-          {status.approved === true && (
+          {isApproved === true && (
             <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
               <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
           )}
           
-          {status.approved === false && (
+          {isApproved === false && (
             <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
               <X className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
           )}
           
-          {status.approved === undefined && (
+          {isApproved === undefined && (
             <div className="w-8 h-8 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
               {current ? (
                 <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -383,9 +396,9 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
         <div>
           <p className="font-medium">{label}</p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {status.approved === true && `Approved ${status.date ? `by ${status.by || 'staff'} on ${formatDate(status.date)}` : ''}`}
-            {status.approved === false && `Rejected ${status.date ? `by ${status.by || 'staff'} on ${formatDate(status.date)}` : ''}`}
-            {status.approved === undefined && (current ? "Awaiting review" : "Pending")}
+            {isApproved === true && `Approved ${status.date ? `by ${status.by || 'staff'} on ${formatDate(status.date)}` : ''}`}
+            {isApproved === false && `Rejected ${status.date ? `by ${status.by || 'staff'} on ${formatDate(status.date)}` : ''}`}
+            {isApproved === undefined && (current ? "Awaiting review" : "Pending")}
           </p>
         </div>
       </div>
@@ -520,7 +533,6 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
             {!isCurrentApprover() && !readOnly && (
               <NoActionRequired 
                 message="You are not currently assigned as the approver for this loan application."
-                detail="The loan is awaiting review by another staff member."
               />
             )}
             
@@ -537,9 +549,9 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
           
           <TabsContent value="calculator">
             <InstallmentCalculator 
-              loanAmount={loanData.loan_amount} 
-              duration={12} 
-              termUnit="months" 
+              amount={loanData.loan_amount} 
+              term={12} 
+              unit="months" 
               interestRate={12}
               className=""
             />

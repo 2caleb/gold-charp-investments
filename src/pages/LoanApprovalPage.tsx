@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
-import LoanApprovalWorkflow from '@/components/workflow/LoanApprovalWorkflow';
+import LoanApprovalWorkflow, { WorkflowLoanData } from '@/components/workflow/LoanApprovalWorkflow';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Loader2, AlertTriangle } from 'lucide-react';
@@ -10,20 +10,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
-interface LoanApplicationData {
-  id: string;
-  client_name: string;
-  loan_amount: string;
-  loan_type: string;
-  purpose_of_loan: string;
-  status: string;
-  created_at: string;
-}
-
 const LoanApprovalPage = () => {
   const { id } = useParams<{ id: string }>();
   const { isLoading: isLoadingPermissions } = useRolePermissions();
-  const [application, setApplication] = useState<LoanApplicationData | null>(null);
+  const [loanData, setLoanData] = useState<WorkflowLoanData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -42,7 +32,7 @@ const LoanApprovalPage = () => {
         
         const { data, error } = await supabase
           .from('loan_applications')
-          .select('id, client_name, loan_amount, loan_type, purpose_of_loan, status, created_at')
+          .select('*')
           .eq('id', id)
           .single();
           
@@ -54,7 +44,7 @@ const LoanApprovalPage = () => {
           throw new Error("Application not found");
         }
         
-        setApplication(data);
+        setLoanData(data as WorkflowLoanData);
       } catch (error: any) {
         console.error('Error fetching loan application:', error);
         setError(error.message || 'Could not load application data');
@@ -71,6 +61,25 @@ const LoanApprovalPage = () => {
     fetchLoanApplication();
   }, [id, toast]);
 
+  const handleWorkflowUpdate = async () => {
+    // Refresh the loan data after an update
+    if (id) {
+      try {
+        const { data } = await supabase
+          .from('loan_applications')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (data) {
+          setLoanData(data as WorkflowLoanData);
+        }
+      } catch (error) {
+        console.error("Error refreshing loan data:", error);
+      }
+    }
+  };
+
   if (isLoadingPermissions || isLoading) {
     return (
       <Layout>
@@ -84,7 +93,7 @@ const LoanApprovalPage = () => {
     );
   }
   
-  if (error || !id) {
+  if (error || !id || !loanData) {
     return (
       <Layout>
         <section className="bg-gray-50 dark:bg-gray-900 py-8 md:py-16">
@@ -102,7 +111,7 @@ const LoanApprovalPage = () => {
               <div className="flex flex-col items-center justify-center text-center">
                 <div className="flex items-center text-red-500 mb-4 text-xl">
                   <AlertTriangle className="h-8 w-8 mr-2" />
-                  {error || "Application ID is missing"}
+                  {error || "Application not found or ID is missing"}
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">
                   Please check the URL or return to the applications list.
@@ -145,13 +154,13 @@ const LoanApprovalPage = () => {
             transition={{ duration: 0.5, delay: 0.1 }}
           >
             <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4 dark:text-white">Loan Application Review</h1>
-            {application && (
+            {loanData && (
               <div className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mb-4">
-                <p><span className="font-medium">Client:</span> {application.client_name}</p>
-                <p><span className="font-medium">Amount:</span> {parseFloat(application.loan_amount).toLocaleString()} UGX</p>
-                <p><span className="font-medium">Type:</span> {application.loan_type}</p>
-                <p><span className="font-medium">Purpose:</span> {application.purpose_of_loan}</p>
-                <p><span className="font-medium">Status:</span> <span className="uppercase font-semibold">{application.status}</span></p>
+                <p><span className="font-medium">Client:</span> {loanData.client_name}</p>
+                <p><span className="font-medium">Amount:</span> {loanData.loan_amount.toLocaleString()} UGX</p>
+                <p><span className="font-medium">Type:</span> {loanData.loan_type}</p>
+                <p><span className="font-medium">Purpose:</span> {loanData.purpose_of_loan || 'Not specified'}</p>
+                <p><span className="font-medium">Status:</span> <span className="uppercase font-semibold">{loanData.status}</span></p>
               </div>
             )}
             <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
@@ -165,7 +174,10 @@ const LoanApprovalPage = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <LoanApprovalWorkflow applicationId={id} />
+            <LoanApprovalWorkflow 
+              loanData={loanData} 
+              onWorkflowUpdate={handleWorkflowUpdate}
+            />
           </motion.div>
         </div>
       </motion.section>

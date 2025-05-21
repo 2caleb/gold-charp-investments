@@ -6,11 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 interface NoActionRequiredProps {
   userRole?: string;
   message?: string;
+  detail?: string;
 }
 
 const NoActionRequired: React.FC<NoActionRequiredProps> = ({ 
   userRole, 
-  message = 'There are no items requiring your attention at this time.' 
+  message = 'There are no items requiring your attention at this time.',
+  detail
 }) => {
   return (
     <Card className="w-full">
@@ -25,6 +27,11 @@ const NoActionRequired: React.FC<NoActionRequiredProps> = ({
         <p className="text-center text-gray-600 max-w-md mb-4">
           {message}
         </p>
+        {detail && (
+          <p className="text-center text-sm text-gray-500 max-w-md mb-4">
+            {detail}
+          </p>
+        )}
         <p className="text-center text-sm text-gray-500">
           You can access all features of the application now.
         </p>
