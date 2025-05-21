@@ -14,6 +14,7 @@ interface InstallmentCalculatorProps {
   duration?: number;
   termUnit?: 'days' | 'weeks' | 'months' | 'years';
   interestRate: number;
+  className?: string; // Add className prop
 }
 
 type InstallmentSchedule = {
@@ -31,7 +32,8 @@ const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({
   loanAmount,
   duration,
   termUnit,
-  interestRate
+  interestRate,
+  className = '' // Default value for className
 }) => {
   // Use either new or old prop names
   const finalAmount = amount || loanAmount || 0;
@@ -113,7 +115,7 @@ const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({
   }
 
   return (
-    <Card className="mt-6">
+    <Card className={`mt-6 ${className}`}>
       <CardHeader>
         <CardTitle>Loan Repayment Schedule</CardTitle>
         <CardDescription>
@@ -122,9 +124,9 @@ const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gray-50 p-4 rounded-lg border text-center">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Monthly Payment</h3>
-            <p className="text-2xl font-bold text-purple-700">
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border text-center">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Monthly Payment</h3>
+            <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: 'UGX',
@@ -133,9 +135,9 @@ const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({
               }).format(monthlyPayment)}
             </p>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg border text-center">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Total Interest</h3>
-            <p className="text-2xl font-bold text-purple-700">
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border text-center">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Total Interest</h3>
+            <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: 'UGX',
@@ -144,9 +146,9 @@ const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({
               }).format(totalInterest)}
             </p>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg border text-center">
-            <h3 className="text-sm font-medium text-gray-500 mb-1">Total Payment</h3>
-            <p className="text-2xl font-bold text-purple-700">
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border text-center">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Total Payment</h3>
+            <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">
               {new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: 'UGX',

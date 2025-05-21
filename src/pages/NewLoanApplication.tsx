@@ -25,6 +25,19 @@ const NewLoanApplication = () => {
     setTimeout(() => navigate('/loan-applications'), 1500);
   };
 
+  // Empty dummy clients array and loading state for the LoanApplicationForm
+  const dummyClients = [];
+  const dummyIsLoadingClients = false;
+
+  // Create dummy submission handler
+  const handleSubmit = (data: any) => {
+    console.log("Form submitted:", data);
+    toast({
+      title: "Loan Application Submitted",
+      description: "Your loan application has been successfully submitted",
+    });
+  };
+
   return (
     <Layout>
       <section className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8 md:py-16 transition-all duration-500">
@@ -126,7 +139,12 @@ const NewLoanApplication = () => {
                   Complete all required fields for your loan request
                 </p>
               </div>
-              <LoanApplicationForm />
+              <LoanApplicationForm 
+                onSubmit={handleSubmit}
+                isSubmitting={false}
+                clients={dummyClients}
+                isLoadingClients={dummyIsLoadingClients}
+              />
             </div>
             
             <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-900/50 dark:to-transparent rounded-lg border border-gray-100 dark:border-gray-800">
