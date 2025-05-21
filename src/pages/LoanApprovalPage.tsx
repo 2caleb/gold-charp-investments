@@ -44,7 +44,13 @@ const LoanApprovalPage = () => {
           throw new Error("Application not found");
         }
         
-        setLoanData(data as WorkflowLoanData);
+        // Add the current_stage property if it doesn't exist
+        const loanWithStage: WorkflowLoanData = {
+          ...data,
+          current_stage: data.current_stage || data.status || 'pending'
+        };
+        
+        setLoanData(loanWithStage);
       } catch (error: any) {
         console.error('Error fetching loan application:', error);
         setError(error.message || 'Could not load application data');
@@ -72,7 +78,13 @@ const LoanApprovalPage = () => {
           .single();
           
         if (data) {
-          setLoanData(data as WorkflowLoanData);
+          // Add the current_stage property if it doesn't exist
+          const loanWithStage: WorkflowLoanData = {
+            ...data,
+            current_stage: data.current_stage || data.status || 'pending'
+          };
+          
+          setLoanData(loanWithStage);
         }
       } catch (error) {
         console.error("Error refreshing loan data:", error);
@@ -174,10 +186,12 @@ const LoanApprovalPage = () => {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <LoanApprovalWorkflow 
-              loanData={loanData} 
-              onWorkflowUpdate={handleWorkflowUpdate}
-            />
+            {loanData && (
+              <LoanApprovalWorkflow 
+                loanData={loanData} 
+                onWorkflowUpdate={handleWorkflowUpdate}
+              />
+            )}
           </motion.div>
         </div>
       </motion.section>
