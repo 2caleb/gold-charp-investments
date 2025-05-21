@@ -99,7 +99,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
         }
         
         if (workflowData) {
-          setWorkflow(workflowData);
+          setWorkflow(workflowData as WorkflowResponse);
           
           // Set initial notes based on current role if available
           if (workflowData.current_stage && userRole) {
@@ -242,7 +242,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
 
       // Update local state with the response data
       if (updatedWorkflow) {
-        setWorkflow(updatedWorkflow);
+        setWorkflow(updatedWorkflow as WorkflowResponse);
         
         // Update approvers info
         const updatedApprovers = [...approvers];

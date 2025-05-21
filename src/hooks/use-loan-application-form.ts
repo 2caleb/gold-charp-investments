@@ -20,7 +20,7 @@ export function useLoanApplicationForm() {
   const [activeTab, setActiveTab] = useState("details");
   const [loanApplicationId, setLoanApplicationId] = useState<string | null>(null);
   const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [submissionError, setError] = useState<string | null>(null);
   const [loanIdentificationNumber, setLoanIdentificationNumber] = useState<string>('');
   
   // Document upload hooks
@@ -174,154 +174,126 @@ export function useLoanApplicationForm() {
   };
 
   const handleSubmit = async (values: LoanApplicationValues) => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "You must be logged in to submit a loan application",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
-    setSubmissionError(null);
-
+    setError(null);
+    
     try {
-      // Convert loan_amount from string to number for calculation but keep as string for database
-      const numericAmount = parseFloat(values.loan_amount.replace(/,/g, ''));
+      if (!user) throw new Error("You must be logged in to submit a loan application");
+
+      // Check if this is a new or existing client
+      let clientId: string | undefined = undefined;
+      let clientName = '';
       
-      // Handle client data based on whether it's a new or existing client
-      let clientId = values.client_id;
-      let clientData = {
-        full_name: '',
-        phone_number: '',
-        id_number: '',
-        address: '',
-        employment_status: '',
-        monthly_income: 0,
-        email: null as string | null
-      };
-      
-      // If this is a new client, create the client first
-      if (values.client_type === 'new') {
-        if (!values.full_name || !values.phone_number || !values.id_number) {
-          throw new Error("Missing required client information");
+      if (values.client_type === 'existing' && values.client_id) {
+        // Existing client
+        clientId = values.client_id;
+        const selectedClient = clients.find(c => c.id === values.client_id);
+        if (selectedClient) {
+          clientName = selectedClient.full_name;
+        } else {
+          throw new Error("Selected client not found");
+        }
+      } else {
+        // Create new client first
+        if (!values.full_name || !values.id_number) {
+          throw new Error("Client name and ID number are required");
         }
         
-        // Create new client - changed from 'clients' to 'client_name'
-        const { data: newClientData, error: newClientError } = await supabase
+        const { data: newClient, error: clientError } = await supabase
           .from('client_name')
           .insert({
             full_name: values.full_name,
-            phone_number: values.phone_number,
+            phone_number: values.phone_number || '',
+            email: values.email,
             id_number: values.id_number,
             address: values.address || '',
-            employment_status: values.employment_status || 'employed',
-            monthly_income: parseFloat(values.monthly_income || '0'),
-            email: values.email || null,
-            user_id: user.id
+            employment_status: values.employment_status || '',
+            monthly_income: parseFloat(values.monthly_income || '0'), // Convert to number
           })
-          .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income, email')
+          .select()
           .single();
-          
-        if (newClientError) throw newClientError;
         
-        clientId = newClientData.id;
-        clientData = {
-          full_name: newClientData.full_name,
-          phone_number: newClientData.phone_number,
-          id_number: newClientData.id_number,
-          address: newClientData.address,
-          employment_status: newClientData.employment_status,
-          monthly_income: newClientData.monthly_income,
-          email: newClientData.email
-        };
-        
-        // Add the new client to the clients list
-        setClients(prevClients => [...prevClients, { ...newClientData, created_at: new Date().toISOString() }]);
-        
-        toast({
-          title: "New client created",
-          description: `Created client profile for ${newClientData.full_name}`,
-        });
-      } else {
-        // Get existing client data
-        const selectedClient = clients.find(c => c.id === clientId);
-        if (!selectedClient) {
-          throw new Error("Selected client not found");
+        if (clientError) {
+          throw new Error(`Failed to create client: ${clientError.message}`);
         }
         
-        clientData = {
-          full_name: selectedClient.full_name,
-          phone_number: selectedClient.phone_number,
-          id_number: selectedClient.id_number,
-          address: selectedClient.address,
-          employment_status: selectedClient.employment_status,
-          monthly_income: selectedClient.monthly_income,
-          email: selectedClient.email
-        };
+        clientId = newClient.id;
+        clientName = newClient.full_name;
       }
       
-      // Get the manager's user ID (in a real app, you might fetch this from profiles table)
-      // Using current user for demo purposes
-      const manager_id = user.id;
+      // Now create the loan application
+      const loanApplicationData = {
+        client_id: clientId,
+        client_name: clientName,
+        loan_type: values.loan_type,
+        loan_amount: values.loan_amount,
+        purpose_of_loan: values.purpose_of_loan,
+        phone_number: values.phone_number || '',
+        id_number: values.id_number || '',
+        address: values.address || '',
+        employment_status: values.employment_status || '',
+        monthly_income: parseFloat(values.monthly_income || '0'), // Convert to number
+        notes: values.notes,
+        created_by: user.id,
+        current_approver: user.id, // Initially, submitter is the approver
+        status: 'submitted',
+      };
       
-      // Convert monthly_income to string before insertion
-      const monthlyIncomeStr = clientData.monthly_income.toString();
-      
-      // Insert the loan application
-      const { data, error } = await supabase
+      const { data: loanApplication, error: loanError } = await supabase
         .from('loan_applications')
-        .insert({
-          // Don't include client_id directly as it might not be in the schema
-          // Instead use these fields that match the database table
-          client_name: clientData.full_name,
-          phone_number: clientData.phone_number,
-          id_number: clientData.id_number,
-          address: clientData.address,
-          loan_type: values.loan_type,
-          loan_amount: String(numericAmount),
-          loan_term: values.loan_term,
-          purpose_of_loan: values.purpose_of_loan,
-          applicant_name: values.applicant_name || clientData.full_name,
-          has_collateral: values.has_collateral,
-          collateral_description: values.collateral_description || '',
-          notes: values.notes || '',
-          // terms_accepted: values.terms_accepted,
-          created_by: user.id,
-          current_approver: manager_id,
-          employment_status: clientData.employment_status,
-          monthly_income: monthlyIncomeStr,
-          email: clientData.email,
-          loan_id: loanIdentificationNumber // Add the loan identification number
-        })
-        .select();
-
-      if (error) throw error;
-
-      // Get the loan application ID
-      if (data && data[0] && data[0].id) {
-        setLoanApplicationId(data[0].id);
-        
-        // Switch to documents tab after successful submission
-        setActiveTab("documents");
-        
-        toast({
-          title: "Loan application submitted",
-          description: `Your loan application has been submitted successfully with ID: ${loanIdentificationNumber}. You can now upload supporting documents.`,
-          variant: "default",
-        });
-      } else {
-        throw new Error("Failed to get loan application ID");
+        .insert(loanApplicationData)
+        .select()
+        .single();
+      
+      if (loanError) {
+        throw new Error(`Failed to create loan application: ${loanError.message}`);
       }
-    } catch (error: any) {
-      console.error('Error submitting loan application:', error);
-      setSubmissionError(error.message || "An unexpected error occurred");
+
+      // Create a workflow for this application
+      const { data: workflow, error: workflowError } = await supabase
+        .from('loan_application_workflow')
+        .insert({
+          loan_application_id: loanApplication.id,
+          current_stage: 'field_officer',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (workflowError) {
+        console.error("Error creating workflow:", workflowError);
+        // Not critical, don't throw error
+      }
+
+      // Create notification
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          message: `Your loan application for ${values.loan_type} has been submitted successfully.`,
+          related_to: 'loan_application',
+          entity_id: loanApplication.id
+        });
+      
       toast({
-        title: "Failed to submit application",
-        description: error.message || "An unexpected error occurred",
+        title: "Loan application submitted",
+        description: "Your loan application has been submitted successfully.",
+      });
+      
+      return loanApplication;
+
+    } catch (err: any) {
+      console.error("Loan application error:", err);
+      setError(err.message);
+      
+      toast({
+        title: "Error",
+        description: err.message || "Failed to submit loan application",
         variant: "destructive",
       });
+      
+      return null;
     } finally {
       setIsSubmitting(false);
     }

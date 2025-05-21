@@ -50,7 +50,7 @@ export interface Client {
   created_at: string;
   updated_at?: string;
   user_id?: string;
-  deleted_at?: string; // Added this field to fix TypeScript errors
+  deleted_at?: string;
 }
 
 export interface LoanDetailsFormProps {

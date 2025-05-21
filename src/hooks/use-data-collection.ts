@@ -1,281 +1,198 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { DataCollectionFormValues } from '@/components/loans/data-collection/schema';
-import { useDocumentUpload, UploadedDocument } from '@/hooks/use-document-upload';
-import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
+import { useToast } from '@/hooks/use-toast';
+import { Client } from '@/types/loan';
 
-export function useDataCollection() {
+interface LoanApplicationForm {
+  client_type: string;
+  client_id?: string;
+  full_name?: string;
+  phone_number?: string;
+  email?: string;
+  id_number?: string;
+  address?: string;
+  employment_status?: string;
+  monthly_income?: string;
+  loan_type: string;
+  loan_amount: string;
+  purpose_of_loan: string;
+  notes?: string;
+}
+
+export const useDataCollection = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  
-  // Dialog state
-  const [open, setOpen] = useState(false);
-  
-  // Form state
-  const [activeTab, setActiveTab] = useState("client");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formReady, setFormReady] = useState(false);
-  const [generatedLoanId, setGeneratedLoanId] = useState<string>('');
-  
-  // Application data
-  const [clientId, setClientId] = useState<string | null>(null);
-  const [applicationId, setApplicationId] = useState<string | null>(null);
-  
-  // Document upload hooks
-  const {
-    isUploading: isUploadingId,
-    uploadDocument: uploadIdDocument,
-    uploadedDocuments: idDocuments,
-    deleteDocument: deleteIdDocument,
-    setUploadedDocuments: setIdDocuments
-  } = useDocumentUpload();
-  
-  const {
-    isUploading: isUploadingPassport,
-    uploadDocument: uploadPassportPhoto,
-    uploadedDocuments: passportPhotos,
-    deleteDocument: deletePassportPhoto,
-    setUploadedDocuments: setPassportPhotos
-  } = useDocumentUpload();
-  
-  const {
-    isUploading: isUploadingGuarantor1,
-    uploadDocument: uploadGuarantor1Photo,
-    uploadedDocuments: guarantor1Photos,
-    deleteDocument: deleteGuarantor1Photo,
-    setUploadedDocuments: setGuarantor1Photos
-  } = useDocumentUpload();
-  
-  const {
-    isUploading: isUploadingGuarantor2,
-    uploadDocument: uploadGuarantor2Photo,
-    uploadedDocuments: guarantor2Photos,
-    deleteDocument: deleteGuarantor2Photo,
-    setUploadedDocuments: setGuarantor2Photos
-  } = useDocumentUpload();
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [isLoadingClients, setIsLoadingClients] = useState(true);
 
-  // Has the required documents
-  const hasAllRequiredDocuments = idDocuments.length > 0 && passportPhotos.length > 0 && guarantor1Photos.length > 0;
-  
-  // Generate loan ID when component mounts
-  useEffect(() => {
-    setGeneratedLoanId(generateLoanIdentificationNumber());
-  }, []);
-  
-  // Handle opening the dialog
-  useEffect(() => {
-    if (open) {
-      // Reset state when dialog opens
-      setActiveTab("client");
-      setFormReady(false);
-      if (!generatedLoanId) {
-        setGeneratedLoanId(generateLoanIdentificationNumber());
+  // Fetch clients
+  const fetchClients = async () => {
+    setIsLoadingClients(true);
+    try {
+      const { data, error } = await supabase
+        .from('client_name')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error("Error fetching clients:", error);
+        setError(error.message);
+        toast({
+          title: "Error fetching clients",
+          description: error.message || "Failed to load clients.",
+          variant: "destructive",
+        });
+        return;
       }
-    }
-  }, [open]);
-  
-  // Handle form submission
-  const onSubmit = async (values: DataCollectionFormValues) => {
-    if (!user) {
+
+      setClients(data as Client[]);
+    } catch (error: any) {
+      console.error("Unexpected error fetching clients:", error);
+      setError(error.message);
       toast({
-        title: "Authentication required",
-        description: "You must be logged in to submit an application",
+        title: "Unexpected error",
+        description: error.message || "An unexpected error occurred while loading clients.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsLoadingClients(false);
     }
+  };
 
+  // Update the insert function to handle monthly_income as a number
+  const insertApplication = async (values: LoanApplicationForm) => {
     setIsSubmitting(true);
-    
+    setError(null);
+
     try {
-      // First, create or find the client
-      let client_id = values.client_id;
+      // Determine if we're working with an existing client or creating a new one
+      const isExistingClient = values.client_type === 'existing' && values.client_id;
+      let clientId = values.client_id;
+      let clientName = '';
       
-      if (values.isNewClient) {
-        // Create new client
-        const { data: newClient, error: clientError } = await supabase
+      // If creating new client, do so first
+      if (!isExistingClient) {
+        const { data: clientData, error: clientError } = await supabase
           .from('client_name')
           .insert({
-            full_name: values.full_name,
-            phone_number: values.phone_number,
-            id_number: values.id_number,
-            address: values.address || '',
-            employment_status: values.employment_status || 'employed',
-            // Convert monthly_income to a number before insertion
-            monthly_income: parseFloat(values.monthly_income || '0'),
-            email: values.email || null,
-            user_id: user.id
-          })
-          .select()
-          .single();
-          
-        if (clientError) throw clientError;
-        client_id = newClient.id;
-        setClientId(newClient.id);
-      } else {
-        setClientId(client_id || null);
-      }
-      
-      // Create loan application
-      if (client_id) {
-        // Convert loan_amount to string explicitly
-        const loanAmountStr = values.loan_amount?.toString() || '';
-        const monthlyIncomeStr = values.monthly_income?.toString() || '';
-
-        const { data: application, error: applicationError } = await supabase
-          .from('loan_applications')
-          .insert({
-            client_name: values.full_name || '',
+            full_name: values.full_name || '',
             phone_number: values.phone_number || '',
+            email: values.email || null,
             id_number: values.id_number || '',
             address: values.address || '',
             employment_status: values.employment_status || '',
-            monthly_income: monthlyIncomeStr,
-            loan_type: values.loan_type || 'personal',
-            loan_amount: loanAmountStr,
-            loan_id: generatedLoanId,
-            purpose_of_loan: values.purpose_of_loan || '',
-            notes: values.purpose_of_loan || '',
-            created_by: user.id,
-            current_approver: user.id, // Default to self for demo
-            status: 'submitted'
+            monthly_income: parseFloat(values.monthly_income || '0'), // Convert to number
+            created_at: new Date().toISOString(),
           })
-          .select()
+          .select('id, full_name')
           .single();
-          
-        if (applicationError) throw applicationError;
         
-        setApplicationId(application.id);
-        setFormReady(true);
-        setActiveTab("documents");
+        if (clientError) {
+          console.error("Error creating client:", clientError);
+          throw new Error(`Failed to create client: ${clientError.message}`);
+        }
         
-        toast({
-          title: "Application saved",
-          description: "Client information has been saved successfully.",
-        });
+        if (!clientData) throw new Error("Failed to create client: No data returned");
+        
+        clientId = clientData.id;
+        clientName = clientData.full_name;
+      } else {
+        // Find the selected client's details
+        const selectedClient = clients.find(client => client.id === values.client_id);
+        if (selectedClient) {
+          clientName = selectedClient.full_name;
+        }
       }
-    } catch (error: any) {
-      console.error('Submission error:', error);
+      
+      if (!clientId || !clientName) {
+        throw new Error("Client information is incomplete");
+      }
+      
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
+      
+      // Format application data
+      const applicationData = {
+        client_id: clientId,
+        client_name: clientName,
+        loan_type: values.loan_type,
+        loan_amount: values.loan_amount,
+        purpose_of_loan: values.purpose_of_loan,
+        created_by: user.id,
+        phone_number: values.phone_number || '', 
+        id_number: values.id_number || '',
+        employment_status: values.employment_status || '',
+        monthly_income: parseFloat(values.monthly_income || '0'), // Convert to number
+        address: values.address || '',
+        current_approver: user.id,
+        notes: values.notes || '',
+        status: 'submitted',
+        created_at: new Date().toISOString(),
+      };
+      
+      // Insert the application
+      const { data, error } = await supabase
+        .from('loan_applications')
+        .insert(applicationData)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error creating application:", error);
+        throw new Error(`Failed to submit application: ${error.message}`);
+      }
+      
+      if (!data) {
+        throw new Error("Failed to submit application: No data returned");
+      }
+      
+      // Create notification for the submission
+      try {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: user.id,
+            message: `Your loan application for ${values.loan_type} has been submitted successfully.`,
+            related_to: 'loan_application',
+            entity_id: data.id
+          });
+      } catch (notifError) {
+        console.error("Error creating notification:", notifError);
+        // Non-critical error, don't throw
+      }
+      
       toast({
-        title: "Error saving application",
-        description: error.message || "An unexpected error occurred",
+        title: "Loan application submitted",
+        description: "Your loan application has been submitted successfully.",
+      });
+
+      return data;
+    } catch (error: any) {
+      setError(error.message);
+      console.error("Error submitting application:", error);
+      
+      toast({
+        title: "Error submitting application",
+        description: error.message || "There was a problem submitting your application.",
         variant: "destructive",
       });
+      
+      return null;
     } finally {
       setIsSubmitting(false);
     }
   };
-  
-  // Handle document uploads
-  const handleUploadIdDocument = async (file: File, description?: string) => {
-    if (!applicationId) {
-      toast({
-        title: "Client information required",
-        description: "Please save client information first",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    await uploadIdDocument(file, 'id_document', applicationId, description);
-  };
-  
-  const handleUploadPassportPhoto = async (file: File, description?: string) => {
-    if (!applicationId) {
-      toast({
-        title: "Client information required",
-        description: "Please save client information first",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    await uploadPassportPhoto(file, 'passport_photo', applicationId, description);
-  };
-  
-  const handleUploadGuarantor1Photo = async (file: File, description?: string) => {
-    if (!applicationId) {
-      toast({
-        title: "Client information required",
-        description: "Please save client information first",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    await uploadGuarantor1Photo(file, 'guarantor1_photo', applicationId, description);
-  };
-  
-  const handleUploadGuarantor2Photo = async (file: File, description?: string) => {
-    if (!applicationId) {
-      toast({
-        title: "Client information required",
-        description: "Please save client information first",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    await uploadGuarantor2Photo(file, 'guarantor2_photo', applicationId, description);
-  };
-  
-  // Handle finish button
-  const handleFinish = () => {
-    setOpen(false);
-    
-    toast({
-      title: "Process complete",
-      description: "Client onboarding process completed successfully",
-    });
-    
-    // Optionally navigate somewhere
-    // navigate('/dashboard');
-  };
-  
-  // Handle regenerate loan ID
-  const handleRegenerateLoanId = () => {
-    const newId = generateLoanIdentificationNumber();
-    setGeneratedLoanId(newId);
-    
-    toast({
-      title: "ID regenerated",
-      description: `New reference ID: ${newId}`,
-    });
-  };
 
   return {
-    open,
-    setOpen,
-    activeTab,
-    setActiveTab,
     isSubmitting,
-    formReady,
-    generatedLoanId,
-    clientId,
-    applicationId,
-    isUploadingId,
-    isUploadingPassport,
-    isUploadingGuarantor1,
-    isUploadingGuarantor2,
-    idDocuments,
-    passportPhotos,
-    guarantor1Photos,
-    guarantor2Photos,
-    onSubmit,
-    handleUploadIdDocument,
-    handleUploadPassportPhoto,
-    handleUploadGuarantor1Photo,
-    handleUploadGuarantor2Photo,
-    deleteIdDocument,
-    deletePassportPhoto,
-    deleteGuarantor1Photo,
-    deleteGuarantor2Photo,
-    handleFinish,
-    handleRegenerateLoanId,
-    hasAllRequiredDocuments
+    error,
+    insertApplication,
+    fetchClients,
+    clients,
+    isLoadingClients,
   };
-}
+};

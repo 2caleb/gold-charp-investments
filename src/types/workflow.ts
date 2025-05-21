@@ -13,11 +13,11 @@ export interface LoanWorkflow {
   director_notes: string | null;
   ceo_notes: string | null;
   chairperson_notes: string | null;
-  field_officer_name?: string | null;
-  manager_name?: string | null;
-  director_name?: string | null;
-  ceo_name?: string | null;
-  chairperson_name?: string | null;
+  field_officer_name: string | null;
+  manager_name: string | null;
+  director_name: string | null;
+  ceo_name: string | null;
+  chairperson_name: string | null;
   created_at: string;
   updated_at: string;
 }

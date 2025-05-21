@@ -102,11 +102,23 @@ export function useRolePermissions() {
     return userRoleIndex >= requiredRoleIndex;
   };
 
+  // Helper functions to check specific roles
+  const isFieldOfficer = userRole === 'field_officer' || hasPermission('field_officer');
+  const isManager = userRole === 'manager' || hasPermission('manager');
+  const isDirector = userRole === 'director' || hasPermission('director');
+  const isCEO = userRole === 'ceo' || hasPermission('ceo');
+  const isChairperson = userRole === 'chairperson' || hasPermission('chairperson');
+
   return {
     userRole,
     userName,
     hasPermission,
     isLoading,
-    error
+    error,
+    isFieldOfficer,
+    isManager,
+    isDirector,
+    isCEO,
+    isChairperson
   };
 }

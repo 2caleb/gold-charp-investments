@@ -108,7 +108,7 @@ const ClientsList = () => {
       
       // Update local state
       setClients(clients.filter(c => c.id !== clientToDelete.id));
-      setDeletedClients([...deletedClients, {...clientToDelete, deleted_at: new Date().toISOString()}]);
+      setDeletedClients([...deletedClients, {...clientToDelete, deleted_at: new Date().toISOString()} as Client]);
     } catch (error: any) {
       toast({
         title: 'Error removing client',
@@ -137,7 +137,7 @@ const ClientsList = () => {
       
       // Update local state
       setDeletedClients(deletedClients.filter(c => c.id !== client.id));
-      setClients([{...client, deleted_at: undefined}, ...clients]);
+      setClients([{...client, deleted_at: undefined} as Client, ...clients]);
     } catch (error: any) {
       toast({
         title: 'Error restoring client',

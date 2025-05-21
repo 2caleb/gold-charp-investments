@@ -28,6 +28,7 @@ export type Database = {
         Row: {
           address: string
           created_at: string
+          deleted_at: string | null
           email: string | null
           employment_status: string
           full_name: string
@@ -41,6 +42,7 @@ export type Database = {
         Insert: {
           address: string
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           employment_status: string
           full_name: string
@@ -54,6 +56,7 @@ export type Database = {
         Update: {
           address?: string
           created_at?: string
+          deleted_at?: string | null
           email?: string | null
           employment_status?: string
           full_name?: string
@@ -126,52 +129,67 @@ export type Database = {
       loan_application_workflow: {
         Row: {
           ceo_approved: boolean | null
+          ceo_name: string | null
           ceo_notes: string | null
           chairperson_approved: boolean | null
+          chairperson_name: string | null
           chairperson_notes: string | null
           created_at: string
           current_stage: string
           director_approved: boolean | null
+          director_name: string | null
           director_notes: string | null
           field_officer_approved: boolean | null
+          field_officer_name: string | null
           field_officer_notes: string | null
           id: string
           loan_application_id: string | null
           manager_approved: boolean | null
+          manager_name: string | null
           manager_notes: string | null
           updated_at: string
         }
         Insert: {
           ceo_approved?: boolean | null
+          ceo_name?: string | null
           ceo_notes?: string | null
           chairperson_approved?: boolean | null
+          chairperson_name?: string | null
           chairperson_notes?: string | null
           created_at?: string
           current_stage?: string
           director_approved?: boolean | null
+          director_name?: string | null
           director_notes?: string | null
           field_officer_approved?: boolean | null
+          field_officer_name?: string | null
           field_officer_notes?: string | null
           id?: string
           loan_application_id?: string | null
           manager_approved?: boolean | null
+          manager_name?: string | null
           manager_notes?: string | null
           updated_at?: string
         }
         Update: {
           ceo_approved?: boolean | null
+          ceo_name?: string | null
           ceo_notes?: string | null
           chairperson_approved?: boolean | null
+          chairperson_name?: string | null
           chairperson_notes?: string | null
           created_at?: string
           current_stage?: string
           director_approved?: boolean | null
+          director_name?: string | null
           director_notes?: string | null
           field_officer_approved?: boolean | null
+          field_officer_name?: string | null
           field_officer_notes?: string | null
           id?: string
           loan_application_id?: string | null
           manager_approved?: boolean | null
+          manager_name?: string | null
           manager_notes?: string | null
           updated_at?: string
         }
