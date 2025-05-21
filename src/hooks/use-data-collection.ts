@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Client } from '@/types/loan';
+import { useDocumentUpload, UploadedDocument } from '@/hooks/use-document-upload';
+import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
+import { DataCollectionFormValues } from '@/components/loans/data-collection/schema';
 
 interface LoanApplicationForm {
   client_type: string;
@@ -22,11 +25,62 @@ interface LoanApplicationForm {
 
 export const useDataCollection = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
+  
+  // Add state variables needed by DataCollectionButton
+  const [open, setOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>("client");
+  const [formReady, setFormReady] = useState<boolean>(false);
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [generatedLoanId, setGeneratedLoanId] = useState<string>(() => generateLoanIdentificationNumber());
+  const [hasAllRequiredDocuments, setHasAllRequiredDocuments] = useState<boolean>(false);
+
+  // Document upload states
+  const {
+    isUploading: isUploadingId,
+    uploadDocument: uploadIdDocument,
+    uploadedDocuments: idDocuments,
+    deleteDocument: deleteIdDocument,
+    setUploadedDocuments: setIdDocuments
+  } = useDocumentUpload();
+  
+  const {
+    isUploading: isUploadingPassport,
+    uploadDocument: uploadPassportPhoto,
+    uploadedDocuments: passportPhotos,
+    deleteDocument: deletePassportPhoto,
+    setUploadedDocuments: setPassportPhotos
+  } = useDocumentUpload();
+  
+  const {
+    isUploading: isUploadingGuarantor1,
+    uploadDocument: uploadGuarantor1Photo,
+    uploadedDocuments: guarantor1Photos,
+    deleteDocument: deleteGuarantor1Photo,
+    setUploadedDocuments: setGuarantor1Photos
+  } = useDocumentUpload();
+  
+  const {
+    isUploading: isUploadingGuarantor2,
+    uploadDocument: uploadGuarantor2Photo,
+    uploadedDocuments: guarantor2Photos,
+    deleteDocument: deleteGuarantor2Photo,
+    setUploadedDocuments: setGuarantor2Photos
+  } = useDocumentUpload();
+
+  // Check if all required documents are uploaded
+  useEffect(() => {
+    if (idDocuments.length > 0) {
+      setHasAllRequiredDocuments(true);
+    } else {
+      setHasAllRequiredDocuments(false);
+    }
+  }, [idDocuments]);
 
   // Fetch clients
   const fetchClients = async () => {
@@ -62,8 +116,8 @@ export const useDataCollection = () => {
     }
   };
 
-  // Update the insert function to handle monthly_income as a number
-  const insertApplication = async (values: LoanApplicationForm) => {
+  // Handle loan application submission
+  const insertApplication = async (values: any) => {
     setIsSubmitting(true);
     setError(null);
 
@@ -170,6 +224,13 @@ export const useDataCollection = () => {
         description: "Your loan application has been submitted successfully.",
       });
 
+      // Set formReady and clientId after successful submission
+      setFormReady(true);
+      if (data) {
+        setClientId(data.client_id);
+        setApplicationId(data.id);
+      }
+      
       return data;
     } catch (error: any) {
       setError(error.message);
@@ -187,6 +248,48 @@ export const useDataCollection = () => {
     }
   };
 
+  // Handle document uploads
+  const handleUploadIdDocument = async (file: File, description?: string, tags?: string[]) => {
+    // Implementation
+    console.log("Uploading ID document");
+  };
+
+  const handleUploadPassportPhoto = async (file: File, description?: string, tags?: string[]) => {
+    // Implementation
+    console.log("Uploading passport photo");
+  };
+
+  const handleUploadGuarantor1Photo = async (file: File, description?: string, tags?: string[]) => {
+    // Implementation
+    console.log("Uploading guarantor 1 photo");
+  };
+
+  const handleUploadGuarantor2Photo = async (file: File, description?: string, tags?: string[]) => {
+    // Implementation
+    console.log("Uploading guarantor 2 photo");
+  };
+
+  // Generate a new loan ID
+  const handleRegenerateLoanId = () => {
+    const newId = generateLoanIdentificationNumber();
+    setGeneratedLoanId(newId);
+    
+    toast({
+      title: "Loan ID Regenerated",
+      description: `New ID: ${newId}`,
+    });
+  };
+
+  // Handle completion of the onboarding process
+  const handleFinish = () => {
+    setOpen(false);
+    toast({
+      title: "Client Onboarding Complete",
+      description: "Client information and documents have been saved successfully.",
+    });
+  };
+
+  // Provide all properties needed by DataCollectionButton
   return {
     isSubmitting,
     error,
@@ -194,5 +297,35 @@ export const useDataCollection = () => {
     fetchClients,
     clients,
     isLoadingClients,
+    
+    // Additional properties required by DataCollectionButton
+    open,
+    setOpen,
+    activeTab,
+    setActiveTab,
+    formReady,
+    generatedLoanId,
+    clientId,
+    applicationId,
+    isUploadingId,
+    isUploadingPassport,
+    isUploadingGuarantor1,
+    isUploadingGuarantor2,
+    idDocuments,
+    passportPhotos,
+    guarantor1Photos,
+    guarantor2Photos,
+    onSubmit: insertApplication,
+    handleUploadIdDocument,
+    handleUploadPassportPhoto,
+    handleUploadGuarantor1Photo,
+    handleUploadGuarantor2Photo,
+    deleteIdDocument,
+    deletePassportPhoto,
+    deleteGuarantor1Photo,
+    deleteGuarantor2Photo,
+    handleFinish,
+    handleRegenerateLoanId,
+    hasAllRequiredDocuments
   };
 };

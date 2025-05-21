@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useUser } from '@/hooks/use-user';
+
 import {
+  Form,
   FormField,
   FormItem,
   FormLabel,
@@ -9,7 +17,15 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue,
+  SelectGroup
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import InstallmentCalculator from './InstallmentCalculator';
 import { LoanDetailsFormProps } from '@/types/loan';
@@ -293,9 +309,9 @@ const LoanDetailsForm = ({
         {/* Show installment schedule when loan amount and term are filled */}
         {loanAmount > 0 && termLength > 0 && (
           <InstallmentCalculator 
-            loanAmount={loanAmount} 
-            duration={termLength} 
-            termUnit={termUnit}
+            amount={loanAmount} // Fixed prop name to match component expectations
+            term={termLength} // Fixed prop name to match component expectations
+            unit={termUnit} // Fixed prop name to match component expectations
             interestRate={15} // Default 15% annual interest rate
           />
         )}

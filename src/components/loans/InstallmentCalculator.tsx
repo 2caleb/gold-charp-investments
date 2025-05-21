@@ -1,224 +1,205 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Calculator } from 'lucide-react';
-
-interface InstallmentPlan {
-  paymentNumber: number;
-  date: string;
-  principal: number;
-  interest: number;
-  payment: number;
-  balance: number;
-}
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 
 interface InstallmentCalculatorProps {
-  initialAmount?: string;
-  className?: string;
+  // Support both old and new prop names for backward compatibility
+  amount?: number;
+  term?: number;
+  unit?: 'days' | 'weeks' | 'months' | 'years';
+  loanAmount?: number;
+  duration?: number;
+  termUnit?: 'days' | 'weeks' | 'months' | 'years';
+  interestRate: number;
 }
 
-const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ initialAmount = "", className = "" }) => {
-  const [loanAmount, setLoanAmount] = useState(initialAmount);
-  const [interestRate, setInterestRate] = useState("15");
-  const [loanTerm, setLoanTerm] = useState("12");
-  const [installmentPlan, setInstallmentPlan] = useState<InstallmentPlan[]>([]);
-  const [monthlyPayment, setMonthlyPayment] = useState<number | null>(null);
-  const [showTable, setShowTable] = useState(false);
-  const [termUnit, setTermUnit] = useState("months");
+type InstallmentSchedule = {
+  date: string;
+  payment: number;
+  principal: number;
+  interest: number;
+  balance: number;
+}[];
+
+const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({
+  amount,
+  term,
+  unit,
+  loanAmount,
+  duration,
+  termUnit,
+  interestRate
+}) => {
+  // Use either new or old prop names
+  const finalAmount = amount || loanAmount || 0;
+  const finalTerm = term || duration || 12;
+  const finalUnit = unit || termUnit || 'months';
+  
+  const [totalInterest, setTotalInterest] = useState<number>(0);
+  const [monthlyPayment, setMonthlyPayment] = useState<number>(0);
+  const [schedule, setSchedule] = useState<InstallmentSchedule>([]);
+  const [progressValue, setProgressValue] = useState<number>(0);
 
   useEffect(() => {
-    // Update loan amount when initialAmount prop changes
-    if (initialAmount) {
-      setLoanAmount(initialAmount);
+    if (finalAmount > 0 && finalTerm > 0) {
+      calculateLoan();
     }
-  }, [initialAmount]);
+  }, [finalAmount, finalTerm, finalUnit, interestRate]);
 
-  const calculateInstallments = () => {
-    // Parse inputs
-    const principal = parseFloat(loanAmount.replace(/,/g, ''));
-    const rate = parseFloat(interestRate) / 100 / 12; // Monthly interest rate
-    const term = parseInt(loanTerm); // Term in months
-    
-    if (isNaN(principal) || isNaN(rate) || isNaN(term) || principal <= 0 || term <= 0) {
-      return;
+  const calculateLoan = () => {
+    // Convert terms to months for calculation
+    let termInMonths = finalTerm;
+    if (finalUnit === 'years') {
+      termInMonths = finalTerm * 12;
+    } else if (finalUnit === 'weeks') {
+      termInMonths = Math.ceil(finalTerm / 4.33);
+    } else if (finalUnit === 'days') {
+      termInMonths = Math.ceil(finalTerm / 30);
     }
+
+    // Convert annual rate to monthly
+    const monthlyRate = interestRate / 100 / 12;
     
-    // Calculate monthly payment using PMT formula
-    const x = Math.pow(1 + rate, term);
-    const monthly = (principal * x * rate) / (x - 1);
-    setMonthlyPayment(monthly);
+    // Calculate monthly payment (PMT formula)
+    const payment = 
+      finalAmount * monthlyRate * Math.pow(1 + monthlyRate, termInMonths) / 
+      (Math.pow(1 + monthlyRate, termInMonths) - 1);
+    
+    setMonthlyPayment(payment);
     
     // Calculate amortization schedule
-    let balance = principal;
-    const schedule: InstallmentPlan[] = [];
+    const newSchedule: InstallmentSchedule = [];
+    let balance = finalAmount;
+    let totalInterestPaid = 0;
+    
     const today = new Date();
     
-    for (let i = 1; i <= term; i++) {
-      // Calculate next payment date
-      const nextDate = new Date(today);
-      nextDate.setMonth(today.getMonth() + i);
-      
-      // Calculate interest and principal for this payment
-      const interestPayment = balance * rate;
-      let principalPayment = monthly - interestPayment;
-      
-      // Adjust for final payment
-      if (i === term) {
-        principalPayment = balance;
-      }
-      
-      // Update balance
+    for (let i = 1; i <= termInMonths; i++) {
+      const interestPayment = balance * monthlyRate;
+      const principalPayment = payment - interestPayment;
       balance -= principalPayment;
-      if (balance < 0.01) balance = 0;
+      totalInterestPaid += interestPayment;
       
-      // Add to schedule
-      schedule.push({
-        paymentNumber: i,
-        date: nextDate.toLocaleDateString(),
-        principal: principalPayment,
-        interest: interestPayment,
-        payment: principalPayment + interestPayment,
-        balance: balance
+      // Calculate payment date
+      const paymentDate = new Date(today);
+      paymentDate.setMonth(today.getMonth() + i);
+      
+      // Prevent negative balance on final payment due to rounding
+      const adjustedBalance = i === termInMonths ? 0 : Math.max(0, balance);
+      
+      newSchedule.push({
+        date: paymentDate.toLocaleDateString(),
+        payment: Number(payment.toFixed(2)),
+        principal: Number(principalPayment.toFixed(2)),
+        interest: Number(interestPayment.toFixed(2)),
+        balance: Number(adjustedBalance.toFixed(2))
       });
     }
     
-    setInstallmentPlan(schedule);
-    setShowTable(true);
+    setTotalInterest(totalInterestPaid);
+    setSchedule(newSchedule);
+    
+    // Animate progress bar
+    setTimeout(() => {
+      setProgressValue(100);
+    }, 300);
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
-  };
+  if (!finalAmount || finalAmount <= 0) {
+    return null;
+  }
 
   return (
-    <Card className={className}>
+    <Card className="mt-6">
       <CardHeader>
-        <CardTitle className="flex items-center text-xl">
-          <Calculator className="mr-2 h-5 w-5 text-purple-600" />
-          Loan Installment Calculator
-        </CardTitle>
+        <CardTitle>Loan Repayment Schedule</CardTitle>
         <CardDescription>
-          Calculate your monthly payments and view full repayment schedule
+          Estimated repayment plan based on {interestRate}% annual interest rate
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <Label htmlFor="loanAmount">Loan Amount</Label>
-            <Input
-              id="loanAmount"
-              value={loanAmount}
-              onChange={(e) => setLoanAmount(e.target.value)}
-              placeholder="Enter loan amount"
-              className="mt-1"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-gray-50 p-4 rounded-lg border text-center">
+            <h3 className="text-sm font-medium text-gray-500 mb-1">Monthly Payment</h3>
+            <p className="text-2xl font-bold text-purple-700">
+              {new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'UGX',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              }).format(monthlyPayment)}
+            </p>
           </div>
-          <div>
-            <Label htmlFor="interestRate">Annual Interest Rate (%)</Label>
-            <Input
-              id="interestRate"
-              value={interestRate}
-              onChange={(e) => setInterestRate(e.target.value)}
-              placeholder="Enter interest rate"
-              className="mt-1"
-            />
+          <div className="bg-gray-50 p-4 rounded-lg border text-center">
+            <h3 className="text-sm font-medium text-gray-500 mb-1">Total Interest</h3>
+            <p className="text-2xl font-bold text-purple-700">
+              {new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'UGX',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              }).format(totalInterest)}
+            </p>
           </div>
-          <div>
-            <Label htmlFor="loanTerm">Loan Term</Label>
-            <Input
-              id="loanTerm"
-              value={loanTerm}
-              onChange={(e) => setLoanTerm(e.target.value)}
-              placeholder="Enter loan term"
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="termUnit">Term Unit</Label>
-            <Select value={termUnit} onValueChange={setTermUnit}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select unit" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="months">Months</SelectItem>
-                <SelectItem value="years">Years</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="bg-gray-50 p-4 rounded-lg border text-center">
+            <h3 className="text-sm font-medium text-gray-500 mb-1">Total Payment</h3>
+            <p className="text-2xl font-bold text-purple-700">
+              {new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'UGX',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              }).format(finalAmount + totalInterest)}
+            </p>
           </div>
         </div>
         
-        <Button 
-          onClick={calculateInstallments}
-          className="w-full bg-purple-700 hover:bg-purple-800 mb-6"
-        >
-          Calculate Installments
-        </Button>
-
-        {monthlyPayment !== null && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-md mb-6 text-center"
-          >
-            <h3 className="text-lg font-semibold mb-1">Monthly Payment</h3>
-            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-              {formatCurrency(monthlyPayment)}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Total Payment: {formatCurrency(monthlyPayment * parseInt(loanTerm))}
-            </p>
-          </motion.div>
-        )}
-
-        <AnimatePresence>
-          {showTable && installmentPlan.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <h3 className="font-medium mb-2">Repayment Schedule</h3>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>#</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Principal</TableHead>
-                      <TableHead>Interest</TableHead>
-                      <TableHead>Payment</TableHead>
-                      <TableHead>Balance</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {installmentPlan.map((payment) => (
-                      <TableRow key={payment.paymentNumber}>
-                        <TableCell>{payment.paymentNumber}</TableCell>
-                        <TableCell>{payment.date}</TableCell>
-                        <TableCell>{formatCurrency(payment.principal)}</TableCell>
-                        <TableCell>{formatCurrency(payment.interest)}</TableCell>
-                        <TableCell className="font-medium">{formatCurrency(payment.payment)}</TableCell>
-                        <TableCell>{formatCurrency(payment.balance)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="mb-4">
+          <Progress value={progressValue} className="h-2" />
+        </div>
+        
+        <Table>
+          <TableCaption>Payment schedule for {finalTerm} {finalUnit}</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Payment Date</TableHead>
+              <TableHead>Payment Amount</TableHead>
+              <TableHead>Principal</TableHead>
+              <TableHead>Interest</TableHead>
+              <TableHead>Remaining Balance</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {schedule.slice(0, 6).map((payment, index) => (
+              <TableRow key={index}>
+                <TableCell>{payment.date}</TableCell>
+                <TableCell>{payment.payment.toLocaleString()}</TableCell>
+                <TableCell>{payment.principal.toLocaleString()}</TableCell>
+                <TableCell>{payment.interest.toLocaleString()}</TableCell>
+                <TableCell>{payment.balance.toLocaleString()}</TableCell>
+              </TableRow>
+            ))}
+            {schedule.length > 6 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center italic text-muted-foreground">
+                  ... {schedule.length - 6} more payments
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
+      <CardFooter className="flex justify-between">
+        <Badge variant="outline" className="px-3 py-1">
+          Interest Rate: {interestRate}%
+        </Badge>
+        <Badge variant="secondary" className="px-3 py-1">
+          {finalTerm} {finalUnit}
+        </Badge>
+      </CardFooter>
     </Card>
   );
 };
