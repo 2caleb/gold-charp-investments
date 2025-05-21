@@ -30,7 +30,8 @@ serve(async (req) => {
       applicationId, 
       stage, 
       approved, 
-      notes
+      notes,
+      approverName
     } = await req.json();
 
     if (!workflowId || !applicationId || !stage) {
@@ -86,6 +87,11 @@ serve(async (req) => {
       [`${stage}_notes`]: notes
     };
     
+    // Add approver name if available
+    if (approverName) {
+      updateObject[`${stage}_name`] = approverName;
+    }
+    
     // Only update next stage if moving forward
     if (nextStage) {
       updateObject.current_stage = nextStage;
@@ -124,15 +130,15 @@ serve(async (req) => {
     
     if (approved) {
       if (nextStage) {
-        notificationMessage = `Loan application was approved at ${stage} stage and moved to ${nextStage} stage.`;
+        notificationMessage = `Loan application was approved by ${approverName || stage} and moved to ${nextStage} stage.`;
       } else {
-        notificationMessage = `Loan application has been fully approved!`;
+        notificationMessage = `Loan application has been fully approved by ${approverName || stage}!`;
       }
     } else {
-      notificationMessage = `Loan application was rejected at ${stage} stage.`;
+      notificationMessage = `Loan application was rejected by ${approverName || stage}.`;
       
       if (stage === 'ceo') {
-        notificationMessage = `FINAL REJECTION: Loan application was rejected by the CEO.`;
+        notificationMessage = `FINAL REJECTION: Loan application was rejected by ${approverName || 'the CEO'}.`;
       }
     }
     

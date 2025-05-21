@@ -8,9 +8,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Check, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Loader2, Check, X, AlertTriangle, CheckCircle2, User, UserCheck, UserX } from 'lucide-react';
 import { WorkflowData } from '@/types/notification';
 import { motion } from 'framer-motion';
+import InstallmentCalculator from '../loans/InstallmentCalculator';
 
 interface LoanApplication {
   id: string;
@@ -36,13 +37,26 @@ interface WorkflowResponse {
   director_notes: string | null;
   ceo_notes: string | null;
   chairperson_notes: string | null;
+  field_officer_name: string | null;
+  manager_name: string | null;
+  director_name: string | null;
+  ceo_name: string | null;
+  chairperson_name: string | null;
   created_at: string;
   updated_at: string;
 }
 
+interface ApproverInfo {
+  stage: string;
+  label: string;
+  approved: boolean | null;
+  notes: string | null;
+  approverName: string | null;
+}
+
 const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
   const { toast } = useToast();
-  const { userRole } = useRolePermissions();
+  const { userRole, userName } = useRolePermissions();
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -51,6 +65,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
   const [application, setApplication] = useState<LoanApplication | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [approvers, setApprovers] = useState<ApproverInfo[]>([]);
 
   useEffect(() => {
     if (!applicationId) return;
@@ -74,17 +89,17 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
 
         // Use the edge function to get workflow data
         const { data: workflowData, error: workflowError } = await supabase
-          .functions
-          .invoke('get_loan_workflow', {
-            body: { application_id: applicationId }
-          });
+          .from('loan_application_workflow')
+          .select('*')
+          .eq('loan_application_id', applicationId)
+          .single();
 
         if (workflowError) {
           throw new Error(`Failed to load workflow: ${workflowError.message}`);
         }
         
         if (workflowData) {
-          setWorkflow(workflowData as WorkflowResponse);
+          setWorkflow(workflowData);
           
           // Set initial notes based on current role if available
           if (workflowData.current_stage && userRole) {
@@ -92,6 +107,46 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
             const currentNotes = workflowData[notesKey] as string | null;
             setNotes(currentNotes || '');
           }
+
+          // Construct approver info
+          const approversInfo: ApproverInfo[] = [
+            { 
+              stage: 'field_officer', 
+              label: 'Field Officer', 
+              approved: workflowData.field_officer_approved,
+              notes: workflowData.field_officer_notes,
+              approverName: workflowData.field_officer_name || 'Field Officer'
+            },
+            { 
+              stage: 'manager', 
+              label: 'Manager', 
+              approved: workflowData.manager_approved,
+              notes: workflowData.manager_notes,
+              approverName: workflowData.manager_name || 'Manager'
+            },
+            { 
+              stage: 'director', 
+              label: 'Director', 
+              approved: workflowData.director_approved,
+              notes: workflowData.director_notes,
+              approverName: workflowData.director_name || 'Director'
+            },
+            { 
+              stage: 'ceo', 
+              label: 'CEO', 
+              approved: workflowData.ceo_approved,
+              notes: workflowData.ceo_notes,
+              approverName: workflowData.ceo_name || 'CEO'
+            },
+            { 
+              stage: 'chairperson', 
+              label: 'Chairperson', 
+              approved: workflowData.chairperson_approved,
+              notes: workflowData.chairperson_notes,
+              approverName: workflowData.chairperson_name || 'Chairperson'
+            },
+          ];
+          setApprovers(approversInfo);
         }
       } catch (error: any) {
         console.error('Error fetching workflow data:', error);
@@ -110,24 +165,67 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
   }, [applicationId, toast, userRole]);
 
   const handleAction = async (approve: boolean) => {
-    if (!workflow || !application) return;
+    if (!workflow || !application || !userName) return;
     
     setIsSaving(true);
     try {
       // Use loan-approval edge function instead of direct update
-      const { data: updatedWorkflow, error } = await supabase
-        .functions
-        .invoke('loan-approval', {
-          body: {
-            workflowId: workflow.id,
-            applicationId,
-            stage: workflow.current_stage,
-            approved: approve,
-            notes,
-          }
-        });
+      const nameField = `${workflow.current_stage}_name`;
+      const approvedField = `${workflow.current_stage}_approved`;
+      const notesField = `${workflow.current_stage}_notes`;
+      
+      // Determine next stage
+      let nextStage = null;
+      if (approve) {
+        const stages = ['field_officer', 'manager', 'director', 'ceo', 'chairperson'];
+        const currentIndex = stages.indexOf(workflow.current_stage);
+        if (currentIndex < stages.length - 1) {
+          nextStage = stages[currentIndex + 1];
+        }
+      }
+      
+      // Update the workflow with approver name
+      const updateData: any = {
+        [approvedField]: approve,
+        [notesField]: notes,
+        [nameField]: userName
+      };
+      
+      if (nextStage) {
+        updateData.current_stage = nextStage;
+      }
+      
+      const { data: updatedWorkflow, error: workflowError } = await supabase
+        .from('loan_application_workflow')
+        .update(updateData)
+        .eq('id', workflow.id)
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (workflowError) throw workflowError;
+
+      // Update application status
+      let applicationStatus = approve ? 
+        (nextStage ? `pending_${nextStage}` : 'approved') : 
+        'rejected';
+        
+      // If CEO rejects, mark as final rejection
+      if (!approve && workflow.current_stage === 'ceo') {
+        applicationStatus = 'rejected_final';
+      }
+      
+      const { data: updatedApplication, error: applicationError } = await supabase
+        .from('loan_applications')
+        .update({ 
+          status: applicationStatus,
+          ...(approve ? {} : { rejection_reason: notes }),
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', applicationId)
+        .select()
+        .single();
+
+      if (applicationError) throw applicationError;
 
       // Show success animation
       if (approve) {
@@ -144,18 +242,24 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
 
       // Update local state with the response data
       if (updatedWorkflow) {
-        setWorkflow(updatedWorkflow as WorkflowResponse);
+        setWorkflow(updatedWorkflow);
+        
+        // Update approvers info
+        const updatedApprovers = [...approvers];
+        const index = updatedApprovers.findIndex(a => a.stage === workflow.current_stage);
+        if (index !== -1) {
+          updatedApprovers[index] = {
+            ...updatedApprovers[index],
+            approved: approve,
+            notes: notes,
+            approverName: userName
+          };
+        }
+        setApprovers(updatedApprovers);
       }
 
-      // Refresh application data
-      const { data: updatedApplication, error: appFetchError } = await supabase
-        .from('loan_applications')
-        .select('id, client_name, loan_amount, loan_type, purpose_of_loan, status')
-        .eq('id', applicationId)
-        .single();
-        
-      if (appFetchError) throw appFetchError;
-      if (updatedApplication) setApplication(updatedApplication);
+      // Update application state
+      setApplication(updatedApplication);
 
     } catch (error: any) {
       console.error('Error processing action:', error);
@@ -297,22 +401,25 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
               </dl>
             </motion.div>
 
-            {/* Workflow status */}
-            <motion.div 
+            {/* Loan Calculator */}
+            <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
+              <InstallmentCalculator initialAmount={application.loan_amount} className="my-4" />
+            </motion.div>
+
+            {/* Workflow status */}
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
               <h3 className="text-lg font-medium">Approval Status</h3>
               <Separator className="my-2" />
               <ul className="space-y-3">
-                {[
-                  { stage: 'field_officer', label: 'Field Officer', approved: workflow.field_officer_approved },
-                  { stage: 'manager', label: 'Manager', approved: workflow.manager_approved },
-                  { stage: 'director', label: 'Director', approved: workflow.director_approved },
-                  { stage: 'chairperson', label: 'Chairperson', approved: workflow.chairperson_approved },
-                  { stage: 'ceo', label: 'CEO', approved: workflow.ceo_approved },
-                ].map((item, index) => (
+                {approvers.map((item, index) => (
                   <motion.li 
                     key={item.stage}
                     className="flex items-center"
@@ -322,23 +429,32 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
                   >
                     {item.approved === true ? (
                       <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mr-2">
-                        <Check className="h-4 w-4 text-white" />
+                        <UserCheck className="h-4 w-4 text-white" />
                       </div>
                     ) : item.approved === false ? (
                       <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center mr-2">
-                        <X className="h-4 w-4 text-white" />
+                        <UserX className="h-4 w-4 text-white" />
                       </div>
                     ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-gray-300 mr-2"></div>
+                      <div className="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center mr-2">
+                        <User className="h-4 w-4 text-gray-400" />
+                      </div>
                     )}
-                    <span className={workflow.current_stage === item.stage ? 'font-bold' : ''}>
-                      {item.label}: {item.approved ? 'Approved' : item.approved === false ? 'Rejected' : 'Pending'}
-                    </span>
-                    {workflow.current_stage === item.stage && (
-                      <span className="ml-2 inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                        Current Stage
+                    <div>
+                      <span className={workflow.current_stage === item.stage ? 'font-bold' : ''}>
+                        {item.label}: {item.approved ? 'Approved' : item.approved === false ? 'Rejected' : 'Pending'}
                       </span>
-                    )}
+                      {item.approved !== null && (
+                        <span className="ml-2 text-sm text-gray-600">
+                          by {item.approverName || 'Unknown'}
+                        </span>
+                      )}
+                      {workflow.current_stage === item.stage && (
+                        <span className="ml-2 inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                          Current Stage
+                        </span>
+                      )}
+                    </div>
                   </motion.li>
                 ))}
               </ul>
@@ -348,68 +464,25 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
             <motion.div 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
             >
               <h3 className="text-lg font-medium">Review Notes</h3>
               <Separator className="my-2" />
               <div className="space-y-2">
-                {workflow.field_officer_notes && (
+                {approvers.filter(item => item.notes).map((item, index) => (
                   <motion.div 
+                    key={item.stage}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: 0.1 }}
+                    transition={{ delay: 0.1 * index }}
                     className="p-3 bg-gray-50 rounded-md"
                   >
-                    <p className="text-sm font-medium">Field Officer Notes:</p>
-                    <p className="text-sm">{workflow.field_officer_notes}</p>
+                    <p className="text-sm font-medium">{item.label} Notes (by {item.approverName}):</p>
+                    <p className="text-sm">{item.notes}</p>
                   </motion.div>
-                )}
-                {workflow.manager_notes && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.15 }}
-                    className="p-3 bg-gray-50 rounded-md"
-                  >
-                    <p className="text-sm font-medium">Manager Notes:</p>
-                    <p className="text-sm">{workflow.manager_notes}</p>
-                  </motion.div>
-                )}
-                {workflow.director_notes && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="p-3 bg-gray-50 rounded-md"
-                  >
-                    <p className="text-sm font-medium">Director Notes:</p>
-                    <p className="text-sm">{workflow.director_notes}</p>
-                  </motion.div>
-                )}
-                {workflow.chairperson_notes && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.25 }}
-                    className="p-3 bg-gray-50 rounded-md"
-                  >
-                    <p className="text-sm font-medium">Chairperson Notes:</p>
-                    <p className="text-sm">{workflow.chairperson_notes}</p>
-                  </motion.div>
-                )}
-                {workflow.ceo_notes && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="p-3 bg-gray-50 rounded-md"
-                  >
-                    <p className="text-sm font-medium">CEO Notes:</p>
-                    <p className="text-sm">{workflow.ceo_notes}</p>
-                  </motion.div>
-                )}
-                {!workflow.field_officer_notes && !workflow.manager_notes && !workflow.director_notes && 
-                 !workflow.chairperson_notes && !workflow.ceo_notes && (
+                ))}
+                
+                {!approvers.some(item => item.notes) && (
                   <p className="text-sm italic text-gray-500">No review notes have been added yet.</p>
                 )}
               </div>
@@ -421,7 +494,7 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
                 className="mt-6"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
               >
                 <h3 className="text-lg font-medium">Take Action</h3>
                 <Separator className="my-2" />
@@ -454,6 +527,12 @@ const LoanApprovalWorkflow = ({ applicationId }: { applicationId: string }) => {
                 <p className="text-red-600 mt-2">
                   This application has been rejected by the CEO and cannot be reviewed further.
                 </p>
+                {workflow.ceo_notes && (
+                  <div className="mt-2 p-2 bg-white/50 rounded">
+                    <p className="text-sm font-medium">Rejection reason:</p>
+                    <p className="text-sm">{workflow.ceo_notes}</p>
+                  </div>
+                )}
               </motion.div>
             )}
           </div>

@@ -18,7 +18,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Client } from '@/types/schema';
+import { Client } from '@/types/loan';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -59,6 +59,7 @@ const ClientsList = () => {
       const deletedClients: Client[] = [];
       
       data?.forEach(client => {
+        // Add the client to the appropriate array based on deleted_at value
         if (client.deleted_at) {
           deletedClients.push(client as Client);
         } else {
@@ -292,7 +293,7 @@ const ClientsList = () => {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            {formatDate(showDeleted ? client.deleted_at || client.created_at : client.created_at)}
+                            {formatDate(showDeleted && client.deleted_at ? client.deleted_at : client.created_at)}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-2">

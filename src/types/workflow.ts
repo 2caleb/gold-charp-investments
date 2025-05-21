@@ -13,13 +13,18 @@ export interface LoanWorkflow {
   director_notes: string | null;
   ceo_notes: string | null;
   chairperson_notes: string | null;
+  field_officer_name?: string | null;
+  manager_name?: string | null;
+  director_name?: string | null;
+  ceo_name?: string | null;
+  chairperson_name?: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export type WorkflowStage = 'field_officer' | 'manager' | 'director' | 'ceo' | 'chairperson';
 
-// Updated workflow stages to reflect CEO as final approver
+// Updated workflow stages
 export const WORKFLOW_STAGES: WorkflowStage[] = [
   'field_officer',
   'manager',

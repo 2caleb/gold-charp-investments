@@ -15,6 +15,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Checkbox } from '@/components/ui/checkbox';
+import InstallmentCalculator from './InstallmentCalculator';
 
 const guarantorSchema = z.object({
   guarantor1_consent: z.boolean().refine((val) => val === true, {
@@ -60,6 +61,7 @@ const LoanApplicationForm = () => {
   const { toast } = useToast();
   const [isFormCompleted, setIsFormCompleted] = useState(false);
   const [hasNecessaryDocuments, setHasNecessaryDocuments] = useState(false);
+  const [calculatedAmount, setCalculatedAmount] = useState("");
 
   const form = useForm({
     resolver: zodResolver(guarantorSchema),
@@ -128,9 +130,11 @@ const LoanApplicationForm = () => {
                 ...values,
                 client_type: values.client_id ? 'existing' : 'new',
                 terms_accepted: true,
+                loan_amount: values.loan_amount.toString() // Ensure loan_amount is a string
               };
               handleSubmit(enhancedValues);
               setIsFormCompleted(true);
+              setCalculatedAmount(values.loan_amount.toString());
             }}
             isSubmitting={isSubmitting}
             clients={clients}
@@ -148,6 +152,10 @@ const LoanApplicationForm = () => {
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
+          )}
+          
+          {calculatedAmount && (
+            <InstallmentCalculator initialAmount={calculatedAmount} className="mt-6" />
           )}
         </TabsContent>
         
