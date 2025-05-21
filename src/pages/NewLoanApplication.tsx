@@ -9,6 +9,7 @@ import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
 import { DataCollectionButton } from '@/components/loans/data-collection/DataCollectionButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { LoanApplicationValues } from '@/types/loan';
 
 const NewLoanApplication = () => {
   // Force desktop view for better UX
@@ -30,12 +31,13 @@ const NewLoanApplication = () => {
   const dummyIsLoadingClients = false;
 
   // Create dummy submission handler
-  const handleSubmit = (data: any) => {
+  const handleSubmit = async (data: LoanApplicationValues) => {
     console.log("Form submitted:", data);
     toast({
       title: "Loan Application Submitted",
       description: "Your loan application has been successfully submitted",
     });
+    return data; // Return data to make it a Promise<any>
   };
 
   return (

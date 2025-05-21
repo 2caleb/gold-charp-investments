@@ -24,18 +24,17 @@ export function ThemeProvider({
   storageKey = "ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => {
-      if (typeof window !== 'undefined') {
-        return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
-      }
-      return defaultTheme;
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
+
+  // Initialize theme from localStorage on client-side only
+  useEffect(() => {
+    const savedTheme = localStorage.getItem(storageKey) as Theme | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
     }
-  );
+  }, [storageKey]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
     const root = window.document.documentElement;
     
     root.classList.remove("light", "dark");
@@ -55,9 +54,7 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(storageKey, theme);
-      }
+      localStorage.setItem(storageKey, theme);
       setTheme(theme);
     },
   };

@@ -15,6 +15,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
 
 const DesktopNav = () => {
   const { isAuthenticated } = useAuth();
@@ -36,15 +37,39 @@ const DesktopNav = () => {
 
   return (
     <nav className="hidden md:flex items-center">
-      {/* Compact Navigation Menu */}
-      <NavigationMenu className="mr-4">
+      {/* Compact Navigation Menu - Fixed to prevent flickering */}
+      <NavigationMenu>
         <NavigationMenuList>
           <NavigationMenuItem>
             <NavigationMenuTrigger className="text-sm font-medium hover:text-purple-700 dark:hover:text-purple-400">
               Quick Links
             </NavigationMenuTrigger>
             <NavigationMenuContent>
-              <NavLinks className="flex flex-col p-4 w-[200px] gap-2" />
+              <ul className="flex flex-col p-4 w-[220px] gap-2">
+                {[
+                  { name: 'Home', href: '/' },
+                  { name: 'About', href: '/about' },
+                  { name: 'Properties', href: '/properties' },
+                  { name: 'Loans', href: '/loans' },
+                  { name: 'Services', href: '/services' },
+                  { name: 'Calculator', href: '/calculator' },
+                  { name: 'Contact', href: '/contact' },
+                ].map((link) => (
+                  <li key={link.name}>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        to={link.href}
+                        className={cn(
+                          "block select-none space-y-1 rounded-md p-2 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                          "text-sm font-medium"
+                        )}
+                      >
+                        {link.name}
+                      </Link>
+                    </NavigationMenuLink>
+                  </li>
+                ))}
+              </ul>
             </NavigationMenuContent>
           </NavigationMenuItem>
         </NavigationMenuList>
@@ -56,7 +81,7 @@ const DesktopNav = () => {
           onClick={handleDataCollectionClick}
           variant="ghost"
           size="sm"
-          className="font-medium transition-colors duration-300 flex items-center gap-1 hover:scale-105 transform mr-2"
+          className="font-medium transition-colors duration-300 flex items-center gap-1 hover:scale-105 transform mr-2 ml-2"
         >
           <FileText size={16} />
           <span className="whitespace-nowrap">Data Collection</span>

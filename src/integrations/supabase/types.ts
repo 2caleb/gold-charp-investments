@@ -364,6 +364,21 @@ export type Database = {
         }
         Relationships: []
       }
+      "public.client_name": {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
       roles: {
         Row: {
           full_name: string | null
