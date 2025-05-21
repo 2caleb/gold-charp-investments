@@ -5,13 +5,12 @@ import { FileText } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import NavLinks from './NavLinks';
+import NavLinks, { links } from './NavLinks';
 import UserSection from './UserSection';
 import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
-  NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
@@ -35,9 +34,21 @@ const DesktopNav = () => {
     }
   };
 
+  // Define navigation links for the Quick Links dropdown
+  const quickLinks = [
+    { name: 'Home', href: '/' },
+    { name: 'About', href: '/about' },
+    { name: 'Properties', href: '/properties' },
+    { name: 'Loans', href: '/loans' },
+    { name: 'Services', href: '/services' },
+    { name: 'Property Evaluation', href: '/property-evaluation' },
+    { name: 'Calculator', href: '/calculator' },
+    { name: 'Contact', href: '/contact' },
+  ];
+
   return (
     <nav className="hidden md:flex items-center">
-      {/* Compact Navigation Menu - Fixed to prevent flickering */}
+      {/* Navigation Menu with fixed width to prevent flickering */}
       <NavigationMenu>
         <NavigationMenuList>
           <NavigationMenuItem>
@@ -45,18 +56,10 @@ const DesktopNav = () => {
               Quick Links
             </NavigationMenuTrigger>
             <NavigationMenuContent>
-              <ul className="flex flex-col p-4 w-[220px] gap-2">
-                {[
-                  { name: 'Home', href: '/' },
-                  { name: 'About', href: '/about' },
-                  { name: 'Properties', href: '/properties' },
-                  { name: 'Loans', href: '/loans' },
-                  { name: 'Services', href: '/services' },
-                  { name: 'Calculator', href: '/calculator' },
-                  { name: 'Contact', href: '/contact' },
-                ].map((link) => (
-                  <li key={link.name}>
-                    <NavigationMenuLink asChild>
+              <div className="p-4 w-[220px]">
+                <ul className="grid grid-cols-1 gap-2">
+                  {quickLinks.map((link) => (
+                    <li key={link.name}>
                       <Link
                         to={link.href}
                         className={cn(
@@ -66,10 +69,10 @@ const DesktopNav = () => {
                       >
                         {link.name}
                       </Link>
-                    </NavigationMenuLink>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </NavigationMenuContent>
           </NavigationMenuItem>
         </NavigationMenuList>

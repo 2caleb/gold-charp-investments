@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PropertyValuationForm from '@/components/property-evaluation/PropertyValuationForm';
 import PropertyAnalytics from '@/components/property-evaluation/PropertyAnalytics';
 import RegionalComparison from '@/components/property-evaluation/RegionalComparison';
+import ExternalPropertySearch from '@/components/property-evaluation/ExternalPropertySearch';
 
 const PropertyEvaluation = () => {
   return (
@@ -19,13 +20,17 @@ const PropertyEvaluation = () => {
           </div>
           
           <Tabs defaultValue="valuation" className="w-full">
-            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
+            <TabsList className="grid w-full grid-cols-1 md:grid-cols-4">
               <TabsTrigger value="valuation">Property Valuation</TabsTrigger>
+              <TabsTrigger value="search">Property Search</TabsTrigger>
               <TabsTrigger value="regional">Regional Comparison</TabsTrigger>
               <TabsTrigger value="analytics">Analytics Dashboard</TabsTrigger>
             </TabsList>
             <TabsContent value="valuation" className="pt-6">
               <PropertyValuationForm />
+            </TabsContent>
+            <TabsContent value="search" className="pt-6">
+              <ExternalPropertySearch />
             </TabsContent>
             <TabsContent value="regional" className="pt-6">
               <RegionalComparison />
