@@ -11,6 +11,7 @@ export interface WorkflowLoanData {
   employment_status: string;
   phone: string;
   purpose: string;
+  purpose_of_loan?: string; // Added this field
   approval_notes: string;
   created_by: string;
   created_at: string;

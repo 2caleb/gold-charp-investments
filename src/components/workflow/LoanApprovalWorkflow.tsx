@@ -145,7 +145,7 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-500">Purpose</h3>
-            <p>{loanData.purpose_of_loan}</p>
+            <p>{loanData.purpose_of_loan || loanData.purpose}</p>
           </div>
         </div>
         

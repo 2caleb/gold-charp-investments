@@ -10,6 +10,9 @@ export const adaptLoanDataToWorkflowFormat = (loanData: any): WorkflowLoanData =
     ...loanData,
     loan_amount: typeof loanData.loan_amount === 'string' ? parseFloat(loanData.loan_amount) : loanData.loan_amount,
     workflow_stage: loanData.current_stage || loanData.workflow_stage || 'pending',
+    // Map between purpose and purpose_of_loan fields
+    purpose: loanData.purpose || loanData.purpose_of_loan || '',
+    purpose_of_loan: loanData.purpose_of_loan || loanData.purpose || '',
     // Ensure all required fields are present
     client_id: loanData.client_id || '',
     client_name: loanData.client_name || '',
@@ -19,7 +22,6 @@ export const adaptLoanDataToWorkflowFormat = (loanData: any): WorkflowLoanData =
     id_number: loanData.id_number || '',
     employment_status: loanData.employment_status || '',
     phone: loanData.phone || '',
-    purpose: loanData.purpose || '',
     approval_notes: loanData.approval_notes || '',
     created_by: loanData.created_by || '',
     created_at: loanData.created_at || new Date().toISOString(),
