@@ -34,6 +34,7 @@ const LoanApprovalPage: React.FC = () => {
   const { user } = useAuth();
   const { userRole, userName } = useRolePermissions();
   const [userCanApprove, setUserCanApprove] = useState<boolean>(false);
+  const [notificationShown, setNotificationShown] = useState(false);
   
   // Fetch loan data
   const { data: rawLoanData, isLoading, error, refetch } = useQuery({
@@ -49,7 +50,7 @@ const LoanApprovalPage: React.FC = () => {
   
   // Check if the current user is allowed to approve this loan
   useEffect(() => {
-    if (loanData && user) {
+    if (loanData && user && !notificationShown) {
       const currentStage = loanData.workflow_stage || '';
       
       let canApprove = false;
@@ -73,9 +74,10 @@ const LoanApprovalPage: React.FC = () => {
           title: "Read-Only Mode",
           description: "You are viewing this loan in read-only mode as you are not authorized for the current approval stage.",
         });
+        setNotificationShown(true);
       }
     }
-  }, [loanData, user, toast, userRole]);
+  }, [loanData, user, toast, userRole, notificationShown]);
   
   if (isLoading) {
     return (
@@ -105,7 +107,7 @@ const LoanApprovalPage: React.FC = () => {
   return (
     <Layout>
       <div className="container max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-200">Welcome {userName} - Viewing Application for {loanData.client_name}</h1>
+        <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-200">Welcome {userName}</h1>
         <h2 className="text-xl mb-8 text-gray-600 dark:text-gray-400">Client: {loanData.client_name}</h2>
         
         {userCanApprove ? (

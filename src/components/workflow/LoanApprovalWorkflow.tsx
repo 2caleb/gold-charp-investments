@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -156,7 +155,7 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
             amount={loanDataWithStage.loan_amount}
             term={12} 
             unit="months"
-            interestRate={18} // Updated to 18%
+            interestRate={18}
           />
         </div>
         

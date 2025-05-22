@@ -27,7 +27,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user } = useAuth();
   const initialLoadComplete = useRef(false);
-  const sessionLoadRef = useRef(true); // Changed to true to prevent initial notifications
+  const sessionNotificationsShown = useRef(false);
   
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -48,11 +48,8 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         if (data) {
           setNotifications(data as unknown as Notification[]);
           
-          // Mark that we've completed the initial load, but ONLY ONCE per session
-          if (!sessionLoadRef.current) {
-            initialLoadComplete.current = true;
-            sessionLoadRef.current = true;
-          }
+          // Mark that we've completed the initial load
+          initialLoadComplete.current = true;
         }
       } catch (error) {
         console.error('Error fetching notifications:', error);
@@ -65,6 +62,12 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   // Listen for new notifications
   useEffect(() => {
     if (!user) return;
+    
+    // Prevent any toast notifications during page load
+    if (!sessionNotificationsShown.current) {
+      sessionNotificationsShown.current = true;
+      return;
+    }
 
     const channel = supabase
       .channel('public:notifications')
@@ -80,8 +83,8 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           const newNotification = payload.new as unknown as Notification;
           setNotifications(prev => [newNotification, ...prev]);
           
-          // Only show toast for truly new notifications (after initial load AND session load)
-          if (initialLoadComplete.current && sessionLoadRef.current) {
+          // Only show toast for truly new notifications (after initial load)
+          if (initialLoadComplete.current && sessionNotificationsShown.current) {
             toast({
               title: 'New Notification',
               description: newNotification.message,
