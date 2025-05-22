@@ -9,46 +9,37 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { WorkflowLoanData } from '@/types/workflow';
 import { adaptLoanDataToWorkflowFormat, getWorkflowStage } from '@/utils/workflowAdapter';
+import { useRolePermissions } from '@/hooks/use-role-permissions';
+import { Card } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock API function to fetch loan data
+// Fetch loan data from the database
 const fetchLoanData = async (id: string): Promise<any> => {
-  // In a real application, this would be an API call
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        id,
-        client_id: 'C1001',
-        client_name: 'John Doe',
-        loan_amount: '25000000', // String in legacy data
-        loan_term: '15 years',
-        interest_rate: '18.5%',
-        address: '123 Main St, Kampala',
-        id_number: 'CM1234567',
-        employment_status: 'Employed',
-        phone: '+256700123456',
-        purpose: 'Home purchase',
-        approval_notes: null,
-        created_by: 'agent@example.com',
-        created_at: '2023-10-15T10:30:00Z',
-        current_approver: 'manager@example.com',
-        current_stage: 'manager_review', // Legacy field
-        status: 'pending',
-        loan_type: 'mortgage' // Added loan_type
-      });
-    }, 1000);
-  });
+  const { data, error } = await supabase
+    .from('loan_applications')
+    .select(`
+      *,
+      loan_application_workflow(*)
+    `)
+    .eq('id', id)
+    .single();
+  
+  if (error) throw error;
+  return data;
 };
 
 const LoanApprovalPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { userRole } = useRolePermissions();
   const [userCanApprove, setUserCanApprove] = useState<boolean>(false);
   
   // Fetch loan data
-  const { data: rawLoanData, isLoading, error } = useQuery({
+  const { data: rawLoanData, isLoading, error, refetch } = useQuery({
     queryKey: ['loan', id],
-    queryFn: () => fetchLoanData(id as string)
+    queryFn: () => fetchLoanData(id as string),
+    enabled: !!id
   });
   
   // Convert to workflow format
@@ -59,17 +50,32 @@ const LoanApprovalPage: React.FC = () => {
   // Check if the current user is allowed to approve this loan
   useEffect(() => {
     if (loanData && user) {
-      const isCurrentApprover = loanData.current_approver === user.email;
-      setUserCanApprove(isCurrentApprover);
+      const currentStage = loanData.workflow_stage || '';
       
-      if (!isCurrentApprover) {
+      let canApprove = false;
+      
+      if (currentStage === 'field_officer' && userRole === 'field_officer') {
+        canApprove = true;
+      } else if (currentStage === 'manager' && userRole === 'manager') {
+        canApprove = true;
+      } else if (currentStage === 'director' && userRole === 'director') {
+        canApprove = true;
+      } else if (currentStage === 'chairperson' && userRole === 'chairperson') {
+        canApprove = true;
+      } else if (currentStage === 'ceo' && userRole === 'ceo') {
+        canApprove = true;
+      }
+      
+      setUserCanApprove(canApprove);
+      
+      if (!canApprove) {
         toast({
-          title: "Information",
-          description: "You are viewing this loan in read-only mode as you are not the current approver.",
+          title: "Read-Only Mode",
+          description: "You are viewing this loan in read-only mode as you are not authorized for the current approval stage.",
         });
       }
     }
-  }, [loanData, user, toast]);
+  }, [loanData, user, toast, userRole]);
   
   if (isLoading) {
     return (
@@ -99,17 +105,27 @@ const LoanApprovalPage: React.FC = () => {
   return (
     <Layout>
       <div className="container max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-200">Loan Approval: {loanData.client_name}</h1>
+        <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-200">Loan Approval</h1>
+        <h2 className="text-xl mb-8 text-gray-600 dark:text-gray-400">Client: {loanData.client_name}</h2>
         
         {userCanApprove ? (
           <LoanApprovalWorkflow 
-            loanData={loanData} 
+            loanData={loanData}
+            onWorkflowUpdate={refetch}
           />
         ) : (
-          <NoActionRequired 
-            loanData={loanData}
-            message="You are not the current approver for this loan application."
-          />
+          <Card className="p-6">
+            <NoActionRequired 
+              loanData={loanData}
+              message={`This loan is currently at the ${loanData.workflow_stage?.replace('_', ' ')} stage. 
+                       You are viewing in read-only mode as your role (${userRole}) is not authorized for this stage.`}
+            />
+            <div className="mt-4">
+              <LoanApprovalWorkflow 
+                loanData={loanData}
+              />
+            </div>
+          </Card>
         )}
       </div>
     </Layout>

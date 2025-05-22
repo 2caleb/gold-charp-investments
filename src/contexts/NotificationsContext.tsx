@@ -27,6 +27,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user } = useAuth();
   const initialLoadComplete = useRef(false);
+  const sessionLoadRef = useRef(false);
   
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -40,12 +41,18 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           .from('notifications')
           .select('*')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false })
+          .limit(20); // Limit to the most recent 20 notifications
 
         if (error) throw error;
         if (data) {
           setNotifications(data as unknown as Notification[]);
-          initialLoadComplete.current = true;
+          
+          // Mark that we've completed the initial load, but ONLY ONCE per session
+          if (!sessionLoadRef.current) {
+            initialLoadComplete.current = true;
+            sessionLoadRef.current = true;
+          }
         }
       } catch (error) {
         console.error('Error fetching notifications:', error);
@@ -73,7 +80,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           const newNotification = payload.new as unknown as Notification;
           setNotifications(prev => [newNotification, ...prev]);
           
-          // Only show toast for truly new notifications (not on initial load)
+          // Only show toast for truly new notifications (after initial load)
           if (initialLoadComplete.current) {
             toast({
               title: 'New Notification',

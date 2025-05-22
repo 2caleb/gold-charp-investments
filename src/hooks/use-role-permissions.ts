@@ -82,6 +82,7 @@ export function useRolePermissions() {
     fetchUserRole();
   }, [user]);
 
+  // Improve the hasPermission function to properly implement role hierarchy
   const hasPermission = (requiredRole: UserRole): boolean => {
     if (!userRole || !requiredRole) return false;
     
@@ -91,8 +92,8 @@ export function useRolePermissions() {
       'field_officer',
       'manager',
       'director',
-      'ceo',
-      'chairperson'
+      'chairperson', // Changed order - chairperson is now before CEO
+      'ceo'
     ];
     
     const userRoleIndex = roleHierarchy.indexOf(userRole);
@@ -108,6 +109,26 @@ export function useRolePermissions() {
   const isDirector = userRole === 'director' || hasPermission('director');
   const isCEO = userRole === 'ceo' || hasPermission('ceo');
   const isChairperson = userRole === 'chairperson' || hasPermission('chairperson');
+  
+  // Additional check for determining if a user can modify loan applications
+  const canModifyLoanApplication = (applicationStage: string): boolean => {
+    if (!userRole) return false;
+    
+    switch(applicationStage) {
+      case 'field_officer':
+        return userRole === 'field_officer';
+      case 'manager':
+        return userRole === 'manager';
+      case 'director':
+        return userRole === 'director';
+      case 'chairperson':
+        return userRole === 'chairperson';
+      case 'ceo':
+        return userRole === 'ceo';
+      default:
+        return false;
+    }
+  };
 
   return {
     userRole,
@@ -119,6 +140,7 @@ export function useRolePermissions() {
     isManager,
     isDirector,
     isCEO,
-    isChairperson
+    isChairperson,
+    canModifyLoanApplication
   };
 }

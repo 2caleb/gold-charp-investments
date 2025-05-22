@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { DataCollectionButton } from '@/components/loans/DataCollectionButton';
@@ -18,6 +19,11 @@ interface RecentApplication {
   created_at: string;
   id: string;
   loan_id?: string;
+}
+
+interface ClientData {
+  id: string;
+  monthly_income: number;
 }
 
 const DataCollection = () => {
@@ -69,6 +75,21 @@ const DataCollection = () => {
           
         if (clientError) throw clientError;
         
+        // Fetch client income data to calculate monthly loans
+        const { data: clientData, error: incomeError } = await supabase
+          .from('client_name')
+          .select('id, monthly_income');
+          
+        if (incomeError) throw incomeError;
+        
+        // Calculate total monthly income from all clients
+        let totalMonthlyIncome = 0;
+        if (clientData && Array.isArray(clientData)) {
+          clientData.forEach((client: ClientData) => {
+            totalMonthlyIncome += (client.monthly_income || 0);
+          });
+        }
+        
         const { count: pendingCount, error: pendingError } = await supabase
           .from('loan_applications')
           .select('id', { count: 'exact', head: true })
@@ -79,7 +100,7 @@ const DataCollection = () => {
         setStats({
           totalClients: clientCount || 0,
           pendingApplications: pendingCount || 0,
-          monthlyLoans: 450000000, // Mock data
+          monthlyLoans: totalMonthlyIncome, // Use actual client income data
           scheduledVisits: 18 // Mock data
         });
       } catch (error: any) {
@@ -174,7 +195,7 @@ const DataCollection = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">UGX {(stats.monthlyLoans / 1000000).toFixed(0)}M</div>
-                <p className="text-xs text-gray-500 mt-1">+12% from last month</p>
+                <p className="text-xs text-gray-500 mt-1">Based on client income</p>
               </CardContent>
             </Card>
             
