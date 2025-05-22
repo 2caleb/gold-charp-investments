@@ -10,14 +10,15 @@ type NavLinksProps = {
   isMobile?: boolean; // Added this prop to fix the type error
 };
 
+// Updated links with more relevant options
 export const links = [
   { name: 'Home', href: '/' },
-  { name: 'About', href: '/about' },
-  { name: 'Properties', href: '/properties' },
-  { name: 'Loans', href: '/loans' },
-  { name: 'Services', href: '/services' },
+  { name: 'Dashboard', href: '/dashboard' },
+  { name: 'Clients', href: '/clients' },
+  { name: 'Loan Applications', href: '/loan-applications' },
   { name: 'Property Evaluation', href: '/property-evaluation' },
   { name: 'Calculator', href: '/calculator' },
+  { name: 'Documents', href: '/documents' },
   { name: 'Contact', href: '/contact' },
 ];
 

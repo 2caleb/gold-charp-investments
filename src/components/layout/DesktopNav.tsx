@@ -5,7 +5,6 @@ import { FileText } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import NavLinks, { links } from './NavLinks';
 import UserSection from './UserSection';
 import {
   NavigationMenu,
@@ -15,6 +14,18 @@ import {
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { cn } from "@/lib/utils";
+
+// Define navigation links for the Quick Links dropdown
+const quickLinks = [
+  { name: 'Home', href: '/' },
+  { name: 'Dashboard', href: '/dashboard' },
+  { name: 'Clients', href: '/clients' },
+  { name: 'Loan Applications', href: '/loan-applications' },
+  { name: 'Property Evaluation', href: '/property-evaluation' },
+  { name: 'Calculator', href: '/calculator' },
+  { name: 'Documents', href: '/documents' },
+  { name: 'Contact', href: '/contact' },
+];
 
 const DesktopNav = () => {
   const { isAuthenticated } = useAuth();
@@ -33,18 +44,6 @@ const DesktopNav = () => {
       navigate('/staff/data-collection');
     }
   };
-
-  // Define navigation links for the Quick Links dropdown
-  const quickLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'About', href: '/about' },
-    { name: 'Properties', href: '/properties' },
-    { name: 'Loans', href: '/loans' },
-    { name: 'Services', href: '/services' },
-    { name: 'Property Evaluation', href: '/property-evaluation' },
-    { name: 'Calculator', href: '/calculator' },
-    { name: 'Contact', href: '/contact' },
-  ];
 
   return (
     <nav className="hidden md:flex items-center">
