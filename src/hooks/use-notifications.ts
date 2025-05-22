@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Notification } from '@/types/notification';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +12,7 @@ export const useNotifications = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const initialLoadComplete = useRef(false);
 
   const fetchNotifications = async () => {
     if (!user) {
@@ -33,6 +34,8 @@ export const useNotifications = () => {
       if (data) {
         setNotifications(data);
         setUnreadCount(data.filter((n: Notification) => !n.is_read).length);
+        // Mark that initial load is complete
+        initialLoadComplete.current = true;
       }
     } catch (err: any) {
       console.error('Error fetching notifications:', err);
@@ -162,11 +165,13 @@ export const useNotifications = () => {
           setNotifications(prev => [newNotification, ...prev]);
           setUnreadCount(prev => prev + 1);
           
-          // Show toast for new notification
-          toast({
-            title: 'New Notification',
-            description: newNotification.message,
-          });
+          // Show toast for new notification, but only if it's not part of the initial load
+          if (initialLoadComplete.current) {
+            toast({
+              title: 'New Notification',
+              description: newNotification.message,
+            });
+          }
         }
       )
       .subscribe();

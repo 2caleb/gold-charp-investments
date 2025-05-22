@@ -27,7 +27,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user } = useAuth();
   const initialLoadComplete = useRef(false);
-  const sessionLoadRef = useRef(false);
+  const sessionLoadRef = useRef(true); // Changed to true to prevent initial notifications
   
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -80,8 +80,8 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           const newNotification = payload.new as unknown as Notification;
           setNotifications(prev => [newNotification, ...prev]);
           
-          // Only show toast for truly new notifications (after initial load)
-          if (initialLoadComplete.current) {
+          // Only show toast for truly new notifications (after initial load AND session load)
+          if (initialLoadComplete.current && sessionLoadRef.current) {
             toast({
               title: 'New Notification',
               description: newNotification.message,

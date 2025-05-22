@@ -32,7 +32,7 @@ const LoanApprovalPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { userRole } = useRolePermissions();
+  const { userRole, userName } = useRolePermissions();
   const [userCanApprove, setUserCanApprove] = useState<boolean>(false);
   
   // Fetch loan data
@@ -105,7 +105,7 @@ const LoanApprovalPage: React.FC = () => {
   return (
     <Layout>
       <div className="container max-w-7xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-200">Loan Approval</h1>
+        <h1 className="text-3xl font-bold mb-2 text-gray-800 dark:text-gray-200">Welcome {userName} - Viewing Application for {loanData.client_name}</h1>
         <h2 className="text-xl mb-8 text-gray-600 dark:text-gray-400">Client: {loanData.client_name}</h2>
         
         {userCanApprove ? (

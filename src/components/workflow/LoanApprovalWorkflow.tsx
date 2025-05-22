@@ -99,8 +99,8 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
         <div className="flex justify-between items-start mb-2">
           <div>
             <CardTitle className="text-2xl font-semibold">Loan Approval Workflow</CardTitle>
-            <CardDescription className="mt-1">
-              Current Stage: <Badge variant="outline" className="ml-1 capitalize">{currentStage.replace('_', ' ')}</Badge>
+            <CardDescription className="mt-1 flex items-center">
+              Current Stage: <span className="ml-1 capitalize">{currentStage.replace('_', ' ')}</span>
             </CardDescription>
           </div>
           <Badge 
@@ -145,7 +145,7 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-500">Purpose</h3>
-            <p>{loanData.purpose}</p>
+            <p>{loanData.purpose_of_loan}</p>
           </div>
         </div>
         
@@ -156,7 +156,7 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
             amount={loanDataWithStage.loan_amount}
             term={12} 
             unit="months"
-            interestRate={15}
+            interestRate={18} // Updated to 18%
           />
         </div>
         

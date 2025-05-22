@@ -31,7 +31,7 @@ const NotificationsDropdown = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isMarkingAsRead, setIsMarkingAsRead] = useState(false);
   // Add a ref to track if we already showed toast notifications
-  const notificationsToastShown = useRef(false);
+  const notificationsToastShown = useRef(true); // Setting to true prevents initial toasts
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -86,9 +86,19 @@ const NotificationsDropdown = () => {
         (payload) => {
           console.log('Change received!', payload)
           fetchNotifications(); // Refresh notifications on changes
+          
+          // Only show toast notifications if they're not part of the initial load
+          if (notificationsToastShown.current && payload.eventType === 'INSERT') {
+            // No toast here - we've disabled them to prevent spamming
+          }
         }
       )
       .subscribe()
+
+    // After a second mark that initial loading is complete
+    setTimeout(() => {
+      notificationsToastShown.current = false;
+    }, 1000);
 
     return () => {
       supabase.removeChannel(channel)

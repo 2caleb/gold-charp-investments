@@ -35,7 +35,7 @@ const NavLinks = ({ type = 'desktop', className = '', onItemClick, isMobile }: N
     { name: 'Dashboard', href: '/dashboard', icon: Landmark },
     { name: 'Clients', href: '/clients', icon: Users },
     { name: 'Loan Applications', href: '/loan-applications', icon: FileText },
-    { name: 'Property Evaluation', href: '/property-evaluation', icon: FileCheck },
+    { name: 'Property Evaluation', href: '/property-evaluation', icon: Building2 },
     { name: 'Calculator', href: '/calculator', icon: Calculator },
     { name: 'Documents', href: '/documents', icon: FileText },
     { name: 'Contact', href: '/contact', icon: Phone },
