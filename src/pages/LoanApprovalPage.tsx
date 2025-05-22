@@ -1,200 +1,113 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
-import LoanApprovalWorkflow, { WorkflowLoanData } from '@/components/workflow/LoanApprovalWorkflow';
-import { useRolePermissions } from '@/hooks/use-role-permissions';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, Loader2, AlertTriangle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import LoanApprovalWorkflow from '@/components/workflow/LoanApprovalWorkflow';
+import NoActionRequired from '@/components/workflow/NoActionRequired';
 import { useToast } from '@/hooks/use-toast';
-import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { WorkflowLoanData } from '@/types/workflow';
+import { adaptLoanDataToWorkflowFormat, getWorkflowStage } from '@/utils/workflowAdapter';
 
-const LoanApprovalPage = () => {
+// Mock API function to fetch loan data
+const fetchLoanData = async (id: string): Promise<any> => {
+  // In a real application, this would be an API call
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({
+        id,
+        client_id: 'C1001',
+        client_name: 'John Doe',
+        loan_amount: '25000000', // String in legacy data
+        loan_term: '15 years',
+        interest_rate: '18.5%',
+        address: '123 Main St, Kampala',
+        id_number: 'CM1234567',
+        employment_status: 'Employed',
+        phone: '+256700123456',
+        purpose: 'Home purchase',
+        approval_notes: null,
+        created_by: 'agent@example.com',
+        created_at: '2023-10-15T10:30:00Z',
+        current_approver: 'manager@example.com',
+        current_stage: 'manager_review', // Legacy field
+        status: 'pending'
+      });
+    }, 1000);
+  });
+};
+
+const LoanApprovalPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { isLoading: isLoadingPermissions } = useRolePermissions();
-  const [loanData, setLoanData] = useState<WorkflowLoanData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-
+  const { user } = useAuth();
+  const [userCanApprove, setUserCanApprove] = useState<boolean>(false);
+  
+  // Fetch loan data
+  const { data: rawLoanData, isLoading, error } = useQuery({
+    queryKey: ['loan', id],
+    queryFn: () => fetchLoanData(id as string)
+  });
+  
+  // Convert to workflow format
+  const loanData: WorkflowLoanData | undefined = rawLoanData 
+    ? adaptLoanDataToWorkflowFormat(rawLoanData)
+    : undefined;
+  
+  // Check if the current user is allowed to approve this loan
   useEffect(() => {
-    const fetchLoanApplication = async () => {
-      if (!id) {
-        setError("No application ID provided");
-        setIsLoading(false);
-        return;
-      }
+    if (loanData && user) {
+      const isCurrentApprover = loanData.current_approver === user.email;
+      setUserCanApprove(isCurrentApprover);
       
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const { data, error } = await supabase
-          .from('loan_applications')
-          .select('*')
-          .eq('id', id)
-          .single();
-          
-        if (error) {
-          throw error;
-        }
-        
-        if (!data) {
-          throw new Error("Application not found");
-        }
-        
-        // Add the current_stage property if it doesn't exist
-        const loanWithStage: WorkflowLoanData = {
-          ...data,
-          current_stage: data.current_stage || data.status || 'pending'
-        };
-        
-        setLoanData(loanWithStage);
-      } catch (error: any) {
-        console.error('Error fetching loan application:', error);
-        setError(error.message || 'Could not load application data');
+      if (!isCurrentApprover) {
         toast({
-          title: 'Error fetching application',
-          description: error.message || 'Could not load application data',
-          variant: 'destructive',
+          title: "Information",
+          description: "You are viewing this loan in read-only mode as you are not the current approver.",
         });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLoanApplication();
-  }, [id, toast]);
-
-  const handleWorkflowUpdate = async () => {
-    // Refresh the loan data after an update
-    if (id) {
-      try {
-        const { data } = await supabase
-          .from('loan_applications')
-          .select('*')
-          .eq('id', id)
-          .single();
-          
-        if (data) {
-          // Add the current_stage property if it doesn't exist
-          const loanWithStage: WorkflowLoanData = {
-            ...data,
-            current_stage: data.current_stage || data.status || 'pending'
-          };
-          
-          setLoanData(loanWithStage);
-        }
-      } catch (error) {
-        console.error("Error refreshing loan data:", error);
       }
     }
-  };
-
-  if (isLoadingPermissions || isLoading) {
+  }, [loanData, user, toast]);
+  
+  if (isLoading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center">
-            <Loader2 className="h-8 w-8 animate-spin text-purple-700 mb-4" />
-            <p>{isLoadingPermissions ? 'Loading permissions...' : 'Loading application data...'}</p>
+        <div className="container max-w-7xl mx-auto py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-700"></div>
           </div>
         </div>
       </Layout>
     );
   }
   
-  if (error || !id || !loanData) {
+  if (error || !loanData) {
     return (
       <Layout>
-        <section className="bg-gray-50 dark:bg-gray-900 py-8 md:py-16">
-          <div className="container mx-auto px-4">
-            <div className="mb-6">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/loan-applications">
-                  <ChevronLeft className="mr-2 h-4 w-4" />
-                  Back to Applications
-                </Link>
-              </Button>
-            </div>
-            
-            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 md:p-8">
-              <div className="flex flex-col items-center justify-center text-center">
-                <div className="flex items-center text-red-500 mb-4 text-xl">
-                  <AlertTriangle className="h-8 w-8 mr-2" />
-                  {error || "Application not found or ID is missing"}
-                </div>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  Please check the URL or return to the applications list.
-                </p>
-                <Button asChild>
-                  <Link to="/loan-applications">
-                    View All Applications
-                  </Link>
-                </Button>
-              </div>
-            </div>
+        <div className="container max-w-7xl mx-auto py-8">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong className="font-bold">Error!</strong>
+            <span className="block sm:inline"> There was a problem loading the loan application.</span>
           </div>
-        </section>
+        </div>
       </Layout>
     );
   }
-
+  
   return (
     <Layout>
-      <motion.section 
-        className="bg-gray-50 dark:bg-gray-900 py-8 md:py-16"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="container mx-auto px-4">
-          <div className="mb-6">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/loan-applications">
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Back to Applications
-              </Link>
-            </Button>
-          </div>
-          
-          <motion.div 
-            className="mb-8"
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4 dark:text-white">Loan Application Review</h1>
-            {loanData && (
-              <div className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl mb-4">
-                <p><span className="font-medium">Client:</span> {loanData.client_name}</p>
-                <p><span className="font-medium">Amount:</span> {loanData.loan_amount.toLocaleString()} UGX</p>
-                <p><span className="font-medium">Type:</span> {loanData.loan_type}</p>
-                <p><span className="font-medium">Purpose:</span> {loanData.purpose_of_loan || 'Not specified'}</p>
-                <p><span className="font-medium">Status:</span> <span className="uppercase font-semibold">{loanData.status}</span></p>
-              </div>
-            )}
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
-              Review and process this loan application according to your role's responsibilities.
-            </p>
-          </motion.div>
-          
-          <motion.div 
-            className="bg-white dark:bg-gray-800 shadow-md rounded-lg"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            {loanData && (
-              <LoanApprovalWorkflow 
-                loanData={loanData} 
-                onWorkflowUpdate={handleWorkflowUpdate}
-              />
-            )}
-          </motion.div>
-        </div>
-      </motion.section>
+      <div className="container max-w-7xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-gray-200">Loan Approval: {loanData.client_name}</h1>
+        
+        {userCanApprove ? (
+          <LoanApprovalWorkflow 
+            loanData={loanData} 
+          />
+        ) : (
+          <NoActionRequired loanData={loanData} />
+        )}
+      </div>
     </Layout>
   );
 };

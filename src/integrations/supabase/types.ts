@@ -36,6 +36,7 @@ export type Database = {
           id_number: string
           monthly_income: number
           phone_number: string
+          status: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -50,6 +51,7 @@ export type Database = {
           id_number: string
           monthly_income: number
           phone_number: string
+          status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -64,8 +66,39 @@ export type Database = {
           id_number?: string
           monthly_income?: number
           phone_number?: string
+          status?: string | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          address: string
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          id_number: string
+          phone_number: string
+        }
+        Insert: {
+          address: string
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          id_number: string
+          phone_number: string
+        }
+        Update: {
+          address?: string
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          id_number?: string
+          phone_number?: string
         }
         Relationships: []
       }
@@ -135,6 +168,7 @@ export type Database = {
           chairperson_name: string | null
           chairperson_notes: string | null
           created_at: string
+          created_by: string | null
           current_stage: string
           director_approved: boolean | null
           director_name: string | null
@@ -157,6 +191,7 @@ export type Database = {
           chairperson_name?: string | null
           chairperson_notes?: string | null
           created_at?: string
+          created_by?: string | null
           current_stage?: string
           director_approved?: boolean | null
           director_name?: string | null
@@ -179,6 +214,7 @@ export type Database = {
           chairperson_name?: string | null
           chairperson_notes?: string | null
           created_at?: string
+          created_by?: string | null
           current_stage?: string
           director_approved?: boolean | null
           director_name?: string | null
@@ -195,11 +231,11 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "loan_application_workflow_loan_application_id_fkey"
+            foreignKeyName: "fk_loan_application"
             columns: ["loan_application_id"]
             isOneToOne: false
             referencedRelation: "loan_applications"
-            referencedColumns: ["id"]
+            referencedColumns: ["loan_id"]
           },
         ]
       }
@@ -217,7 +253,7 @@ export type Database = {
           id_number: string
           last_updated: string | null
           loan_amount: string
-          loan_id: string | null
+          loan_id: string
           loan_type: string
           monthly_income: number
           notes: string | null
@@ -239,7 +275,7 @@ export type Database = {
           id_number: string
           last_updated?: string | null
           loan_amount: string
-          loan_id?: string | null
+          loan_id?: string
           loan_type: string
           monthly_income: number
           notes?: string | null
@@ -261,7 +297,7 @@ export type Database = {
           id_number?: string
           last_updated?: string | null
           loan_amount?: string
-          loan_id?: string | null
+          loan_id?: string
           loan_type?: string
           monthly_income?: number
           notes?: string | null
@@ -275,7 +311,39 @@ export type Database = {
             foreignKeyName: "loan_applications_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
-            referencedRelation: "client_name"
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_workflow_log: {
+        Row: {
+          action: string
+          id: string
+          loan_application_id: string
+          performed_at: string | null
+          performed_by: string
+        }
+        Insert: {
+          action: string
+          id?: string
+          loan_application_id: string
+          performed_at?: string | null
+          performed_by: string
+        }
+        Update: {
+          action?: string
+          id?: string
+          loan_application_id?: string
+          performed_at?: string | null
+          performed_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_workflow_log_loan_application_id_fkey"
+            columns: ["loan_application_id"]
+            isOneToOne: false
+            referencedRelation: "loan_applications"
             referencedColumns: ["id"]
           },
         ]
@@ -328,6 +396,21 @@ export type Database = {
           id?: string
           Permissions?: string | null
           role?: string | null
+        }
+        Relationships: []
+      }
+      profile: {
+        Row: {
+          id: string
+          role: string
+        }
+        Insert: {
+          id: string
+          role: string
+        }
+        Update: {
+          id?: string
+          role?: string
         }
         Relationships: []
       }
@@ -394,6 +477,36 @@ export type Database = {
           full_name?: string | null
           id?: string
           role?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          role: string
+          user_id: string
+        }
+        Insert: {
+          role: string
+          user_id: string
+        }
+        Update: {
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      view_data: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
         }
         Relationships: []
       }

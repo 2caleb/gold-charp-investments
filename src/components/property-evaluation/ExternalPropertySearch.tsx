@@ -138,7 +138,7 @@ const ExternalPropertySearch = () => {
                     <SelectValue placeholder="Property Type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="Apartment">Apartment</SelectItem>
                     <SelectItem value="House">House</SelectItem>
                     <SelectItem value="Villa">Villa</SelectItem>
@@ -185,7 +185,7 @@ const ExternalPropertySearch = () => {
                     <SelectValue placeholder="Bedrooms" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Any</SelectItem>
+                    <SelectItem value="any">Any</SelectItem>
                     <SelectItem value="1">1+</SelectItem>
                     <SelectItem value="2">2+</SelectItem>
                     <SelectItem value="3">3+</SelectItem>

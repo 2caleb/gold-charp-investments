@@ -56,7 +56,7 @@ const DesktopNav = () => {
               Quick Links
             </NavigationMenuTrigger>
             <NavigationMenuContent>
-              <div className="p-4 w-[220px]">
+              <div className="p-4 w-[220px] bg-white dark:bg-gray-800">
                 <ul className="grid grid-cols-1 gap-2">
                   {quickLinks.map((link) => (
                     <li key={link.name}>
