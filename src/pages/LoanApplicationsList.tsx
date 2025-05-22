@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { FilePlus, Eye, Loader2, AlertTriangle, InfoIcon, UserRound, Phone, Medal } from 'lucide-react';
+import { FilePlus, Eye, Loader2, AlertTriangle, InfoIcon, UserRound, Phone, Medal, Briefcase, DollarSign, Filter } from 'lucide-react';
 import { DataCollectionButton } from '@/components/loans/DataCollectionButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +54,7 @@ const LoanApplicationsList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
+  const [employmentFilter, setEmploymentFilter] = useState('');
 
   const fetchClientsData = async () => {
     try {
@@ -99,7 +101,7 @@ const LoanApplicationsList = () => {
           phone_number: loan.phone_number || '',
           employment_status: loan.employment_status || '',
           monthly_income: loan.monthly_income || 0,
-          purpose_of_loan: loan.purpose_of_loan || loan.purpose || ''
+          purpose_of_loan: loan.purpose_of_loan || ''
         };
       }) as LoanApplication[];
 
@@ -124,10 +126,14 @@ const LoanApplicationsList = () => {
   const filteredLoans = loans.filter(loan => {
     const searchRegex = new RegExp(searchTerm, 'i');
     const statusMatch = statusFilter ? loan.status === statusFilter : true;
+    const employmentMatch = employmentFilter 
+      ? loan.employment_status === employmentFilter 
+      : true;
 
     return (searchRegex.test(loan.client_name) || 
             searchRegex.test(loan.id_number || '') || 
-            searchRegex.test(loan.phone_number || '')) && statusMatch;
+            searchRegex.test(loan.phone_number || '')) && 
+            statusMatch && employmentMatch;
   });
 
   // Helper function to find client data for a loan
@@ -161,6 +167,15 @@ const LoanApplicationsList = () => {
     { label: 'Rejected', value: 'rejected' },
     { label: 'Disbursed', value: 'disbursed' },
     { label: 'Completed', value: 'completed' },
+  ];
+
+  const employmentOptions: FilterOption[] = [
+    { label: 'All Employment', value: '' },
+    { label: 'Employed', value: 'Employed' },
+    { label: 'Self-Employed', value: 'Self-Employed' },
+    { label: 'Unemployed', value: 'Unemployed' },
+    { label: 'Business Owner', value: 'Business Owner' },
+    { label: 'Retired', value: 'Retired' },
   ];
 
   const getStatusBadgeColor = (status: string): string => {
@@ -209,26 +224,63 @@ const LoanApplicationsList = () => {
           </div>
         </div>
 
-        <div className="mb-4 flex flex-wrap md:flex-nowrap items-center gap-4">
-          <input
-            type="text"
-            placeholder="Search by client name, ID, or phone"
-            className="border rounded px-4 py-2 w-full md:w-1/3"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-          <select
-            className="border rounded px-4 py-2"
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-          >
-            {statusOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <div className="ml-auto flex gap-2">
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label htmlFor="search" className="block text-sm font-medium mb-1">Search</label>
+            <div className="relative">
+              <input
+                id="search"
+                type="text"
+                placeholder="Search by client name, ID, or phone"
+                className="border rounded px-4 py-2 w-full pl-10"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
+              <UserRound className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            </div>
+          </div>
+          
+          <div>
+            <label htmlFor="status" className="block text-sm font-medium mb-1">Status</label>
+            <div className="relative">
+              <select
+                id="status"
+                className="border rounded px-4 py-2 w-full appearance-none pl-10"
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+              >
+                {statusOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <Filter className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            </div>
+          </div>
+          
+          <div>
+            <label htmlFor="employment" className="block text-sm font-medium mb-1">Employment</label>
+            <div className="relative">
+              <select
+                id="employment"
+                className="border rounded px-4 py-2 w-full appearance-none pl-10"
+                value={employmentFilter}
+                onChange={e => setEmploymentFilter(e.target.value)}
+              >
+                {employmentOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            </div>
+          </div>
+        </div>
+          
+        <div className="flex justify-end mb-4">
+          <div className="flex gap-2">
             <Button 
               variant={viewMode === 'compact' ? 'default' : 'outline'} 
               size="sm" 
@@ -375,7 +427,7 @@ const LoanApplicationsList = () => {
             </div>
             <h3 className="text-lg font-medium mb-2">No loan applications found</h3>
             <p className="text-gray-500 mb-4">
-              {searchTerm || statusFilter 
+              {searchTerm || statusFilter || employmentFilter
                 ? 'Try adjusting your search filters' 
                 : 'Start by creating a new loan application'}
             </p>

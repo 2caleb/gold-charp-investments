@@ -30,6 +30,8 @@ const NotificationsDropdown = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMarkingAsRead, setIsMarkingAsRead] = useState(false);
+  // Add a ref to track if we already showed toast notifications
+  const notificationsToastShown = useRef(false);
   const dropdownRef = useRef(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -65,7 +67,6 @@ const NotificationsDropdown = () => {
             entity_id: item.entity_id,
             is_read: item.is_read,
             created_at: item.created_at,
-            // No need to add extra properties not in the Notification type
           }));
           setNotifications(typedNotifications);
         }
@@ -103,37 +104,27 @@ const NotificationsDropdown = () => {
     setIsMarkingAsRead(true);
     const unreadIds = unreadNotifications.map(notification => notification.id);
 
-    // Fix the promise handling - use await instead of .then/.catch
     if (unreadIds.length > 0) {
       try {
         await supabase
           .from('notifications')
           .update({ is_read: true })
           .in('id', unreadIds);
-        console.log('Notifications marked as read');
+        
+        // Optimistically update the state
+        setNotifications(notifications.map(notification => ({ ...notification, is_read: true })));
+        
       } catch (error) {
-        console.error('Error marking notifications as read:', error);
-      }
-    }
-
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .in('id', unreadIds);
-
-      if (error) {
         console.error('Error marking all as read:', error);
         toast({
           title: 'Error',
           description: 'Failed to mark notifications as read.',
           variant: 'destructive',
         });
-      } else {
-        // Optimistically update the state
-        setNotifications(notifications.map(notification => ({ ...notification, is_read: true })));
+      } finally {
+        setIsMarkingAsRead(false);
       }
-    } finally {
+    } else {
       setIsMarkingAsRead(false);
     }
   };

@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { Notification } from '@/types/notification';
@@ -26,6 +26,7 @@ export const useNotifications = () => {
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { user } = useAuth();
+  const initialLoadComplete = useRef(false);
   
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -42,7 +43,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        if (data) setNotifications(data as unknown as Notification[]);
+        if (data) {
+          setNotifications(data as unknown as Notification[]);
+          initialLoadComplete.current = true;
+        }
       } catch (error) {
         console.error('Error fetching notifications:', error);
       }
@@ -69,12 +73,14 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           const newNotification = payload.new as unknown as Notification;
           setNotifications(prev => [newNotification, ...prev]);
           
-          // Show toast notification
-          toast({
-            title: 'New Notification',
-            description: newNotification.message,
-            action: <Bell className="h-4 w-4" />,
-          });
+          // Only show toast for truly new notifications (not on initial load)
+          if (initialLoadComplete.current) {
+            toast({
+              title: 'New Notification',
+              description: newNotification.message,
+              action: <Bell className="h-4 w-4" />,
+            });
+          }
         }
       )
       .subscribe();
