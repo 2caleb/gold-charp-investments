@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -334,7 +333,7 @@ const LoanApplicationsList = () => {
                       
                       {viewMode === 'detailed' && (
                         <td className="py-3 px-4 max-w-xs truncate" title={enrichedLoan.purpose_of_loan || ''}>
-                          {enrichedLoan.purpose_of_loan || enrichedLoan.purpose || 'N/A'}
+                          {enrichedLoan.purpose_of_loan || 'N/A'}
                         </td>
                       )}
                       
