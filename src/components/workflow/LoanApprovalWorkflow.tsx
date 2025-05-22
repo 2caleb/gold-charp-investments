@@ -1,23 +1,14 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import NoActionRequired from './NoActionRequired';
 import { useUser } from '@/hooks/use-user';
 import { InstallmentCalculator } from '@/components/loans/calculator';
-
-export interface WorkflowLoanData {
-  id: string;
-  client_name: string;
-  loan_amount: number;
-  loan_type: string;
-  purpose_of_loan?: string;
-  status: string;
-  current_stage?: string;
-  // ... other loan properties
-}
+import { WorkflowLoanData } from '@/types/workflow';
 
 interface LoanApprovalWorkflowProps {
   loanData: WorkflowLoanData;
-  onWorkflowUpdate: () => void;
+  onWorkflowUpdate?: () => void;
 }
 
 const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, onWorkflowUpdate }) => {
@@ -26,7 +17,7 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
   // Add current_stage if it's missing in the data
   const loanDataWithStage = {
     ...loanData,
-    current_stage: loanData.current_stage || loanData.status || 'pending'
+    current_stage: loanData.workflow_stage || 'pending'
   };
 
   if (!userProfile) {
@@ -60,4 +51,3 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
 };
 
 export default LoanApprovalWorkflow;
-export type { WorkflowLoanData };

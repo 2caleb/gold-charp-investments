@@ -24,7 +24,8 @@ export const adaptLoanDataToWorkflowFormat = (loanData: any): WorkflowLoanData =
     created_by: loanData.created_by || '',
     created_at: loanData.created_at || new Date().toISOString(),
     current_approver: loanData.current_approver || '',
-    status: loanData.status || 'pending'
+    status: loanData.status || 'pending',
+    loan_type: loanData.loan_type || 'general' // Default loan_type if not provided
   };
 };
 

@@ -17,4 +17,5 @@ export interface WorkflowLoanData {
   current_approver: string;
   workflow_stage: string; // Added this field to replace current_stage
   status: string;
+  loan_type?: string; // Added as optional to maintain compatibility
 }

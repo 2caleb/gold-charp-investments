@@ -32,7 +32,8 @@ const fetchLoanData = async (id: string): Promise<any> => {
         created_at: '2023-10-15T10:30:00Z',
         current_approver: 'manager@example.com',
         current_stage: 'manager_review', // Legacy field
-        status: 'pending'
+        status: 'pending',
+        loan_type: 'mortgage' // Added loan_type
       });
     }, 1000);
   });
@@ -105,7 +106,10 @@ const LoanApprovalPage: React.FC = () => {
             loanData={loanData} 
           />
         ) : (
-          <NoActionRequired loanData={loanData} />
+          <NoActionRequired 
+            loanData={loanData}
+            message="You are not the current approver for this loan application."
+          />
         )}
       </div>
     </Layout>
