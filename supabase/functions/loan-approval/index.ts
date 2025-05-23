@@ -132,7 +132,7 @@ serve(async (req) => {
       // Update the workflow record with approval/rejection
       const updateObject: Record<string, any> = {
         [`${currentStage}_approved`]: approved,
-        [`${currentStage}_notes`]: notes || ""
+        [`${currentStage}_notes`]: notes
       };
       
       // Add approver name if available
@@ -154,14 +154,7 @@ serve(async (req) => {
         .single();
 
       if (workflowError) {
-        console.error("Error updating workflow:", workflowError);
-        return new Response(
-          JSON.stringify({ error: workflowError.message || "Failed to update workflow" }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
-          }
-        );
+        throw workflowError;
       }
 
       // Update application status
@@ -169,7 +162,7 @@ serve(async (req) => {
         .from('loan_applications')
         .update({ 
           status: applicationStatus,
-          ...(approved ? {} : { rejection_reason: notes || "" }),
+          ...(approved ? {} : { rejection_reason: notes }),
           last_updated: new Date().toISOString()
         })
         .eq('id', loanId)
@@ -177,14 +170,7 @@ serve(async (req) => {
         .single();
 
       if (applicationError) {
-        console.error("Error updating application:", applicationError);
-        return new Response(
-          JSON.stringify({ error: applicationError.message || "Failed to update application" }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
-          }
-        );
+        throw applicationError;
       }
 
       // Create notification for application status change
@@ -206,34 +192,24 @@ serve(async (req) => {
       
       // Only create notification if we have a user ID to send it to
       if (loanApplication.created_by) {
-        try {
-          await supabaseClient
-            .from('notifications')
-            .insert({
-              user_id: loanApplication.created_by,
-              message: notificationMessage,
-              related_to: 'loan_application',
-              entity_id: loanId
-            });
-        } catch (notifyError) {
-          console.error("Notification error (non-critical):", notifyError);
-          // Continue execution even if notification fails
-        }
+        await supabaseClient
+          .from('notifications')
+          .insert({
+            user_id: loanApplication.created_by,
+            message: notificationMessage,
+            related_to: 'loan_application',
+            entity_id: loanId
+          });
       }
 
       // Log workflow action
-      try {
-        await supabaseClient
-          .from('loan_workflow_log')
-          .insert({
-            loan_application_id: loanId,
-            action: approved ? `Approved by ${currentStage}` : `Rejected by ${currentStage}`,
-            performed_by: approverId
-          });
-      } catch (logError) {
-        console.error("Logging error (non-critical):", logError);
-        // Continue execution even if logging fails
-      }
+      await supabaseClient
+        .from('loan_workflow_log')
+        .insert({
+          loan_application_id: loanId,
+          action: approved ? `Approved by ${currentStage}` : `Rejected by ${currentStage}`,
+          performed_by: approverId
+        });
 
       // Return success response
       return new Response(
@@ -265,7 +241,7 @@ serve(async (req) => {
         .from('loan_applications')
         .update({ 
           loan_amount: downsized_amount,
-          downsizing_reason: notes || "",
+          downsizing_reason: notes,
           last_updated: new Date().toISOString()
         })
         .eq('id', loanId)
@@ -273,31 +249,19 @@ serve(async (req) => {
         .single();
 
       if (applicationError) {
-        console.error("Error downsizing application:", applicationError);
-        return new Response(
-          JSON.stringify({ error: applicationError.message || "Failed to update application" }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, "Content-Type": "application/json" } 
-          }
-        );
+        throw applicationError;
       }
 
       // Create notification only if we have a user ID
       if (loanApplication.created_by) {
-        try {
-          await supabaseClient
-            .from('notifications')
-            .insert({
-              user_id: loanApplication.created_by,
-              message: `Your loan amount has been adjusted to ${downsized_amount}.`,
-              related_to: 'loan_application',
-              entity_id: loanId
-            });
-        } catch (notifyError) {
-          console.error("Notification error (non-critical):", notifyError);
-          // Continue execution even if notification fails
-        }
+        await supabaseClient
+          .from('notifications')
+          .insert({
+            user_id: loanApplication.created_by,
+            message: `Your loan amount has been adjusted to ${downsized_amount}.`,
+            related_to: 'loan_application',
+            entity_id: loanId
+          });
       }
 
       // Return success response

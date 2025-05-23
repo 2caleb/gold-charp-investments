@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for loan processing
  */
@@ -33,9 +32,6 @@ export function isValidLoanIdFormat(loanId: string): boolean {
   return regex.test(loanId);
 }
 
-// Define valid role types
-export type RoleType = 'manager' | 'director' | 'ceo' | 'chairperson';
-
 /**
  * Generate a rejection reason message based on various factors
  * 
@@ -46,13 +42,13 @@ export type RoleType = 'manager' | 'director' | 'ceo' | 'chairperson';
  * @returns A formatted rejection reason
  */
 export function generateRejectionReason(
-  role: RoleType, 
+  role: 'manager' | 'director' | 'ceo' | 'chairperson', 
   employmentStatus: string,
   loanAmount: string,
   monthlyIncome: string
 ): string {
   const numericLoanAmount = parseFloat(loanAmount.replace(/,/g, ''));
-  const numericMonthlyIncome = parseFloat(monthlyIncome.replace(/,/g, ''));
+  const numericMonthlyIncome = parseFloat(monthlyIncome.replace(/,/g, '));
   
   // Calculate debt-to-income ratio (loan amount / annual income)
   const annualIncome = numericMonthlyIncome * 12;
@@ -103,7 +99,7 @@ export function generateDownsizingReason(
 ): string {
   const numericOriginal = parseFloat(originalAmount.replace(/,/g, ''));
   const numericApproved = parseFloat(approvedAmount.replace(/,/g, ''));
-  const numericMonthlyIncome = parseFloat(monthlyIncome.replace(/,/g, ''));
+  const numericMonthlyIncome = parseFloat(monthlyIncome.replace(/,/g, '));
   
   const annualIncome = numericMonthlyIncome * 12;
   const originalRatio = numericOriginal / annualIncome;

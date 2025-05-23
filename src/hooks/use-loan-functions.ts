@@ -2,7 +2,10 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { generateRejectionReason, generateDownsizingReason, RoleType } from '@/utils/loanUtils';
+import { generateRejectionReason, generateDownsizingReason } from '@/utils/loanUtils';
+
+// Define valid role types to match the expected type in generateRejectionReason
+type RoleType = 'manager' | 'director' | 'ceo' | 'chairperson';
 
 // Helper function to validate role type
 const validateRoleType = (role: string | undefined): RoleType => {
@@ -85,11 +88,11 @@ export function useLoanFunctions() {
       if (action === 'reject' && !notes && roleType && employmentStatus && loanAmount) {
         // Ensure roleType is a valid RoleType
         const validRoleType = validateRoleType(roleType);
-        finalNotes = generateRejectionReason(validRoleType, employmentStatus, loanAmount, '0');
+        finalNotes = generateRejectionReason(validRoleType, employmentStatus, loanAmount, '');
       }
       
       if (action === 'downsize' && !notes && loanAmount && downsizedAmount) {
-        finalNotes = generateDownsizingReason(loanAmount, downsizedAmount, '0');
+        finalNotes = generateDownsizingReason(loanAmount, downsizedAmount, '');
       }
       
       const { data, error } = await supabase.functions.invoke('loan-approval', {
@@ -102,13 +105,10 @@ export function useLoanFunctions() {
         }
       });
 
-      if (error) {
-        console.error('Loan approval function error:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       let toastTitle = 'Action Successful';
-      let description = data?.message || 'Action completed successfully';
+      let description = data.message;
       
       if (action === 'approve') {
         toastTitle = 'Loan Approved';
