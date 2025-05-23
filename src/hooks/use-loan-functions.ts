@@ -7,6 +7,15 @@ import { generateRejectionReason, generateDownsizingReason } from '@/utils/loanU
 // Define valid role types to match the expected type in generateRejectionReason
 type RoleType = 'manager' | 'director' | 'ceo' | 'chairperson';
 
+// Helper function to validate role type
+const validateRoleType = (role: string | undefined): RoleType => {
+  if (!role) return 'manager';
+  
+  return (['manager', 'director', 'ceo', 'chairperson'].includes(role) 
+    ? role as RoleType 
+    : 'manager');
+};
+
 export function useLoanFunctions() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -77,11 +86,8 @@ export function useLoanFunctions() {
       let finalNotes = notes;
       
       if (action === 'reject' && !notes && roleType && employmentStatus && loanAmount) {
-        // Cast roleType to RoleType if it's a valid role, otherwise use 'manager' as a fallback
-        const validRoleType = ['manager', 'director', 'ceo', 'chairperson'].includes(roleType) 
-          ? roleType as RoleType 
-          : 'manager';
-          
+        // Ensure roleType is a valid RoleType
+        const validRoleType = validateRoleType(roleType);
         finalNotes = generateRejectionReason(validRoleType, employmentStatus, loanAmount, '');
       }
       

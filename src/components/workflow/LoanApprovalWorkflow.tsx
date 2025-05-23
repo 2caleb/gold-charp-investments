@@ -39,6 +39,11 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
     return <NoActionRequired message="Please log in to access the loan approval workflow." />;
   }
 
+  // Safe role type for rejection reason generation
+  const safeRoleType = userRole && ['manager', 'director', 'ceo', 'chairperson'].includes(userRole) 
+    ? userRole 
+    : 'manager';
+
   const handleAction = async (action: 'approve' | 'reject') => {
     setIsSubmitting(true);
     try {
@@ -50,7 +55,7 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
         loanData.employment_status,
         String(loanData.loan_amount),
         undefined,
-        userRole
+        safeRoleType // Pass the validated role type
       );
       
       if (result) {

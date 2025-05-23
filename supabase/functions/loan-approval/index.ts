@@ -67,7 +67,18 @@ serve(async (req) => {
 
     // Get the current workflow and stage
     const workflow = loanApplication.loan_application_workflow;
-    const workflowId = workflow.id;
+    const workflowId = workflow?.id;
+    
+    if (!workflowId) {
+      return new Response(
+        JSON.stringify({ error: "Workflow data not found for this application" }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+    
     const currentStage = workflow.current_stage || 'field_officer';
     
     // Execute the action (approve or reject)
@@ -179,14 +190,17 @@ serve(async (req) => {
         }
       }
       
-      await supabaseClient
-        .from('notifications')
-        .insert({
-          user_id: loanApplication.created_by,
-          message: notificationMessage,
-          related_to: 'loan_application',
-          entity_id: loanId
-        });
+      // Only create notification if we have a user ID to send it to
+      if (loanApplication.created_by) {
+        await supabaseClient
+          .from('notifications')
+          .insert({
+            user_id: loanApplication.created_by,
+            message: notificationMessage,
+            related_to: 'loan_application',
+            entity_id: loanId
+          });
+      }
 
       // Log workflow action
       await supabaseClient
@@ -238,15 +252,17 @@ serve(async (req) => {
         throw applicationError;
       }
 
-      // Create notification
-      await supabaseClient
-        .from('notifications')
-        .insert({
-          user_id: loanApplication.created_by,
-          message: `Your loan amount has been adjusted to ${downsized_amount}.`,
-          related_to: 'loan_application',
-          entity_id: loanId
-        });
+      // Create notification only if we have a user ID
+      if (loanApplication.created_by) {
+        await supabaseClient
+          .from('notifications')
+          .insert({
+            user_id: loanApplication.created_by,
+            message: `Your loan amount has been adjusted to ${downsized_amount}.`,
+            related_to: 'loan_application',
+            entity_id: loanId
+          });
+      }
 
       // Return success response
       return new Response(
