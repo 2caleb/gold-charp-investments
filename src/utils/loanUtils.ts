@@ -33,6 +33,9 @@ export function isValidLoanIdFormat(loanId: string): boolean {
   return regex.test(loanId);
 }
 
+// Define valid role types
+export type RoleType = 'manager' | 'director' | 'ceo' | 'chairperson';
+
 /**
  * Generate a rejection reason message based on various factors
  * 
@@ -43,7 +46,7 @@ export function isValidLoanIdFormat(loanId: string): boolean {
  * @returns A formatted rejection reason
  */
 export function generateRejectionReason(
-  role: 'manager' | 'director' | 'ceo' | 'chairperson', 
+  role: RoleType, 
   employmentStatus: string,
   loanAmount: string,
   monthlyIncome: string

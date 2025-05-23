@@ -10,8 +10,9 @@ import { WorkflowLoanData } from '@/types/workflow';
 import { useRolePermissions } from '@/hooks/use-role-permissions'; 
 import { useLoanFunctions } from '@/hooks/use-loan-functions';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { RoleType } from '@/utils/loanUtils';
 
 interface LoanApprovalWorkflowProps {
   loanData: WorkflowLoanData;
@@ -40,8 +41,8 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
   }
 
   // Safe role type for rejection reason generation
-  const safeRoleType = userRole && ['manager', 'director', 'ceo', 'chairperson'].includes(userRole) 
-    ? userRole 
+  const safeRoleType: RoleType = userRole && ['manager', 'director', 'ceo', 'chairperson'].includes(userRole) 
+    ? userRole as RoleType 
     : 'manager';
 
   const handleAction = async (action: 'approve' | 'reject') => {
