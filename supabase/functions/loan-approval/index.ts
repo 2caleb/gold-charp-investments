@@ -151,6 +151,15 @@ serve(async (req) => {
         entity_id: applicationId
       });
 
+    // Log workflow action
+    await supabaseClient
+      .from('loan_workflow_log')
+      .insert({
+        loan_application_id: applicationId,
+        action: approved ? `Approved by ${stage}` : `Rejected by ${stage}`,
+        performed_by: updatedApplication.current_approver
+      });
+
     // Return success response
     return new Response(
       JSON.stringify({ 
