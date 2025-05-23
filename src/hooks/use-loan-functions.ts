@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateRejectionReason, generateDownsizingReason } from '@/utils/loanUtils';
 
+// Define valid role types to match the expected type in generateRejectionReason
+type RoleType = 'manager' | 'director' | 'ceo' | 'chairperson';
+
 export function useLoanFunctions() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -74,7 +77,12 @@ export function useLoanFunctions() {
       let finalNotes = notes;
       
       if (action === 'reject' && !notes && roleType && employmentStatus && loanAmount) {
-        finalNotes = generateRejectionReason(roleType, employmentStatus, loanAmount, '');
+        // Cast roleType to RoleType if it's a valid role, otherwise use 'manager' as a fallback
+        const validRoleType = ['manager', 'director', 'ceo', 'chairperson'].includes(roleType) 
+          ? roleType as RoleType 
+          : 'manager';
+          
+        finalNotes = generateRejectionReason(validRoleType, employmentStatus, loanAmount, '');
       }
       
       if (action === 'downsize' && !notes && loanAmount && downsizedAmount) {
