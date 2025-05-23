@@ -64,22 +64,21 @@ export function useLoanFunctions() {
     notes: string, 
     approverId: string,
     employmentStatus?: string,
-    monthlyIncome?: string,
     loanAmount?: string,
     downsizedAmount?: string,
-    roleType?: 'manager' | 'director' | 'ceo' | 'chairperson'
+    roleType?: string
   ) => {
     setIsLoading(true);
     try {
       // Generate reason if not provided
       let finalNotes = notes;
       
-      if (action === 'reject' && !notes && roleType && employmentStatus && loanAmount && monthlyIncome) {
-        finalNotes = generateRejectionReason(roleType, employmentStatus, loanAmount, monthlyIncome);
+      if (action === 'reject' && !notes && roleType && employmentStatus && loanAmount) {
+        finalNotes = generateRejectionReason(roleType, employmentStatus, loanAmount, '');
       }
       
-      if (action === 'downsize' && !notes && loanAmount && downsizedAmount && monthlyIncome) {
-        finalNotes = generateDownsizingReason(loanAmount, downsizedAmount, monthlyIncome);
+      if (action === 'downsize' && !notes && loanAmount && downsizedAmount) {
+        finalNotes = generateDownsizingReason(loanAmount, downsizedAmount, '');
       }
       
       const { data, error } = await supabase.functions.invoke('loan-approval', {
