@@ -10,7 +10,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { WorkflowLoanData } from '@/types/workflow';
 import { adaptLoanDataToWorkflowFormat } from '@/utils/workflowAdapter';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
-import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 
 // Fetch loan data from the database
@@ -67,10 +66,15 @@ const LoanApprovalPage: React.FC = () => {
   if (isLoading) {
     return (
       <Layout>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-          <div className="container max-w-7xl mx-auto py-12 px-4">
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-700"></div>
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-indigo-900 dark:to-purple-900">
+          <div className="container max-w-7xl mx-auto py-8 px-4">
+            <div className="flex justify-center items-center h-96">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur-sm opacity-75 animate-pulse"></div>
+                <div className="relative w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -81,11 +85,22 @@ const LoanApprovalPage: React.FC = () => {
   if (error || !loanData) {
     return (
       <Layout>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-          <div className="container max-w-7xl mx-auto py-12 px-4">
-            <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg shadow-sm" role="alert">
-              <strong className="font-bold">Error!</strong>
-              <span className="block sm:inline ml-2">There was a problem loading the loan application.</span>
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-indigo-900 dark:to-purple-900">
+          <div className="container max-w-7xl mx-auto py-8 px-4">
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-200 px-8 py-6 rounded-2xl shadow-lg backdrop-blur-sm" role="alert">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-red-100 dark:bg-red-800 rounded-full flex items-center justify-center mr-4">
+                    <svg className="w-5 h-5 text-red-600 dark:text-red-300" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg mb-1">Error Loading Application</h3>
+                    <p className="text-sm opacity-90">There was a problem loading the loan application. Please try again or contact support.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -95,37 +110,19 @@ const LoanApprovalPage: React.FC = () => {
   
   return (
     <Layout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-        <div className="container max-w-7xl mx-auto py-12 px-4">
-          {/* Premium Header */}
-          <div className="mb-8">
-            <div className="text-center mb-6">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-700 via-blue-600 to-indigo-700 bg-clip-text text-transparent mb-2">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-indigo-900 dark:to-purple-900">
+        <div className="container max-w-7xl mx-auto py-8 px-4">
+          {/* Premium Welcome Header */}
+          <div className="text-center mb-8">
+            <div className="relative inline-block">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-700 via-indigo-600 to-pink-600 bg-clip-text text-transparent mb-4">
                 Welcome {userName}
               </h1>
-              <div className="w-24 h-1 bg-gradient-to-r from-purple-500 to-blue-500 mx-auto rounded-full"></div>
+              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 rounded-full"></div>
             </div>
-            
-            <Card className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border-0 shadow-xl">
-              <div className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-1">
-                      {loanData.client_name}
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Loan Application Review
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Application ID</div>
-                    <div className="text-xs font-mono text-gray-600 dark:text-gray-300">
-                      {loanData.id.slice(0, 8)}...
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
+            <p className="text-gray-600 dark:text-gray-300 text-lg mt-6 font-medium">
+              Premium Loan Application Review System
+            </p>
           </div>
           
           <EnhancedLoanApprovalWorkflow 

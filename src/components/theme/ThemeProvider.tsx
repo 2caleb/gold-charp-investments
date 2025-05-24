@@ -45,10 +45,24 @@ export function ThemeProvider({
         : "light";
       
       root.classList.add(systemTheme);
+      
+      // Apply premium gradient backgrounds based on theme
+      if (systemTheme === "dark") {
+        document.body.style.background = "linear-gradient(135deg, #2d1b69 0%, #11998e 100%)";
+      } else {
+        document.body.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+      }
       return;
     }
     
     root.classList.add(theme);
+    
+    // Apply premium gradient backgrounds
+    if (theme === "dark") {
+      document.body.style.background = "linear-gradient(135deg, #2d1b69 0%, #11998e 100%)";
+    } else {
+      document.body.style.background = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+    }
   }, [theme]);
 
   const value = {
