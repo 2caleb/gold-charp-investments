@@ -48,6 +48,18 @@ serve(async (req) => {
 async function processWorkflow(supabaseClient: any, loanId: string, approverId: string, decision: string, notes: string) {
   console.log('Processing workflow decision:', { loanId, approverId, decision, notes })
 
+  // First verify the loan application exists
+  const { data: loanApplication, error: loanError } = await supabaseClient
+    .from('loan_applications')
+    .select('*')
+    .eq('id', loanId)
+    .single()
+
+  if (loanError || !loanApplication) {
+    console.error('Loan application not found:', loanError)
+    throw new Error(`Loan application not found: ${loanError?.message || 'Unknown error'}`)
+  }
+
   // Get approver profile
   const { data: approver, error: approverError } = await supabaseClient
     .from('profiles')
@@ -67,7 +79,7 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     .single()
 
   if (workflowError && workflowError.code === 'PGRST116') {
-    // Workflow doesn't exist, create it with proper field mapping
+    // Workflow doesn't exist, create it
     const { data: newWorkflow, error: createError } = await supabaseClient
       .from('loan_application_workflow')
       .insert({
@@ -161,13 +173,7 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
   }
 
   // Create notification
-  const { data: loanApp } = await supabaseClient
-    .from('loan_applications')
-    .select('client_name, created_by')
-    .eq('id', loanId)
-    .single()
-
-  if (loanApp) {
+  if (loanApplication.created_by) {
     let message = ''
     if (decision === 'approve' && !isComplete) {
       message = `Your loan application has been approved by ${approver.full_name} (${approverRole}) and moved to ${nextStage} stage.`
@@ -180,7 +186,7 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     await supabaseClient
       .from('notifications')
       .insert({
-        user_id: loanApp.created_by,
+        user_id: loanApplication.created_by,
         message,
         related_to: 'loan_application',
         entity_id: loanId
