@@ -39,19 +39,21 @@ const WeeklyReportsViewer: React.FC = () => {
 
     try {
       setIsLoading(true);
-      // Use a raw SQL query to fetch from weekly_reports table
-      const { data, error } = await supabase.rpc('get_weekly_reports', {
-        target_role: userRole
+      
+      // Use the edge function to get weekly reports
+      const { data, error } = await supabase.functions.invoke('get-weekly-reports', {
+        body: { target_role: userRole }
       });
 
       if (error) {
-        // If the function doesn't exist, create mock data for now
-        console.warn('Weekly reports function not available:', error);
+        console.warn('Weekly reports function error:', error);
         setReports([]);
         return;
       }
       
-      setReports(data || []);
+      // Ensure data is an array and cast to WeeklyReport[]
+      const reportsData = Array.isArray(data) ? data as WeeklyReport[] : [];
+      setReports(reportsData);
     } catch (error: any) {
       console.error('Error fetching reports:', error);
       toast({
@@ -100,6 +102,11 @@ const WeeklyReportsViewer: React.FC = () => {
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
     return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+  };
+
+  const getApprovalRate = (report: WeeklyReport) => {
+    if (report.total_applications === 0) return 0;
+    return Math.round((report.approved_applications / report.total_applications) * 100);
   };
 
   if (isLoading) {
@@ -177,7 +184,7 @@ const WeeklyReportsViewer: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">Approval Rate</p>
-                      <p className="text-2xl font-bold">{reports[0].report_data?.approval_rate || 0}%</p>
+                      <p className="text-2xl font-bold">{getApprovalRate(reports[0])}%</p>
                     </div>
                     <Badge variant="outline">{userRole}</Badge>
                   </div>
