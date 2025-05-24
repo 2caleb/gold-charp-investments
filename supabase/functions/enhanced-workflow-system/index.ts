@@ -67,23 +67,30 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     .single()
 
   if (workflowError && workflowError.code === 'PGRST116') {
-    // Workflow doesn't exist, create it
+    // Workflow doesn't exist, create it with proper field mapping
     const { data: newWorkflow, error: createError } = await supabaseClient
       .from('loan_application_workflow')
       .insert({
         loan_application_id: loanId,
         current_stage: 'field_officer',
-        created_by: approverId
+        created_by: approverId,
+        field_officer_approved: false,
+        manager_approved: false,
+        director_approved: false,
+        chairperson_approved: false,
+        ceo_approved: false
       })
       .select()
       .single()
 
     if (createError) {
-      throw new Error('Failed to create workflow')
+      console.error('Error creating workflow:', createError)
+      throw new Error(`Failed to create workflow: ${createError.message}`)
     }
     workflow = newWorkflow
   } else if (workflowError) {
-    throw new Error('Workflow not found')
+    console.error('Error fetching workflow:', workflowError)
+    throw new Error(`Workflow error: ${workflowError.message}`)
   }
 
   const currentStage = workflow.current_stage
@@ -135,7 +142,8 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     .eq('loan_application_id', loanId)
 
   if (updateError) {
-    throw new Error('Failed to update workflow')
+    console.error('Error updating workflow:', updateError)
+    throw new Error(`Failed to update workflow: ${updateError.message}`)
   }
 
   // Update loan application status
@@ -148,7 +156,8 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     .eq('id', loanId)
 
   if (statusError) {
-    throw new Error('Failed to update loan status')
+    console.error('Error updating loan status:', statusError)
+    throw new Error(`Failed to update loan status: ${statusError.message}`)
   }
 
   // Create notification
