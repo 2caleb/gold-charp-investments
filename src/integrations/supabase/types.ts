@@ -72,39 +72,6 @@ export type Database = {
         }
         Relationships: []
       }
-      clients: {
-        Row: {
-          address: string
-          created_at: string | null
-          email: string | null
-          full_name: string
-          id: string
-          id_number: string
-          phone_number: string
-          user_id: string | null
-        }
-        Insert: {
-          address: string
-          created_at?: string | null
-          email?: string | null
-          full_name: string
-          id?: string
-          id_number: string
-          phone_number: string
-          user_id?: string | null
-        }
-        Update: {
-          address?: string
-          created_at?: string | null
-          email?: string | null
-          full_name?: string
-          id?: string
-          id_number?: string
-          phone_number?: string
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       delete_to: {
         Row: {
           created_at: string
@@ -309,15 +276,7 @@ export type Database = {
           rejection_reason?: string | null
           status?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "loan_applications_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       loan_workflow_log: {
         Row: {
@@ -326,6 +285,7 @@ export type Database = {
           loan_application_id: string
           performed_at: string | null
           performed_by: string
+          status: string | null
         }
         Insert: {
           action: string
@@ -333,6 +293,7 @@ export type Database = {
           loan_application_id: string
           performed_at?: string | null
           performed_by: string
+          status?: string | null
         }
         Update: {
           action?: string
@@ -340,6 +301,7 @@ export type Database = {
           loan_application_id?: string
           performed_at?: string | null
           performed_by?: string
+          status?: string | null
         }
         Relationships: [
           {
@@ -350,6 +312,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      "loan-approval": {
+        Row: {
+          full_name: string | null
+          id: string
+          Permissions: string | null
+          role: string | null
+          status: string | null
+        }
+        Insert: {
+          full_name?: string | null
+          id: string
+          Permissions?: string | null
+          role?: string | null
+          status?: string | null
+        }
+        Update: {
+          full_name?: string | null
+          id?: string
+          Permissions?: string | null
+          role?: string | null
+          status?: string | null
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -378,42 +364,6 @@ export type Database = {
           message?: string
           related_to?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      permissions: {
-        Row: {
-          full_name: string | null
-          id: string
-          Permissions: string | null
-          role: string | null
-        }
-        Insert: {
-          full_name?: string | null
-          id: string
-          Permissions?: string | null
-          role?: string | null
-        }
-        Update: {
-          full_name?: string | null
-          id?: string
-          Permissions?: string | null
-          role?: string | null
-        }
-        Relationships: []
-      }
-      profile: {
-        Row: {
-          id: string
-          role: string
-        }
-        Insert: {
-          id: string
-          role: string
-        }
-        Update: {
-          id?: string
-          role?: string
         }
         Relationships: []
       }

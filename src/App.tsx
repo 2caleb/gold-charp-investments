@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
@@ -42,6 +41,7 @@ import NewClient from '@/pages/NewClient';
 import ClientDetail from '@/pages/ClientDetail';
 import Documents from '@/pages/Documents';
 import Payments from '@/pages/Payments';
+import ReportsPage from '@/pages/ReportsPage';
 
 // Staff Pages
 import DataCollection from '@/pages/staff/DataCollection';
@@ -94,6 +94,7 @@ function App() {
               <Route path="/clients/:id" element={<PrivateRoute><ClientDetail /></PrivateRoute>} />
               <Route path="/documents" element={<PrivateRoute><Documents /></PrivateRoute>} />
               <Route path="/payments" element={<PrivateRoute><Payments /></PrivateRoute>} />
+              <Route path="/reports" element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
               
               {/* Staff Routes */}
               <Route path="/staff/data-collection" element={<StaffRoute><DataCollection /></StaffRoute>} />
