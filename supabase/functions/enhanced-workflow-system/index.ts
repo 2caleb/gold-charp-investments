@@ -1,153 +1,167 @@
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.1";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const WORKFLOW_STAGES = ['field_officer', 'manager', 'director', 'chairperson', 'ceo'];
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-    const { 
-      action,
-      loan_id: loanId, 
-      approver_id: approverId,
-      notes,
-      decision // 'approve' or 'reject'
-    } = await req.json();
+    const { action, loan_id, approver_id, decision, notes } = await req.json()
 
-    if (action === 'process_workflow') {
-      return await processWorkflowAction(supabaseClient, loanId, approverId, decision, notes);
-    } else if (action === 'generate_weekly_report') {
-      return await generateWeeklyReport(supabaseClient);
+    switch (action) {
+      case 'process_workflow':
+        return await processWorkflow(supabaseClient, loan_id, approver_id, decision, notes)
+      
+      case 'generate_weekly_report':
+        return await generateWeeklyReports(supabaseClient)
+      
+      case 'get_weekly_reports':
+        return await getWeeklyReports(supabaseClient, req)
+      
+      default:
+        return new Response(
+          JSON.stringify({ error: 'Invalid action' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
     }
 
-    return new Response(
-      JSON.stringify({ error: "Invalid action" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
   } catch (error) {
-    console.error("Error in enhanced workflow system:", error);
+    console.error('Error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    )
   }
-});
+})
 
-async function processWorkflowAction(supabaseClient: any, loanId: string, approverId: string, decision: string, notes: string) {
-  // Get current loan and workflow data
-  const { data: loanData, error: loanError } = await supabaseClient
-    .from('loan_applications')
-    .select(`
-      *,
-      loan_application_workflow(*)
-    `)
-    .eq('id', loanId)
-    .single();
+async function processWorkflow(supabaseClient: any, loanId: string, approverId: string, decision: string, notes: string) {
+  console.log('Processing workflow decision:', { loanId, approverId, decision, notes })
 
-  if (loanError || !loanData) {
-    throw new Error("Loan application not found");
-  }
-
-  const workflow = loanData.loan_application_workflow;
-  const currentStage = workflow?.current_stage || 'field_officer';
-  const currentStageIndex = WORKFLOW_STAGES.indexOf(currentStage);
-
-  // Get approver details
-  const { data: approverData } = await supabaseClient
+  // Get approver profile
+  const { data: approver, error: approverError } = await supabaseClient
     .from('profiles')
     .select('full_name, role')
     .eq('id', approverId)
-    .single();
+    .single()
 
-  const approverName = approverData?.full_name || 'Unknown';
-  const approverRole = approverData?.role || currentStage;
+  if (approverError || !approver) {
+    throw new Error('Approver not found')
+  }
 
-  let nextStage = null;
-  let applicationStatus = loanData.status;
-  let workflowUpdate: any = {};
+  // Get current workflow state
+  const { data: workflow, error: workflowError } = await supabaseClient
+    .from('loan_application_workflow')
+    .select('*')
+    .eq('loan_application_id', loanId)
+    .single()
+
+  if (workflowError || !workflow) {
+    throw new Error('Workflow not found')
+  }
+
+  const currentStage = workflow.current_stage
+  const approverRole = approver.role
+
+  // Validate that the approver can act on this stage
+  if (currentStage !== approverRole) {
+    throw new Error(`Cannot approve at ${currentStage} stage with ${approverRole} role`)
+  }
+
+  // Update workflow based on decision
+  const updateData: any = {
+    updated_at: new Date().toISOString()
+  }
+
+  // Set approval fields based on role
+  updateData[`${approverRole}_approved`] = decision === 'approve'
+  updateData[`${approverRole}_name`] = approver.full_name
+  updateData[`${approverRole}_notes`] = notes
+
+  let nextStage = null
+  let finalStatus = null
+  let isComplete = false
 
   if (decision === 'approve') {
-    // Mark current stage as approved
-    workflowUpdate[`${currentStage}_approved`] = true;
-    workflowUpdate[`${currentStage}_notes`] = notes;
-    workflowUpdate[`${currentStage}_name`] = approverName;
-
-    // Move to next stage or final approval
-    if (currentStageIndex < WORKFLOW_STAGES.length - 1) {
-      nextStage = WORKFLOW_STAGES[currentStageIndex + 1];
-      workflowUpdate.current_stage = nextStage;
-      applicationStatus = `pending_${nextStage}`;
+    // Determine next stage
+    const stageOrder = ['field_officer', 'manager', 'director', 'chairperson', 'ceo']
+    const currentIndex = stageOrder.indexOf(currentStage)
+    
+    if (currentIndex < stageOrder.length - 1) {
+      nextStage = stageOrder[currentIndex + 1]
+      updateData.current_stage = nextStage
     } else {
-      // CEO final approval
-      applicationStatus = 'approved';
+      // CEO approved - final approval
+      finalStatus = 'approved'
+      isComplete = true
     }
   } else {
-    // Rejection stops the workflow
-    workflowUpdate[`${currentStage}_approved`] = false;
-    workflowUpdate[`${currentStage}_notes`] = notes;
-    workflowUpdate[`${currentStage}_name`] = approverName;
-    
-    applicationStatus = currentStage === 'ceo' ? 'rejected_final' : 'rejected';
+    // Rejected at any stage
+    finalStatus = currentStage === 'ceo' ? 'rejected_final' : 'rejected'
+    isComplete = true
   }
 
   // Update workflow
-  const { error: workflowError } = await supabaseClient
+  const { error: updateError } = await supabaseClient
     .from('loan_application_workflow')
-    .update(workflowUpdate)
-    .eq('loan_application_id', loanId);
+    .update(updateData)
+    .eq('loan_application_id', loanId)
 
-  if (workflowError) throw workflowError;
+  if (updateError) {
+    throw new Error('Failed to update workflow')
+  }
 
-  // Update application status
-  const { error: appError } = await supabaseClient
-    .from('loan_applications')
-    .update({ 
-      status: applicationStatus,
-      ...(decision === 'reject' ? { rejection_reason: notes } : {}),
-      last_updated: new Date().toISOString()
-    })
-    .eq('id', loanId);
+  // Update loan application status if complete
+  if (isComplete && finalStatus) {
+    const { error: statusError } = await supabaseClient
+      .from('loan_applications')
+      .update({ 
+        status: finalStatus,
+        last_updated: new Date().toISOString()
+      })
+      .eq('id', loanId)
 
-  if (appError) throw appError;
+    if (statusError) {
+      throw new Error('Failed to update loan status')
+    }
+  }
 
   // Create notification
-  if (loanData.created_by) {
-    let message = '';
-    if (decision === 'approve') {
-      if (nextStage) {
-        message = `Your loan application has been approved by ${approverName} (${currentStage.replace('_', ' ')}) and moved to ${nextStage.replace('_', ' ')} stage.`;
-      } else {
-        message = `🎉 CONGRATULATIONS! Your loan application has been FULLY APPROVED by CEO ${approverName}!`;
-      }
+  const { data: loanApp } = await supabaseClient
+    .from('loan_applications')
+    .select('client_name, created_by')
+    .eq('id', loanId)
+    .single()
+
+  if (loanApp) {
+    let message = ''
+    if (decision === 'approve' && !isComplete) {
+      message = `Your loan application has been approved by ${approver.full_name} (${approverRole}) and moved to ${nextStage} stage.`
+    } else if (decision === 'approve' && isComplete) {
+      message = `Your loan application has been APPROVED by ${approver.full_name} (${approverRole}). Congratulations!`
     } else {
-      message = currentStage === 'ceo' 
-        ? `❌ FINAL REJECTION: Your loan application has been rejected by CEO ${approverName}.`
-        : `Your loan application was rejected by ${approverName} (${currentStage.replace('_', ' ')}).`;
+      message = `Your loan application has been rejected by ${approver.full_name} (${approverRole}).`
     }
 
     await supabaseClient
       .from('notifications')
       .insert({
-        user_id: loanData.created_by,
+        user_id: loanApp.created_by,
         message,
         related_to: 'loan_application',
         entity_id: loanId
-      });
+      })
   }
 
   // Log the action
@@ -155,121 +169,76 @@ async function processWorkflowAction(supabaseClient: any, loanId: string, approv
     .from('loan_workflow_log')
     .insert({
       loan_application_id: loanId,
-      action: `${decision === 'approve' ? 'Approved' : 'Rejected'} by ${currentStage}`,
-      performed_by: approverId
-    });
+      action: `${decision} by ${approverRole}`,
+      performed_by: approverId,
+      status: finalStatus || `moved to ${nextStage}`
+    })
 
   return new Response(
     JSON.stringify({ 
-      success: true,
-      message: `Application ${decision}d successfully`,
-      status: applicationStatus,
+      success: true, 
       next_stage: nextStage,
-      is_final: currentStage === 'ceo'
+      final_status: finalStatus,
+      is_final: isComplete,
+      message: decision === 'approve' ? 'Application approved successfully' : 'Application rejected'
     }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }
 
-async function generateWeeklyReport(supabaseClient: any) {
-  const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Monday
-  weekStart.setHours(0, 0, 0, 0);
-  
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6); // Sunday
-  weekEnd.setHours(23, 59, 59, 999);
+async function generateWeeklyReports(supabaseClient: any) {
+  const roles = ['manager', 'director', 'chairperson', 'ceo']
+  const weekStart = new Date()
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1) // Monday
+  weekStart.setHours(0, 0, 0, 0)
 
-  const roles = ['manager', 'director', 'chairperson', 'ceo'];
-  const reports = [];
+  const reports = []
 
   for (const role of roles) {
-    let query = supabaseClient
-      .from('loan_applications')
-      .select(`
-        *,
-        loan_application_workflow(*)
-      `)
-      .gte('created_at', weekStart.toISOString())
-      .lte('created_at', weekEnd.toISOString());
+    try {
+      const { data, error } = await supabaseClient.rpc('generate_weekly_report', {
+        target_role: role,
+        week_start: weekStart.toISOString().split('T')[0]
+      })
 
-    // Filter based on role
-    if (role !== 'ceo') {
-      // For other roles, filter applications that reached their stage
-      query = query.or(`loan_application_workflow.current_stage.eq.${role},loan_application_workflow.current_stage.in.(${WORKFLOW_STAGES.slice(WORKFLOW_STAGES.indexOf(role) + 1).join(',')}),status.eq.approved`);
-    }
-
-    const { data: applications } = await query;
-
-    if (applications) {
-      let totalApps = applications.length;
-      let approvedApps = 0;
-      let rejectedApps = 0;
-      let pendingApps = 0;
-      let totalAmount = 0;
-      let approvedAmount = 0;
-
-      applications.forEach(app => {
-        const amount = parseFloat(app.loan_amount?.replace(/,/g, '') || '0');
-        totalAmount += amount;
-
-        if (role === 'ceo') {
-          if (app.status === 'approved') {
-            approvedApps++;
-            approvedAmount += amount;
-          } else if (app.status.includes('rejected')) {
-            rejectedApps++;
-          } else {
-            pendingApps++;
-          }
-        } else {
-          const workflow = app.loan_application_workflow;
-          const stageApproved = workflow?.[`${role}_approved`];
-          
-          if (stageApproved === true) {
-            approvedApps++;
-            approvedAmount += amount;
-          } else if (stageApproved === false) {
-            rejectedApps++;
-          } else {
-            pendingApps++;
-          }
-        }
-      });
-
-      const reportData = {
-        week_start: weekStart.toISOString().split('T')[0],
-        week_end: weekEnd.toISOString().split('T')[0],
-        role,
-        total_applications: totalApps,
-        approved_applications: approvedApps,
-        rejected_applications: rejectedApps,
-        pending_applications: pendingApps,
-        total_loan_amount: totalAmount,
-        approved_loan_amount: approvedAmount,
-        approval_rate: totalApps > 0 ? Math.round((approvedApps / totalApps) * 100) : 0
-      };
-
-      // Insert report
-      await supabaseClient
-        .from('weekly_reports')
-        .upsert({
-          report_week: weekStart.toISOString().split('T')[0],
-          role_type: role,
-          ...reportData,
-          report_data: reportData
-        });
-
-      reports.push(reportData);
+      if (!error) {
+        reports.push({ role, data })
+      }
+    } catch (err) {
+      console.error(`Error generating report for ${role}:`, err)
     }
   }
 
   return new Response(
-    JSON.stringify({ 
-      success: true,
-      message: "Weekly reports generated successfully",
-      reports
-    }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+    JSON.stringify({ success: true, reports }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
+}
+
+async function getWeeklyReports(supabaseClient: any, req: Request) {
+  const url = new URL(req.url)
+  const targetRole = url.searchParams.get('target_role')
+
+  if (!targetRole) {
+    return new Response(
+      JSON.stringify({ error: 'target_role parameter required' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+    )
+  }
+
+  const { data, error } = await supabaseClient
+    .from('weekly_reports')
+    .select('*')
+    .eq('role_type', targetRole)
+    .order('report_week', { ascending: false })
+    .limit(10)
+
+  if (error) {
+    throw new Error('Failed to fetch weekly reports')
+  }
+
+  return new Response(
+    JSON.stringify(data || []),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  )
 }

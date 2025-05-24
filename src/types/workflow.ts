@@ -19,4 +19,5 @@ export interface WorkflowLoanData {
   workflow_stage: string; // Added this field to replace current_stage
   status: string;
   loan_type?: string; // Added as optional to maintain compatibility
+  loan_application_workflow?: any; // Added this property to fix the error
 }
