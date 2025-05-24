@@ -30,6 +30,9 @@ const EnhancedLoanApprovalWorkflow: React.FC<EnhancedLoanApprovalWorkflowProps> 
   const currentStage = loanData.workflow_stage || 'field_officer';
   const canModify = canModifyLoanApplication(currentStage);
 
+  // Get the phone number from either field
+  const phoneNumber = loanData.phone || loanData.phone_number || 'Not provided';
+
   const handleDecision = async (decision: 'approve' | 'reject') => {
     if (!userProfile) return;
 
@@ -110,8 +113,8 @@ const EnhancedLoanApprovalWorkflow: React.FC<EnhancedLoanApprovalWorkflowProps> 
               <p>{loanData.employment_status}</p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500">Phone</h3>
-              <p>{loanData.phone}</p>
+              <h3 className="text-sm font-medium text-gray-500">Phone Number</h3>
+              <p>{phoneNumber}</p>
             </div>
           </div>
         </CardContent>

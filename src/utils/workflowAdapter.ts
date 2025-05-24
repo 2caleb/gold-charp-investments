@@ -1,4 +1,3 @@
-
 import { WorkflowLoanData } from "@/types/workflow";
 
 /**
@@ -10,6 +9,9 @@ export const adaptLoanDataToWorkflowFormat = (loanData: any): WorkflowLoanData =
   const workflow = loanData.loan_application_workflow || {};
   const currentStage = workflow.current_stage || 'field_officer';
   
+  // Handle phone number mapping - check multiple possible field names
+  const phoneNumber = loanData.phone || loanData.phone_number || '';
+  
   return {
     ...loanData,
     loan_amount: typeof loanData.loan_amount === 'string' ? parseFloat(loanData.loan_amount) : loanData.loan_amount,
@@ -17,6 +19,9 @@ export const adaptLoanDataToWorkflowFormat = (loanData: any): WorkflowLoanData =
     // Map between purpose and purpose_of_loan fields
     purpose: loanData.purpose || loanData.purpose_of_loan || '',
     purpose_of_loan: loanData.purpose_of_loan || loanData.purpose || '',
+    // Ensure phone number is properly mapped
+    phone: phoneNumber,
+    phone_number: phoneNumber,
     // Ensure all required fields are present
     client_id: loanData.client_id || '',
     client_name: loanData.client_name || '',
@@ -25,13 +30,12 @@ export const adaptLoanDataToWorkflowFormat = (loanData: any): WorkflowLoanData =
     address: loanData.address || '',
     id_number: loanData.id_number || '',
     employment_status: loanData.employment_status || '',
-    phone: loanData.phone || '',
     approval_notes: loanData.approval_notes || '',
     created_by: loanData.created_by || '',
     created_at: loanData.created_at || new Date().toISOString(),
     current_approver: loanData.current_approver || '',
     status: loanData.status || 'pending',
-    loan_type: loanData.loan_type || 'general' // Default loan_type if not provided
+    loan_type: loanData.loan_type || 'general'
   };
 };
 

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -60,14 +59,30 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     throw new Error('Approver not found')
   }
 
-  // Get current workflow state
-  const { data: workflow, error: workflowError } = await supabaseClient
+  // Get current workflow state - create if doesn't exist
+  let { data: workflow, error: workflowError } = await supabaseClient
     .from('loan_application_workflow')
     .select('*')
     .eq('loan_application_id', loanId)
     .single()
 
-  if (workflowError || !workflow) {
+  if (workflowError && workflowError.code === 'PGRST116') {
+    // Workflow doesn't exist, create it
+    const { data: newWorkflow, error: createError } = await supabaseClient
+      .from('loan_application_workflow')
+      .insert({
+        loan_application_id: loanId,
+        current_stage: 'field_officer',
+        created_by: approverId
+      })
+      .select()
+      .single()
+
+    if (createError) {
+      throw new Error('Failed to create workflow')
+    }
+    workflow = newWorkflow
+  } else if (workflowError) {
     throw new Error('Workflow not found')
   }
 
@@ -101,6 +116,7 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     if (currentIndex < stageOrder.length - 1) {
       nextStage = stageOrder[currentIndex + 1]
       updateData.current_stage = nextStage
+      finalStatus = `pending_${nextStage}`
     } else {
       // CEO approved - final approval
       finalStatus = 'approved'
@@ -122,19 +138,17 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     throw new Error('Failed to update workflow')
   }
 
-  // Update loan application status if complete
-  if (isComplete && finalStatus) {
-    const { error: statusError } = await supabaseClient
-      .from('loan_applications')
-      .update({ 
-        status: finalStatus,
-        last_updated: new Date().toISOString()
-      })
-      .eq('id', loanId)
+  // Update loan application status
+  const { error: statusError } = await supabaseClient
+    .from('loan_applications')
+    .update({ 
+      status: finalStatus,
+      last_updated: new Date().toISOString()
+    })
+    .eq('id', loanId)
 
-    if (statusError) {
-      throw new Error('Failed to update loan status')
-    }
+  if (statusError) {
+    throw new Error('Failed to update loan status')
   }
 
   // Create notification

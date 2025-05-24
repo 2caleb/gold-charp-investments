@@ -3,21 +3,22 @@ export interface WorkflowLoanData {
   id: string;
   client_id: string;
   client_name: string;
-  loan_amount: number; // Changed from string to number
+  loan_amount: number;
   loan_term: string;
   interest_rate: string;
   address: string;
   id_number: string;
   employment_status: string;
   phone: string;
+  phone_number?: string; // Added alternative field name
   purpose: string;
-  purpose_of_loan?: string; // Added this field
+  purpose_of_loan?: string;
   approval_notes: string;
   created_by: string;
   created_at: string;
   current_approver: string;
-  workflow_stage: string; // Added this field to replace current_stage
+  workflow_stage: string;
   status: string;
-  loan_type?: string; // Added as optional to maintain compatibility
-  loan_application_workflow?: any; // Added this property to fix the error
+  loan_type?: string;
+  loan_application_workflow?: any;
 }
