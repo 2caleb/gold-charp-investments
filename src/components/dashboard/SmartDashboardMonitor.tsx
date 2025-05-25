@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -33,24 +32,15 @@ const SmartDashboardMonitor: React.FC = () => {
           handleLoanApplicationChange(payload);
         }
       )
-      .on(
-        'subscribe',
-        {},
-        (status) => {
-          if (status === 'SUBSCRIBED') {
-            setConnectionStatus('connected');
-            console.log('Smart dashboard monitoring active');
-          }
-        }
-      )
-      .on(
-        'error',
-        {},
-        () => {
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+          console.log('Smart dashboard monitoring active');
+        } else if (status === 'CHANNEL_ERROR') {
           setConnectionStatus('disconnected');
+          console.error('Channel subscription error');
         }
-      )
-      .subscribe();
+      });
 
     return () => {
       supabase.removeChannel(channel);
