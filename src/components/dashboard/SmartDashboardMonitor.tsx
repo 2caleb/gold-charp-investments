@@ -33,15 +33,23 @@ const SmartDashboardMonitor: React.FC = () => {
           handleLoanApplicationChange(payload);
         }
       )
-      .on('subscribe', (status) => {
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-          console.log('Smart dashboard monitoring active');
+      .on(
+        'subscribe',
+        {},
+        (status) => {
+          if (status === 'SUBSCRIBED') {
+            setConnectionStatus('connected');
+            console.log('Smart dashboard monitoring active');
+          }
         }
-      })
-      .on('error', () => {
-        setConnectionStatus('disconnected');
-      })
+      )
+      .on(
+        'error',
+        {},
+        () => {
+          setConnectionStatus('disconnected');
+        }
+      )
       .subscribe();
 
     return () => {
