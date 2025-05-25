@@ -67,17 +67,27 @@ export function useLoanApplicationForm() {
 
   useEffect(() => {
     const fetchClients = async () => {
+      if (!user) {
+        console.log('No user found, skipping client fetch');
+        return;
+      }
+
       setIsLoadingClients(true);
       try {
-        // Changed from 'clients' to 'client_name' to match the actual table name
+        console.log('Fetching clients...');
         const { data, error } = await supabase
           .from('client_name')
           .select('id, full_name, phone_number, id_number, address, employment_status, monthly_income, created_at, updated_at, user_id, email');
         
-        if (error) throw error;
+        if (error) {
+          console.error('Client fetch error:', error);
+          throw error;
+        }
+        
+        console.log('Clients fetched successfully:', data?.length || 0);
         
         // Ensure the data matches the Client type
-        const typedClients: Client[] = data.map(client => ({
+        const typedClients: Client[] = (data || []).map(client => ({
           id: client.id,
           full_name: client.full_name,
           phone_number: client.phone_number,
@@ -96,16 +106,17 @@ export function useLoanApplicationForm() {
         console.error('Error fetching clients:', error);
         toast({
           title: "Failed to load clients",
-          description: "Could not load client list. Please try again.",
+          description: error.message || "Could not load client list. Please try again.",
           variant: "destructive",
         });
+        setClients([]); // Set empty array on error
       } finally {
         setIsLoadingClients(false);
       }
     };
 
     fetchClients();
-  }, [toast]);
+  }, [toast, user]);
 
   useEffect(() => {
     // Load documents if loan application ID exists
@@ -174,11 +185,20 @@ export function useLoanApplicationForm() {
   };
 
   const handleSubmit = async (values: LoanApplicationValues) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to submit a loan application",
+        variant: "destructive",
+      });
+      return null;
+    }
+
     setIsSubmitting(true);
     setError(null);
     
     try {
-      if (!user) throw new Error("You must be logged in to submit a loan application");
+      console.log('Starting loan application submission...', values);
 
       // Check if this is a new or existing client
       let clientId: string | undefined = undefined;
@@ -199,6 +219,7 @@ export function useLoanApplicationForm() {
           throw new Error("Client name and ID number are required");
         }
         
+        console.log('Creating new client...');
         const { data: newClient, error: clientError } = await supabase
           .from('client_name')
           .insert({
@@ -208,17 +229,19 @@ export function useLoanApplicationForm() {
             id_number: values.id_number,
             address: values.address || '',
             employment_status: values.employment_status || '',
-            monthly_income: parseFloat(values.monthly_income || '0'), // Convert to number
+            monthly_income: parseFloat(values.monthly_income || '0'),
           })
           .select()
           .single();
         
         if (clientError) {
+          console.error('Client creation error:', clientError);
           throw new Error(`Failed to create client: ${clientError.message}`);
         }
         
         clientId = newClient.id;
         clientName = newClient.full_name;
+        console.log('New client created successfully:', clientId);
       }
       
       // Now create the loan application
@@ -232,49 +255,63 @@ export function useLoanApplicationForm() {
         id_number: values.id_number || '',
         address: values.address || '',
         employment_status: values.employment_status || '',
-        monthly_income: parseFloat(values.monthly_income || '0'), // Convert to number
+        monthly_income: parseFloat(values.monthly_income || '0'),
         notes: values.notes,
         created_by: user.id,
-        current_approver: user.id, // Initially, submitter is the approver
+        current_approver: user.id,
         status: 'submitted',
       };
       
-      const { data: loanApplication, error: loanError } = await supabase
+      console.log('Creating loan application...', loanApplicationData);
+      const { data: loanApplication, error: loanError } = await supabaseClient
         .from('loan_applications')
         .insert(loanApplicationData)
         .select()
         .single();
       
       if (loanError) {
+        console.error('Loan application creation error:', loanError);
         throw new Error(`Failed to create loan application: ${loanError.message}`);
       }
 
-      // Create a workflow for this application
-      const { data: workflow, error: workflowError } = await supabase
-        .from('loan_application_workflow')
-        .insert({
-          loan_application_id: loanApplication.id,
-          current_stage: 'field_officer',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      console.log('Loan application created successfully:', loanApplication.id);
+      setLoanApplicationId(loanApplication.id);
 
-      if (workflowError) {
-        console.error("Error creating workflow:", workflowError);
-        // Not critical, don't throw error
+      // Create a workflow for this application
+      try {
+        const { data: workflow, error: workflowError } = await supabase
+          .from('loan_application_workflow')
+          .insert({
+            loan_application_id: loanApplication.id,
+            current_stage: 'field_officer',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (workflowError) {
+          console.error("Error creating workflow:", workflowError);
+        } else {
+          console.log('Workflow created successfully:', workflow.id);
+        }
+      } catch (workflowErr) {
+        console.error("Workflow creation failed:", workflowErr);
       }
 
       // Create notification
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: user.id,
-          message: `Your loan application for ${values.loan_type} has been submitted successfully.`,
-          related_to: 'loan_application',
-          entity_id: loanApplication.id
-        });
+      try {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: user.id,
+            message: `Your loan application for ${values.loan_type} has been submitted successfully.`,
+            related_to: 'loan_application',
+            entity_id: loanApplication.id
+          });
+      } catch (notificationErr) {
+        console.error("Notification creation failed:", notificationErr);
+      }
       
       toast({
         title: "Loan application submitted",

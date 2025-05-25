@@ -35,6 +35,8 @@ serve(async (req) => {
 
     const { action, loan_id, approver_id, decision, notes } = await req.json()
 
+    console.log('Processing request:', { action, loan_id, approver_id, decision })
+
     switch (action) {
       case 'process_workflow':
         return await processWorkflow(supabaseClient, loan_id, approver_id, decision, notes)
@@ -64,6 +66,14 @@ serve(async (req) => {
 async function processWorkflow(supabaseClient: any, loanId: string, approverId: string, decision: string, notes: string) {
   console.log('Processing workflow decision:', { loanId, approverId, decision, notes })
 
+  // Validate required parameters
+  if (!loanId || !approverId || !decision) {
+    return new Response(
+      JSON.stringify({ error: 'Missing required parameters: loan_id, approver_id, or decision' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+    )
+  }
+
   // First verify the loan application exists and get its details
   const { data: loanApplication, error: loanError } = await supabaseClient
     .from('loan_applications')
@@ -71,10 +81,17 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     .eq('id', loanId)
     .single()
 
-  if (loanError || !loanApplication) {
-    console.error('Loan application not found:', loanError)
+  if (loanError) {
+    console.error('Loan application query error:', loanError)
     return new Response(
-      JSON.stringify({ error: `Loan application not found: ${loanError?.message || 'Unknown error'}` }),
+      JSON.stringify({ error: `Loan application not found: ${loanError.message}` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+    )
+  }
+
+  if (!loanApplication) {
+    return new Response(
+      JSON.stringify({ error: 'Loan application not found' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
     )
   }
@@ -87,6 +104,7 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     .single()
 
   if (approverError || !approver) {
+    console.error('Approver query error:', approverError)
     return new Response(
       JSON.stringify({ error: 'Approver not found' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }

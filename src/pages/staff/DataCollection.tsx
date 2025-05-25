@@ -27,11 +27,10 @@ interface ClientData {
 }
 
 const DataCollection = () => {
-  // Force desktop view for better UX
   useDesktopRedirect();
   
   const { toast } = useToast();
-  const { user, session } = useAuth();
+  const { user, session, isAuthenticated } = useAuth();
   const [recentApplications, setRecentApplications] = useState<RecentApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -42,27 +41,33 @@ const DataCollection = () => {
   });
 
   useEffect(() => {
-    // Only fetch data if user is authenticated
-    if (!user || !session) {
-      setIsLoading(false);
-      return;
-    }
-
     const fetchData = async () => {
+      if (!isAuthenticated || !user || !session) {
+        console.log('User not authenticated, skipping data fetch');
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
+        console.log('Fetching dashboard data for authenticated user:', user.id);
+        
         // Fetch recent applications with proper authentication
-        const { data, error } = await supabase
+        const { data: applicationsData, error: applicationsError } = await supabase
           .from('loan_applications')
           .select('id, client_name, loan_amount, loan_type, status, created_at, loan_id')
           .order('created_at', { ascending: false })
           .limit(5);
           
-        if (error) throw error;
+        if (applicationsError) {
+          console.error('Applications fetch error:', applicationsError);
+          throw applicationsError;
+        }
         
-        if (data && Array.isArray(data)) {
-          // Handle the data safely to avoid TypeScript errors
-          const safeData = data.map(app => ({
+        console.log('Applications fetched:', applicationsData?.length || 0);
+        
+        if (applicationsData && Array.isArray(applicationsData)) {
+          const safeData = applicationsData.map(app => ({
             id: app.id || '',
             client_name: app.client_name || '',
             loan_amount: app.loan_amount || '',
@@ -113,9 +118,11 @@ const DataCollection = () => {
         setStats({
           totalClients: clientCount || 0,
           pendingApplications: pendingCount || 0,
-          monthlyLoans: totalMonthlyIncome, // Use actual client income data
+          monthlyLoans: totalMonthlyIncome,
           scheduledVisits: 18 // Mock data
         });
+
+        console.log('Dashboard data loaded successfully');
       } catch (error: any) {
         console.error('Error fetching data:', error);
         toast({
@@ -130,10 +137,10 @@ const DataCollection = () => {
     };
     
     fetchData();
-  }, [toast, user, session]);
+  }, [toast, user, session, isAuthenticated]);
 
   // Show login message if not authenticated
-  if (!user || !session) {
+  if (!isAuthenticated || !user || !session) {
     return (
       <Layout>
         <section className="bg-gray-50 dark:bg-gray-900 py-8">
@@ -190,7 +197,6 @@ const DataCollection = () => {
             
             <div className="mt-4 md:mt-0">
               <DataCollectionButton onDataCollected={() => {
-                // Refresh data after collection
                 toast({
                   title: "Data Collected",
                   description: "New client data has been successfully collected and saved."
@@ -282,9 +288,7 @@ const DataCollection = () => {
                     ))
                   ) : (
                     <div className="py-4 text-center">
-                      <p className="text-sm text-gray-500">
-                        {user ? 'No applications found' : 'Please log in to view applications'}
-                      </p>
+                      <p className="text-sm text-gray-500">No applications found</p>
                     </div>
                   )}
                 </div>
