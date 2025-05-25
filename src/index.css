@@ -131,24 +131,24 @@
   
   /* Premium hover effects */
   .hover-scale {
-    @apply transition-all duration-300 hover:scale-105 hover:shadow-2xl;
+    @apply transition-all duration-300 hover:scale-105;
   }
   
   .hover-lift {
-    @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl;
+    @apply transition-all duration-300 hover:-translate-y-2;
   }
   
   .hover-glow {
-    @apply transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/25;
+    @apply transition-all duration-300;
   }
   
   /* Premium UI utilities */
   .premium-card {
-    @apply rounded-2xl border border-white/20 shadow-2xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl backdrop-saturate-150 overflow-hidden transition-all duration-500 hover:shadow-3xl hover:bg-white/90 dark:hover:bg-gray-900/90;
+    @apply rounded-2xl border border-white/20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl backdrop-saturate-150 overflow-hidden transition-all duration-500;
   }
   
   .premium-button {
-    @apply rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white font-semibold shadow-lg transition-all duration-300 hover:shadow-2xl hover:from-purple-700 hover:via-indigo-700 hover:to-purple-800 hover:-translate-y-1 hover:scale-105 active:scale-95;
+    @apply rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white font-semibold transition-all duration-300 hover:from-purple-700 hover:via-indigo-700 hover:to-purple-800 hover:-translate-y-1 hover:scale-105 active:scale-95;
   }
   
   .premium-input {
@@ -156,7 +156,7 @@
   }
   
   .glass-effect {
-    @apply bg-white/10 dark:bg-gray-900/10 backdrop-blur-2xl backdrop-saturate-150 border border-white/20 dark:border-gray-800/20 shadow-2xl;
+    @apply bg-white/10 dark:bg-gray-900/10 backdrop-blur-2xl backdrop-saturate-150 border border-white/20 dark:border-gray-800/20;
   }
   
   .text-gradient {

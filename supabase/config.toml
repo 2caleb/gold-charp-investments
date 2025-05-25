@@ -1,6 +1,9 @@
 
 project_id = "bjsxekgraxbfqzhbqjff"
 
+[functions.enhanced-workflow-system]
+verify_jwt = true
+
 [functions.send-approval-email]
 verify_jwt = true
 

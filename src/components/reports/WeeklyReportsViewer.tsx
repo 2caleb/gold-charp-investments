@@ -2,64 +2,55 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Calendar, Download, TrendingUp, TrendingDown, FileText } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Calendar, Download, FileText, TrendingUp } from 'lucide-react';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
 
 interface WeeklyReport {
   id: string;
-  report_week: string;
   role_type: string;
-  total_applications: number;
-  approved_applications: number;
-  rejected_applications: number;
+  report_week: string;
+  applications_reviewed: number;
+  applications_approved: number;
+  applications_rejected: number;
   pending_applications: number;
-  total_loan_amount: number;
-  approved_loan_amount: number;
-  report_data: any;
-  generated_at: string;
+  created_at: string;
 }
 
 const WeeklyReportsViewer: React.FC = () => {
   const [reports, setReports] = useState<WeeklyReport[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const { toast } = useToast();
   const { userRole } = useRolePermissions();
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetchReports();
+    if (userRole && ['manager', 'director', 'chairperson', 'ceo'].includes(userRole)) {
+      fetchReports();
+    }
   }, [userRole]);
 
   const fetchReports = async () => {
     if (!userRole) return;
-
+    
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      
-      // Use the edge function to get weekly reports
-      const { data, error } = await supabase.functions.invoke('get-weekly-reports', {
-        body: { target_role: userRole }
+      const { data, error } = await supabase.functions.invoke('enhanced-workflow-system', {
+        body: {
+          action: 'get_weekly_reports',
+          target_role: userRole
+        }
       });
 
-      if (error) {
-        console.warn('Weekly reports function error:', error);
-        setReports([]);
-        return;
-      }
-      
-      // Ensure data is an array and cast to WeeklyReport[]
-      const reportsData = Array.isArray(data) ? data as WeeklyReport[] : [];
-      setReports(reportsData);
+      if (error) throw error;
+      setReports(data || []);
     } catch (error: any) {
       console.error('Error fetching reports:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch weekly reports',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -67,46 +58,40 @@ const WeeklyReportsViewer: React.FC = () => {
   };
 
   const generateWeeklyReport = async () => {
+    setIsGenerating(true);
     try {
-      setIsGenerating(true);
       const { data, error } = await supabase.functions.invoke('enhanced-workflow-system', {
-        body: { action: 'generate_weekly_report' }
+        body: {
+          action: 'generate_weekly_report'
+        }
       });
 
       if (error) throw error;
 
       toast({
-        title: 'Success',
-        description: 'Weekly reports generated successfully',
+        title: 'Reports Generated',
+        description: 'Weekly reports have been generated successfully',
       });
 
-      fetchReports();
+      fetchReports(); // Refresh the reports
     } catch (error: any) {
       console.error('Error generating reports:', error);
       toast({
         title: 'Error',
         description: 'Failed to generate weekly reports',
-        variant: 'destructive'
+        variant: 'destructive',
       });
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return `UGX ${amount.toLocaleString()}`;
-  };
-
-  const getWeekRange = (weekStart: string) => {
-    const start = new Date(weekStart);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 6);
-    return `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
-  };
-
-  const getApprovalRate = (report: WeeklyReport) => {
-    if (report.total_applications === 0) return 0;
-    return Math.round((report.approved_applications / report.total_applications) * 100);
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   if (isLoading) {
@@ -121,150 +106,91 @@ const WeeklyReportsViewer: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Weekly Reports</h2>
-          <p className="text-gray-600">Performance insights for {userRole?.replace('_', ' ')}</p>
+          <h1 className="text-3xl font-bold">Weekly Reports</h1>
+          <p className="text-gray-600">View and generate weekly workflow reports</p>
         </div>
-        <Button onClick={generateWeeklyReport} disabled={isGenerating}>
-          <FileText className="h-4 w-4 mr-2" />
+        <Button 
+          onClick={generateWeeklyReport}
+          disabled={isGenerating}
+          className="flex items-center gap-2"
+        >
+          <TrendingUp className="h-4 w-4" />
           {isGenerating ? 'Generating...' : 'Generate Report'}
         </Button>
       </div>
 
-      {reports.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-600 mb-2">No Reports Available</h3>
-            <p className="text-gray-500">Weekly reports will be generated automatically every Friday.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {/* Latest Report Summary */}
-          {reports[0] && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Total Applications</p>
-                      <p className="text-2xl font-bold">{reports[0].total_applications}</p>
-                    </div>
-                    <FileText className="h-8 w-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Approved</p>
-                      <p className="text-2xl font-bold text-green-600">{reports[0].approved_applications}</p>
-                    </div>
-                    <TrendingUp className="h-8 w-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Rejected</p>
-                      <p className="text-2xl font-bold text-red-600">{reports[0].rejected_applications}</p>
-                    </div>
-                    <TrendingDown className="h-8 w-8 text-red-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Approval Rate</p>
-                      <p className="text-2xl font-bold">{getApprovalRate(reports[0])}%</p>
-                    </div>
-                    <Badge variant="outline">{userRole}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* Chart */}
+      <div className="grid gap-6">
+        {reports.length === 0 ? (
           <Card>
-            <CardHeader>
-              <CardTitle>Weekly Performance Trends</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={reports.slice(0, 8).reverse()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="report_week" 
-                    tickFormatter={(value) => new Date(value).toLocaleDateString()}
-                  />
-                  <YAxis />
-                  <Tooltip 
-                    labelFormatter={(value) => getWeekRange(value)}
-                    formatter={(value, name) => [value, name === 'approved_applications' ? 'Approved' : 'Total']}
-                  />
-                  <Bar dataKey="total_applications" fill="#8884d8" name="total_applications" />
-                  <Bar dataKey="approved_applications" fill="#82ca9d" name="approved_applications" />
-                </BarChart>
-              </ResponsiveContainer>
+            <CardContent className="p-8 text-center">
+              <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-600 mb-2">No Reports Available</h3>
+              <p className="text-gray-500 mb-4">
+                No weekly reports have been generated yet for your role.
+              </p>
+              <Button onClick={generateWeeklyReport} disabled={isGenerating}>
+                Generate First Report
+              </Button>
             </CardContent>
           </Card>
-
-          {/* Reports List */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Report History</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {reports.map((report) => (
-                  <div key={report.id} className="border rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-medium">Week of {getWeekRange(report.report_week)}</h4>
-                        <p className="text-sm text-gray-500">
-                          Generated on {new Date(report.generated_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-2" />
-                        Export
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">Total: </span>
-                        <span className="font-medium">{report.total_applications}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Approved: </span>
-                        <span className="font-medium text-green-600">{report.approved_applications}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Rejected: </span>
-                        <span className="font-medium text-red-600">{report.rejected_applications}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Amount: </span>
-                        <span className="font-medium">{formatCurrency(report.approved_loan_amount)}</span>
-                      </div>
-                    </div>
+        ) : (
+          reports.map((report) => (
+            <Card key={report.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    Week of {formatDate(report.report_week)}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                  <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                    {report.role_type.toUpperCase()}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {report.applications_reviewed}
+                    </div>
+                    <div className="text-sm text-gray-600">Reviewed</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {report.applications_approved}
+                    </div>
+                    <div className="text-sm text-gray-600">Approved</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-red-600">
+                      {report.applications_rejected}
+                    </div>
+                    <div className="text-sm text-gray-600">Rejected</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {report.pending_applications}
+                    </div>
+                    <div className="text-sm text-gray-600">Pending</div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">
+                      Generated: {formatDate(report.created_at)}
+                    </span>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };

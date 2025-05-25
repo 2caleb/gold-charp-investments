@@ -86,7 +86,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<EnhancedLoanApprovalWorkflowProps> 
       />
 
       {/* Premium Loan Details Card */}
-      <Card className="premium-card border-0 shadow-2xl hover-lift">
+      <Card className="border-0 shadow-2xl bg-gradient-to-br from-white/90 to-purple-50/30 dark:from-gray-800/90 dark:to-purple-900/30 backdrop-blur-xl">
         <CardHeader className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white rounded-t-2xl relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20"></div>
           <CardTitle className="text-3xl font-bold flex items-center gap-3 relative z-10">
@@ -97,7 +97,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<EnhancedLoanApprovalWorkflowProps> 
           </CardTitle>
           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
         </CardHeader>
-        <CardContent className="p-10 bg-gradient-to-br from-white/95 to-purple-50/30 dark:from-gray-800/95 dark:to-purple-900/30">
+        <CardContent className="p-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="space-y-3 group">
               <div className="flex items-center gap-3 text-purple-600 dark:text-purple-400">
@@ -178,7 +178,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<EnhancedLoanApprovalWorkflowProps> 
 
       {/* Decision Panel */}
       {canModify && !['approved', 'rejected', 'rejected_final'].includes(loanData.status) && (
-        <Card className="premium-card border-0 shadow-2xl hover-lift">
+        <Card className="border-0 shadow-2xl bg-gradient-to-br from-white/90 to-indigo-50/30 dark:from-gray-800/90 dark:to-indigo-900/30 backdrop-blur-xl">
           <CardHeader className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-t-2xl relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/20 to-purple-400/20"></div>
             <CardTitle className="text-2xl font-bold relative z-10">
@@ -190,7 +190,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<EnhancedLoanApprovalWorkflowProps> 
             </CardTitle>
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
           </CardHeader>
-          <CardContent className="p-10 bg-gradient-to-br from-white/95 to-indigo-50/30 dark:from-gray-800/95 dark:to-indigo-900/30">
+          <CardContent className="p-10">
             <div className="space-y-8">
               <div>
                 <label htmlFor="notes" className="block text-lg font-bold mb-4 text-gray-800 dark:text-gray-200">
@@ -201,7 +201,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<EnhancedLoanApprovalWorkflowProps> 
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Add your professional notes or comments here..."
-                  className="h-40 premium-input text-lg resize-none"
+                  className="h-40 text-lg resize-none rounded-xl border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-200 dark:focus:ring-purple-800 transition-all duration-300 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm"
                 />
               </div>
 
@@ -218,7 +218,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<EnhancedLoanApprovalWorkflowProps> 
                 <Button
                   onClick={() => handleDecision('approve')}
                   disabled={isSubmitting}
-                  className="premium-button px-8 py-4 text-lg font-bold"
+                  className="px-8 py-4 text-lg font-bold rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white shadow-lg transition-all duration-300 hover:shadow-2xl hover:from-purple-700 hover:via-indigo-700 hover:to-purple-800 hover:-translate-y-1 hover:scale-105 active:scale-95"
                 >
                   <CheckCircle className="mr-3 h-6 w-6" />
                   {currentStage === 'ceo' ? '✅ Final Approval' : '✅ Approve & Forward'}
@@ -231,8 +231,8 @@ const EnhancedLoanApprovalWorkflow: React.FC<EnhancedLoanApprovalWorkflowProps> 
 
       {/* Read-only message for unauthorized users */}
       {!canModify && (
-        <Card className="premium-card border-0 shadow-2xl">
-          <CardContent className="p-10 text-center bg-gradient-to-br from-amber-50/95 to-orange-50/95 dark:from-amber-900/20 dark:to-orange-900/20">
+        <Card className="border-0 shadow-2xl bg-gradient-to-br from-amber-50/95 to-orange-50/95 dark:from-amber-900/20 dark:to-orange-900/20 backdrop-blur-xl">
+          <CardContent className="p-10 text-center">
             <div className="text-amber-800 dark:text-amber-200">
               <div className="mb-6">
                 <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center mx-auto shadow-2xl">
