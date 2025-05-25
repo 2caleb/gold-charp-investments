@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -58,7 +57,10 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
 
   if (loanError || !loanApplication) {
     console.error('Loan application not found:', loanError)
-    throw new Error(`Loan application not found: ${loanError?.message || 'Unknown error'}`)
+    return new Response(
+      JSON.stringify({ error: `Loan application not found: ${loanError?.message || 'Unknown error'}` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+    )
   }
 
   // Get approver profile
@@ -69,7 +71,10 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
     .single()
 
   if (approverError || !approver) {
-    throw new Error('Approver not found')
+    return new Response(
+      JSON.stringify({ error: 'Approver not found' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+    )
   }
 
   // Get current workflow state - create if doesn't exist
@@ -98,12 +103,18 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
 
     if (createError) {
       console.error('Error creating workflow:', createError)
-      throw new Error(`Failed to create workflow: ${createError.message}`)
+      return new Response(
+        JSON.stringify({ error: `Failed to create workflow: ${createError.message}` }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      )
     }
     workflow = newWorkflow
   } else if (workflowError) {
     console.error('Error fetching workflow:', workflowError)
-    throw new Error(`Workflow error: ${workflowError.message}`)
+    return new Response(
+      JSON.stringify({ error: `Workflow error: ${workflowError.message}` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    )
   }
 
   const currentStage = workflow.current_stage
@@ -111,7 +122,10 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
 
   // Validate that the approver can act on this stage
   if (currentStage !== approverRole) {
-    throw new Error(`Cannot approve at ${currentStage} stage with ${approverRole} role`)
+    return new Response(
+      JSON.stringify({ error: `Cannot approve at ${currentStage} stage with ${approverRole} role` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+    )
   }
 
   // Update workflow based on decision
@@ -156,7 +170,10 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
 
   if (updateError) {
     console.error('Error updating workflow:', updateError)
-    throw new Error(`Failed to update workflow: ${updateError.message}`)
+    return new Response(
+      JSON.stringify({ error: `Failed to update workflow: ${updateError.message}` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    )
   }
 
   // Update loan application status
@@ -170,7 +187,10 @@ async function processWorkflow(supabaseClient: any, loanId: string, approverId: 
 
   if (statusError) {
     console.error('Error updating loan status:', statusError)
-    throw new Error(`Failed to update loan status: ${statusError.message}`)
+    return new Response(
+      JSON.stringify({ error: `Failed to update loan status: ${statusError.message}` }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    )
   }
 
   // Create notification
@@ -264,7 +284,10 @@ async function getWeeklyReports(supabaseClient: any, req: Request) {
     .limit(10)
 
   if (error) {
-    throw new Error('Failed to fetch weekly reports')
+    return new Response(
+      JSON.stringify({ error: 'Failed to fetch weekly reports' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    )
   }
 
   return new Response(
