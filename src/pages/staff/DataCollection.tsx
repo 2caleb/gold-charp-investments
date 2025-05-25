@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { DataCollectionButton } from '@/components/loans/DataCollectionButton';
@@ -10,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateLoanIdentificationNumber } from '@/utils/loanUtils';
 import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RecentApplication {
   client_name: string;
@@ -31,6 +31,7 @@ const DataCollection = () => {
   useDesktopRedirect();
   
   const { toast } = useToast();
+  const { user, session } = useAuth();
   const [recentApplications, setRecentApplications] = useState<RecentApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -41,10 +42,16 @@ const DataCollection = () => {
   });
 
   useEffect(() => {
+    // Only fetch data if user is authenticated
+    if (!user || !session) {
+      setIsLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Fetch recent applications
+        // Fetch recent applications with proper authentication
         const { data, error } = await supabase
           .from('loan_applications')
           .select('id, client_name, loan_amount, loan_type, status, created_at, loan_id')
@@ -68,19 +75,23 @@ const DataCollection = () => {
           setRecentApplications(safeData);
         }
         
-        // Fetch stats (for a real application, these would be separate queries)
+        // Fetch stats for authenticated users
         const { count: clientCount, error: clientError } = await supabase
           .from('client_name')
           .select('id', { count: 'exact', head: true });
           
-        if (clientError) throw clientError;
+        if (clientError) {
+          console.error('Client count error:', clientError);
+        }
         
         // Fetch client income data to calculate monthly loans
         const { data: clientData, error: incomeError } = await supabase
           .from('client_name')
           .select('id, monthly_income');
           
-        if (incomeError) throw incomeError;
+        if (incomeError) {
+          console.error('Client income error:', incomeError);
+        }
         
         // Calculate total monthly income from all clients
         let totalMonthlyIncome = 0;
@@ -95,7 +106,9 @@ const DataCollection = () => {
           .select('id', { count: 'exact', head: true })
           .in('status', ['submitted', 'pending_manager', 'pending_director', 'pending_ceo', 'pending_chairperson']);
           
-        if (pendingError) throw pendingError;
+        if (pendingError) {
+          console.error('Pending count error:', pendingError);
+        }
         
         setStats({
           totalClients: clientCount || 0,
@@ -107,7 +120,7 @@ const DataCollection = () => {
         console.error('Error fetching data:', error);
         toast({
           title: 'Data Fetch Error',
-          description: error.message || 'Failed to load data',
+          description: error.message || 'Failed to load data. Please ensure you are logged in.',
           variant: 'destructive'
         });
         setRecentApplications([]);
@@ -117,7 +130,28 @@ const DataCollection = () => {
     };
     
     fetchData();
-  }, [toast]);
+  }, [toast, user, session]);
+
+  // Show login message if not authenticated
+  if (!user || !session) {
+    return (
+      <Layout>
+        <section className="bg-gray-50 dark:bg-gray-900 py-8">
+          <div className="container mx-auto px-4">
+            <div className="text-center py-12">
+              <h1 className="text-3xl font-bold mb-4">Authentication Required</h1>
+              <p className="text-lg text-gray-600 mb-6">
+                Please log in to access the client data collection dashboard.
+              </p>
+              <Link to="/login">
+                <Button>Login</Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      </Layout>
+    );
+  }
 
   const handleGenerateNewLoanId = () => {
     const newLoanId = generateLoanIdentificationNumber();
@@ -248,7 +282,9 @@ const DataCollection = () => {
                     ))
                   ) : (
                     <div className="py-4 text-center">
-                      <p className="text-sm text-gray-500">No applications found</p>
+                      <p className="text-sm text-gray-500">
+                        {user ? 'No applications found' : 'Please log in to view applications'}
+                      </p>
                     </div>
                   )}
                 </div>

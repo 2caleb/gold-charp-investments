@@ -205,7 +205,7 @@ export type Database = {
             columns: ["loan_application_id"]
             isOneToOne: false
             referencedRelation: "loan_applications"
-            referencedColumns: ["loan_id"]
+            referencedColumns: ["id"]
           },
         ]
       }

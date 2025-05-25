@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -12,10 +13,25 @@ serve(async (req) => {
   }
 
   try {
+    // Create authenticated Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
     )
+
+    // Verify user authentication
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'No authorization header provided' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
 
     const { action, loan_id, approver_id, decision, notes } = await req.json()
 
@@ -48,7 +64,7 @@ serve(async (req) => {
 async function processWorkflow(supabaseClient: any, loanId: string, approverId: string, decision: string, notes: string) {
   console.log('Processing workflow decision:', { loanId, approverId, decision, notes })
 
-  // First verify the loan application exists
+  // First verify the loan application exists and get its details
   const { data: loanApplication, error: loanError } = await supabaseClient
     .from('loan_applications')
     .select('*')
