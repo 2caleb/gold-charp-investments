@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -36,8 +35,7 @@ const ManagerReviewDashboard = () => {
             loan_type, 
             purpose_of_loan,
             created_at, 
-            status,
-            loan_application_workflow(current_stage)
+            status
           `)
           .or('status.eq.pending_manager,status.eq.submitted')
           .order('created_at', { ascending: false });

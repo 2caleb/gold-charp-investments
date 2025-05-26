@@ -22,21 +22,11 @@ const ChairpersonFinalDashboard = () => {
       try {
         setIsLoading(true);
         
-        // Fetch applications pending Chairperson final approval
+        // Fetch applications pending Chairperson final approval - simplified query
         const { data, error } = await supabase
           .from('loan_applications')
-          .select(`
-            id, 
-            client_name, 
-            loan_amount, 
-            loan_type, 
-            purpose_of_loan,
-            created_at, 
-            status, 
-            loan_application_workflow(current_stage, ceo_approved)
-          `)
-          .eq('loan_application_workflow.current_stage', 'ceo')
-          .eq('loan_application_workflow.ceo_approved', true)
+          .select('*')
+          .eq('status', 'pending_chairperson')
           .order('created_at', { ascending: false });
 
         if (error) throw error;

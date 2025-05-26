@@ -22,21 +22,11 @@ const DirectorRiskDashboard = () => {
       try {
         setIsLoading(true);
         
-        // Fetch applications pending director risk assessment
+        // Fetch applications pending director risk assessment - simplified query
         const { data, error } = await supabase
           .from('loan_applications')
-          .select(`
-            id, 
-            client_name, 
-            loan_amount, 
-            loan_type, 
-            purpose_of_loan,
-            created_at, 
-            status, 
-            loan_application_workflow(current_stage, manager_approved)
-          `)
-          .eq('loan_application_workflow.current_stage', 'manager')
-          .eq('loan_application_workflow.manager_approved', true)
+          .select('*')
+          .eq('status', 'pending_director')
           .order('created_at', { ascending: false });
 
         if (error) throw error;

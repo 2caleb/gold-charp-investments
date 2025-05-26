@@ -22,21 +22,11 @@ const CEOApprovalDashboard = () => {
       try {
         setIsLoading(true);
         
-        // Fetch applications pending CEO approval
+        // Fetch applications pending CEO approval - simplified query
         const { data, error } = await supabase
           .from('loan_applications')
-          .select(`
-            id, 
-            client_name, 
-            loan_amount, 
-            loan_type, 
-            purpose_of_loan,
-            created_at, 
-            status, 
-            loan_application_workflow(current_stage, director_approved)
-          `)
-          .eq('loan_application_workflow.current_stage', 'director')
-          .eq('loan_application_workflow.director_approved', true)
+          .select('*')
+          .eq('status', 'pending_ceo')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
