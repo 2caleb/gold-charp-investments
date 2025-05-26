@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -18,7 +17,7 @@ const fetchLoanData = async (id: string): Promise<any> => {
     .from('loan_applications')
     .select(`
       *,
-      loan_application_workflow(*)
+      loan_appliations_workflow(*)
     `)
     .eq('id', id)
     .single();
