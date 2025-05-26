@@ -263,7 +263,7 @@ export function useLoanApplicationForm() {
       };
       
       console.log('Creating loan application...', loanApplicationData);
-      const { data: loanApplication, error: loanError } = await supabaseClient
+      const { data: loanApplication, error: loanError } = await supabase
         .from('loan_applications')
         .insert(loanApplicationData)
         .select()
