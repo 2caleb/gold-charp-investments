@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -274,18 +275,23 @@ export function useLoanApplicationForm() {
         throw new Error(`Failed to create loan application: ${loanError.message}`);
       }
 
+      if (!loanApplication?.id) {
+        throw new Error('Loan application was created but no ID was returned');
+      }
+
       console.log('Loan application created successfully:', loanApplication.id);
       setLoanApplicationId(loanApplication.id);
 
-      // Create a workflow for this application
+      // Create a workflow for this application - using the correct table name
       try {
         const { data: workflow, error: workflowError } = await supabase
-          .from('loan_application_workflow')
+          .from('loan_appliations_workflow')
           .insert({
             loan_application_id: loanApplication.id,
-            current_stage: 'field_officer',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            action: 'Application submitted',
+            performed_by: user.id,
+            performed_at: new Date().toISOString(),
+            status: 'submitted'
           })
           .select()
           .single();
@@ -293,7 +299,7 @@ export function useLoanApplicationForm() {
         if (workflowError) {
           console.error("Error creating workflow:", workflowError);
         } else {
-          console.log('Workflow created successfully:', workflow.id);
+          console.log('Workflow created successfully:', workflow?.id);
         }
       } catch (workflowErr) {
         console.error("Workflow creation failed:", workflowErr);
