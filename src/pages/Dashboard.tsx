@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,12 +8,21 @@ import { LoanPerformanceChart } from '@/components/dashboard/LoanPerformanceChar
 import { RiskProfileMap } from '@/components/dashboard/RiskProfileMap';
 import { PropertyInsights } from '@/components/dashboard/PropertyInsights';
 import { FieldOfficerActivity } from '@/components/dashboard/FieldOfficerActivity';
+import SmartDashboardMonitor from '@/components/dashboard/SmartDashboardMonitor';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
 import { useUser } from '@/hooks/use-user';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchDashboardData, DashboardData } from '@/services/dashboardService';
 import { ArrowRight, ClipboardCheck, BarChart2, FileCheck, AlertTriangle, Stamp } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard: React.FC = () => {
   const { userProfile } = useUser();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const { 
     userRole, 
     isFieldOfficer, 
@@ -22,6 +31,32 @@ const Dashboard: React.FC = () => {
     isCEO, 
     isChairperson 
   } = useRolePermissions();
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const data = await fetchDashboardData(user.id);
+        setDashboardData(data);
+        console.log('Dashboard data loaded successfully');
+      } catch (error: any) {
+        console.error('Error loading dashboard data:', error);
+        toast({
+          title: "Error loading dashboard",
+          description: error.message || "Failed to load dashboard data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [user, toast]);
 
   return (
     <Layout>
@@ -46,6 +81,49 @@ const Dashboard: React.FC = () => {
               </Link>
             </Button>
           </div>
+        </div>
+
+        {/* Dashboard Statistics */}
+        {dashboardData && !isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{dashboardData.totalApplications}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Pending</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-yellow-600">{dashboardData.pendingApplications}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Approved</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{dashboardData.approvedApplications}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">UGX {dashboardData.totalLoanAmount.toLocaleString()}</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Smart Monitor */}
+        <div className="mb-6">
+          <SmartDashboardMonitor />
         </div>
 
         {/* Role-specific action cards */}

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -7,7 +8,7 @@ import { Bell, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
 
 interface DashboardAlert {
   id: string;
-  type: 'new_application' | 'status_change' | 'monthly_milestone';
+  type: 'new_application' | 'status_change' | 'workflow_update';
   message: string;
   timestamp: Date;
   priority: 'low' | 'medium' | 'high';
@@ -18,9 +19,9 @@ const SmartDashboardMonitor: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'connecting'>('connecting');
 
   useEffect(() => {
-    // Set up real-time monitoring
-    const channel = supabase
-      .channel('smart_dashboard_monitor')
+    // Set up real-time monitoring for loan applications
+    const loanApplicationsChannel = supabase
+      .channel('smart_dashboard_loan_monitor')
       .on(
         'postgres_changes',
         {
@@ -35,15 +36,38 @@ const SmartDashboardMonitor: React.FC = () => {
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('connected');
-          console.log('Smart dashboard monitoring active');
+          console.log('Smart dashboard loan monitoring active');
         } else if (status === 'CHANNEL_ERROR') {
           setConnectionStatus('disconnected');
-          console.error('Channel subscription error');
+          console.error('Loan applications channel subscription error');
+        }
+      });
+
+    // Set up real-time monitoring for workflow changes
+    const workflowChannel = supabase
+      .channel('smart_dashboard_workflow_monitor')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'loan_appliations_workflow'
+        },
+        (payload) => {
+          handleWorkflowChange(payload);
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Smart dashboard workflow monitoring active');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Workflow channel subscription error');
         }
       });
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(loanApplicationsChannel);
+      supabase.removeChannel(workflowChannel);
     };
   }, []);
 
@@ -63,6 +87,24 @@ const SmartDashboardMonitor: React.FC = () => {
       title: getAlertTitle(newAlert.type),
       description: newAlert.message,
       duration: 5000,
+    });
+  };
+
+  const handleWorkflowChange = (payload: any) => {
+    const newAlert: DashboardAlert = {
+      id: Date.now().toString() + '_workflow',
+      type: 'workflow_update',
+      message: `Workflow action: ${payload.new?.action || 'Unknown action'} by ${payload.new?.performed_by || 'Unknown user'}`,
+      timestamp: new Date(),
+      priority: 'medium'
+    };
+
+    setAlerts(prev => [newAlert, ...prev].slice(0, 5));
+
+    toast({
+      title: 'Workflow Update',
+      description: newAlert.message,
+      duration: 3000,
     });
   };
 
@@ -96,7 +138,7 @@ const SmartDashboardMonitor: React.FC = () => {
     switch (type) {
       case 'new_application': return 'New Application';
       case 'status_change': return 'Status Update';
-      case 'monthly_milestone': return 'Monthly Milestone';
+      case 'workflow_update': return 'Workflow Update';
       default: return 'Dashboard Alert';
     }
   };
@@ -105,6 +147,7 @@ const SmartDashboardMonitor: React.FC = () => {
     switch (type) {
       case 'new_application': return <Bell className="h-4 w-4" />;
       case 'status_change': return <TrendingUp className="h-4 w-4" />;
+      case 'workflow_update': return <CheckCircle className="h-4 w-4" />;
       default: return <AlertCircle className="h-4 w-4" />;
     }
   };

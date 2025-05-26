@@ -1,3 +1,4 @@
+
 import { WorkflowLoanData } from "@/types/workflow";
 
 /**
@@ -5,9 +6,9 @@ import { WorkflowLoanData } from "@/types/workflow";
  * This helps maintain compatibility with existing code while we transition to the new format
  */
 export const adaptLoanDataToWorkflowFormat = (loanData: any): WorkflowLoanData => {
-  // Determine the current workflow stage
-  const workflow = loanData.loan_application_workflow || {};
-  const currentStage = workflow.current_stage || 'field_officer';
+  // Determine the current workflow stage from the loan_appliations_workflow data
+  const workflow = loanData.loan_appliations_workflow || loanData.loan_application_workflow || {};
+  const currentStage = workflow.current_stage || getStageFromStatus(loanData.status) || 'field_officer';
   
   // Handle phone number mapping - check multiple possible field names
   const phoneNumber = loanData.phone || loanData.phone_number || '';
@@ -35,18 +36,46 @@ export const adaptLoanDataToWorkflowFormat = (loanData: any): WorkflowLoanData =
     created_at: loanData.created_at || new Date().toISOString(),
     current_approver: loanData.current_approver || '',
     status: loanData.status || 'pending',
-    loan_type: loanData.loan_type || 'general'
+    loan_type: loanData.loan_type || 'general',
+    loan_application_workflow: workflow
   };
+};
+
+/**
+ * Determine workflow stage from application status
+ */
+const getStageFromStatus = (status: string): string => {
+  switch (status) {
+    case 'submitted':
+    case 'pending_field_officer':
+      return 'field_officer';
+    case 'pending_manager':
+      return 'manager';
+    case 'pending_director':
+      return 'director';
+    case 'pending_chairperson':
+      return 'chairperson';
+    case 'pending_ceo':
+      return 'ceo';
+    case 'approved':
+    case 'rejected':
+      return 'completed';
+    default:
+      return 'field_officer';
+  }
 };
 
 /**
  * Access the workflow stage property regardless of which property name is used
  */
 export const getWorkflowStage = (loanData: any): string => {
+  if (loanData.loan_appliations_workflow?.current_stage) {
+    return loanData.loan_appliations_workflow.current_stage;
+  }
   if (loanData.loan_application_workflow?.current_stage) {
     return loanData.loan_application_workflow.current_stage;
   }
-  return loanData.workflow_stage || loanData.current_stage || 'field_officer';
+  return loanData.workflow_stage || loanData.current_stage || getStageFromStatus(loanData.status) || 'field_officer';
 };
 
 /**
