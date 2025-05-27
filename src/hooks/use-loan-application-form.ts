@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -284,10 +285,13 @@ export function useLoanApplicationForm() {
       // Create a workflow for this application - using the correct table name
       try {
         const { data: workflow, error: workflowError } = await supabase
-          .from('loan_applications_workflow')
+          .from('loan_appliations_workflow')
           .insert({
             loan_application_id: loanApplication.id,
-            current_stage: 'submitted'
+            action: 'Application submitted',
+            performed_by: user.id,
+            performed_at: new Date().toISOString(),
+            status: 'submitted'
           })
           .select()
           .single();
