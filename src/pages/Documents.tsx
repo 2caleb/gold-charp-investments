@@ -67,11 +67,8 @@ const Documents = () => {
           <div className="text-center mt-12">
             <p className="text-gray-500">
               For assistance with documents, please contact support at 
-              <a href="mailto:info@goldcharpinvestments.com" className="text-blue-600 ml-1 hover:underline">
-                info@goldcharpinvestments.com
-              </a> or call us at 
-              <a href="tel:+256-393103974" className="text-blue-600 ml-1 hover:underline">
-                +256-393103974
+              <a href="mailto:support@goldcharp.com" className="text-blue-600 ml-1 hover:underline">
+                support@goldcharp.com
               </a>
             </p>
           </div>

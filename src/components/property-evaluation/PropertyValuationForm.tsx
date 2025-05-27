@@ -56,45 +56,40 @@ const PropertyValuationForm = () => {
 
   // Function to handle form submission
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    // Updated 2024 base values for Uganda districts (in millions of UGX)
+    // In a real app, this would call an API to calculate the valuation
+    // For now, we'll use a simple calculation as a placeholder
+    
+    // Base values for different districts (in millions of UGX)
     const districtBaseValues: Record<string, number> = {
-      'kampala': 450,      // Increased due to infrastructure development
-      'wakiso': 320,       // Growing rapidly due to Kampala expansion
-      'mukono': 280,       // Increased due to industrial development
-      'jinja': 240,        // Source of the Nile tourist attraction
-      'entebbe': 380,      // Airport proximity premium
-      'masaka': 200,       // Regional commercial hub
-      'mbarara': 220,      // Western Uganda commercial center
-      'gulu': 150,         // Northern Uganda development
-      'lira': 140,         // Agricultural region
-      'fort-portal': 180,  // Tourism and agriculture
-      'other': 120,
+      'kampala': 300,
+      'wakiso': 200,
+      'mukono': 150,
+      'jinja': 120,
+      'entebbe': 250,
+      'other': 100,
     };
     
     // Get base value based on district
     const district = values.district.toLowerCase();
     const baseValue = districtBaseValues[district] || districtBaseValues.other;
     
-    // Updated 2024 property type multipliers based on current market trends
+    // Adjust based on property type
     let typeMultiplier = 1;
     switch (values.propertyType) {
       case 'residential':
-        typeMultiplier = 1.2;  // Increased due to housing demand
+        typeMultiplier = 1;
         break;
       case 'commercial':
-        typeMultiplier = 1.8;  // Strong commercial property demand
+        typeMultiplier = 1.5;
         break;
       case 'agricultural':
-        typeMultiplier = 0.9;  // Stable agricultural land values
+        typeMultiplier = 0.7;
         break;
       case 'industrial':
-        typeMultiplier = 2.2;  // High industrial demand
+        typeMultiplier = 1.8;
         break;
       case 'land':
-        typeMultiplier = 0.7;  // Undeveloped land
-        break;
-      case 'mixed-use':
-        typeMultiplier = 1.6;  // Growing mixed-use demand
+        typeMultiplier = 0.5;
         break;
       default:
         typeMultiplier = 1;
@@ -106,11 +101,11 @@ const PropertyValuationForm = () => {
     // Calculate the fair value (in millions of UGX)
     const fairValue = baseValue * typeMultiplier * sizeValue;
     
-    // Market price is typically higher than fair value (12-18% higher in 2024)
-    const marketPrice = fairValue * 1.15;
+    // Market price is typically higher than fair value (10-15% higher)
+    const marketPrice = fairValue * 1.12;
     
-    // Forced price is typically lower than fair value (25-35% lower)
-    const forcedPrice = fairValue * 0.7;
+    // Forced price is typically lower than fair value (20-30% lower)
+    const forcedPrice = fairValue * 0.75;
     
     // Set the results
     setValuationResults({
@@ -121,7 +116,7 @@ const PropertyValuationForm = () => {
     
     toast({
       title: "Valuation Complete",
-      description: "Property valuation has been calculated based on current Uganda market data.",
+      description: "Property valuation has been calculated successfully.",
     });
   };
   
@@ -140,11 +135,6 @@ const PropertyValuationForm = () => {
     { label: "Mukono", value: "mukono" },
     { label: "Jinja", value: "jinja" },
     { label: "Entebbe", value: "entebbe" },
-    { label: "Masaka", value: "masaka" },
-    { label: "Mbarara", value: "mbarara" },
-    { label: "Gulu", value: "gulu" },
-    { label: "Lira", value: "lira" },
-    { label: "Fort Portal", value: "fort-portal" },
     { label: "Other", value: "other" },
   ];
 
@@ -380,7 +370,7 @@ const PropertyValuationForm = () => {
                   Property Valuation Results
                 </CardTitle>
                 <CardDescription className="text-purple-100">
-                  Based on current Uganda real estate market (2024)
+                  Estimated values based on provided information
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6 space-y-6">
@@ -391,7 +381,7 @@ const PropertyValuationForm = () => {
                       UGX {valuationResults.fairValue.toLocaleString()}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      Based on current Uganda market conditions
+                      Estimated based on current market conditions
                     </p>
                   </div>
 
@@ -424,17 +414,17 @@ const PropertyValuationForm = () => {
                     Based on this valuation, the property could qualify for a loan of up to:
                   </p>
                   <p className="text-xl font-semibold text-purple-700 dark:text-purple-400 mt-1">
-                    UGX {Math.round(valuationResults.fairValue * 0.75).toLocaleString()}
+                    UGX {Math.round(valuationResults.fairValue * 0.7).toLocaleString()}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    (75% of Fair Value - Updated lending ratio)
+                    (70% of Fair Value)
                   </p>
                 </div>
 
                 <Button variant="outline" className="w-full" onClick={() => {
                   toast({
                     title: "Report Generated",
-                    description: "Full valuation report based on current Uganda market data has been generated.",
+                    description: "Full valuation report has been generated and saved.",
                   });
                 }}>
                   Generate Full Report
