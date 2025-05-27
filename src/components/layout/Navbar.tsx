@@ -1,66 +1,71 @@
 
-import React, { useState, useEffect } from 'react';
-import { Menu } from 'lucide-react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import DesktopNav from './DesktopNav';
-import MobileNav from './MobileNav';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import UserSection from './UserSection';
+import EnhancedNavLinks from './EnhancedNavLinks';
+import GoldCharpLogo from '@/components/logo/GoldCharpLogo';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const isMobile = useIsMobile();
-  
-  // Add scroll event listener to detect when user scrolls
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const isScrolled = scrollY > 10;
-      
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [scrolled]);
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 w-full z-50 transition-all duration-500 
-        ${scrolled ? 'glass-navbar shadow-lg py-1' : 'bg-transparent py-2'}`}
-    >
-      <div className="container mx-auto px-2 md:px-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center group transition-transform duration-300 hover:scale-105">
-          <span className="text-xl md:text-2xl font-serif font-bold text-purple-700 dark:text-purple-400">Gold<span className="text-amber-500">Charp</span></span>
-        </Link>
+    <nav className="bg-white dark:bg-gray-900 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link to="/" className="flex-shrink-0 flex items-center">
+              <GoldCharpLogo className="h-8 w-auto" />
+              <span className="ml-2 text-xl font-bold text-gray-900 dark:text-white hidden sm:block">
+                GoldCharp Finance
+              </span>
+            </Link>
+          </div>
 
-        {/* Desktop Navigation - More compact */}
-        <div className="hidden md:block overflow-x-auto">
-          <DesktopNav />
-        </div>
+          {/* Desktop Navigation - Hidden for now as it's handled by Layout */}
+          <div className="hidden md:flex items-center space-x-4">
+            <ThemeToggle />
+            <UserSection />
+          </div>
 
-        {/* Mobile menu button */}
-        <div className="md:hidden flex items-center">
-          <Button
-            onClick={() => setIsOpen(!isOpen)}
-            variant="ghost"
-            size="icon"
-            className="ml-2 text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-400 transition-colors duration-300"
-            aria-label="Toggle menu"
-          >
-            <Menu size={24} />
-          </Button>
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center space-x-2">
+            <ThemeToggle />
+            <UserSection />
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-purple-500"
+                >
+                  <span className="sr-only">Open main menu</span>
+                  <Menu className="block h-6 w-6" aria-hidden="true" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 p-0">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                    <GoldCharpLogo className="h-8 w-auto" />
+                    <span className="ml-2 text-lg font-semibold text-gray-900 dark:text-white">
+                      GoldCharp Finance
+                    </span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto py-4">
+                    <EnhancedNavLinks 
+                      isMobile={true} 
+                      onLinkClick={() => setIsOpen(false)} 
+                    />
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
-
-      {/* Mobile Navigation */}
-      <MobileNav isOpen={isOpen} onClose={() => setIsOpen(false)} />
-    </header>
+    </nav>
   );
 };
 

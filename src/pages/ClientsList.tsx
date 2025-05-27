@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   UserPlus, 
   Search, 
@@ -17,7 +18,6 @@ import {
   Trash2, 
   RotateCcw
 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 import { Client } from '@/types/loan';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import EnhancedClientViewDialog from '@/components/clients/EnhancedClientViewDialog';
 
 const ClientsList = () => {
   const [clients, setClients] = useState<Client[]>([]);
@@ -41,6 +42,8 @@ const ClientsList = () => {
   const [showDeleted, setShowDeleted] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string>('');
   const { toast } = useToast();
   const itemsPerPage = 10;
 
@@ -59,7 +62,6 @@ const ClientsList = () => {
       const deletedClients: Client[] = [];
       
       data?.forEach(client => {
-        // Add the client to the appropriate array based on deleted_at value
         if (client.deleted_at) {
           deletedClients.push(client as Client);
         } else {
@@ -85,6 +87,11 @@ const ClientsList = () => {
     fetchClients();
   }, []);
 
+  const handleViewClient = (clientId: string) => {
+    setSelectedClientId(clientId);
+    setViewDialogOpen(true);
+  };
+
   const handleDeleteClient = async (client: Client) => {
     setClientToDelete(client);
     setDeleteDialogOpen(true);
@@ -106,7 +113,6 @@ const ClientsList = () => {
         description: `${clientToDelete.full_name} has been removed from active clients`,
       });
       
-      // Update local state
       setClients(clients.filter(c => c.id !== clientToDelete.id));
       setDeletedClients([...deletedClients, {...clientToDelete, deleted_at: new Date().toISOString()} as Client]);
     } catch (error: any) {
@@ -135,7 +141,6 @@ const ClientsList = () => {
         description: `${client.full_name} has been restored to active clients`,
       });
       
-      // Update local state
       setDeletedClients(deletedClients.filter(c => c.id !== client.id));
       setClients([{...client, deleted_at: undefined} as Client, ...clients]);
     } catch (error: any) {
@@ -149,7 +154,7 @@ const ClientsList = () => {
 
   const toggleShowDeleted = () => {
     setShowDeleted(!showDeleted);
-    setCurrentPage(1); // Reset to first page when switching views
+    setCurrentPage(1);
   };
 
   const displayedClients = showDeleted ? deletedClients : clients;
@@ -192,9 +197,9 @@ const ClientsList = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 space-y-4 md:space-y-0">
           <div>
-            <h1 className="text-3xl font-serif font-bold dark:text-white">Client Database</h1>
+            <h1 className="text-3xl font-serif font-bold dark:text-white">Premium Client Database</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              View and manage all your registered clients
+              Advanced client management with real-time data integration
             </p>
           </div>
 
@@ -208,7 +213,7 @@ const ClientsList = () => {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1); // Reset to first page on search
+                  setCurrentPage(1);
                 }}
               />
             </div>
@@ -233,7 +238,7 @@ const ClientsList = () => {
               </Button>
               
               <Button asChild className="bg-purple-700 hover:bg-purple-800">
-                <Link to="/clients/new">
+                <Link to="/new-client">
                   <UserPlus className="mr-2 h-4 w-4" />
                   Add Client
                 </Link>
@@ -242,10 +247,14 @@ const ClientsList = () => {
           </div>
         </div>
 
-        <Card>
+        <Card className="shadow-lg">
           <CardHeader className="pb-3">
-            <CardTitle>
-              {showDeleted ? 'Deleted Clients' : 'All Clients'} ({filteredClients.length})
+            <CardTitle className="flex items-center justify-between">
+              <span>{showDeleted ? 'Deleted Clients' : 'Active Clients'} ({filteredClients.length})</span>
+              <div className="flex items-center space-x-2">
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-gray-500">Live Data</span>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -270,7 +279,7 @@ const ClientsList = () => {
                     </TableHeader>
                     <TableBody>
                       {paginatedClients.map((client) => (
-                        <TableRow key={client.id}>
+                        <TableRow key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                           <TableCell className="font-medium flex items-center">
                             <UserRound className="h-5 w-5 mr-2 text-gray-500" />
                             {client.full_name}
@@ -309,11 +318,14 @@ const ClientsList = () => {
                                 </Button>
                               ) : (
                                 <>
-                                  <Button variant="outline" size="sm" asChild>
-                                    <Link to={`/clients/${client.id}`}>
-                                      <Eye className="h-4 w-4 mr-1" />
-                                      View Data
-                                    </Link>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => handleViewClient(client.id)}
+                                    className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    View Data
                                   </Button>
                                   <Button 
                                     variant="outline" 
@@ -333,7 +345,6 @@ const ClientsList = () => {
                   </Table>
                 </div>
                 
-                {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex justify-between items-center mt-6">
                     <p className="text-sm text-gray-500">
@@ -390,7 +401,7 @@ const ClientsList = () => {
                 </p>
                 {!showDeleted && (
                   <Button asChild className="bg-purple-700 hover:bg-purple-800">
-                    <Link to="/clients/new">
+                    <Link to="/new-client">
                       <UserPlus className="mr-2 h-4 w-4" />
                       Add Your First Client
                     </Link>
@@ -402,7 +413,6 @@ const ClientsList = () => {
         </Card>
       </div>
       
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -422,6 +432,12 @@ const ClientsList = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EnhancedClientViewDialog
+        clientId={selectedClientId}
+        open={viewDialogOpen}
+        onOpenChange={setViewDialogOpen}
+      />
     </Layout>
   );
 };

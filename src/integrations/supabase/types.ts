@@ -129,49 +129,46 @@ export type Database = {
         }
         Relationships: []
       }
-      loan_appliations_workflow: {
+      financial_transactions: {
         Row: {
-          action: string
-          "CEO comment": string | null
-          "Chairperson's comment": string | null
-          "Director's Comment": string | null
-          "Field officer comment": string | null
+          amount: number
+          category: string
+          created_at: string | null
+          created_by: string
+          date: string
+          description: string
           id: string
-          loan_application_id: string
-          "Manager's Comment": string | null
-          performed_at: string | null
-          performed_by: string
-          status: string | null
+          loan_application_id: string | null
+          transaction_type: string
+          updated_at: string | null
         }
         Insert: {
-          action: string
-          "CEO comment"?: string | null
-          "Chairperson's comment"?: string | null
-          "Director's Comment"?: string | null
-          "Field officer comment"?: string | null
+          amount: number
+          category: string
+          created_at?: string | null
+          created_by: string
+          date?: string
+          description: string
           id?: string
-          loan_application_id: string
-          "Manager's Comment"?: string | null
-          performed_at?: string | null
-          performed_by: string
-          status?: string | null
+          loan_application_id?: string | null
+          transaction_type: string
+          updated_at?: string | null
         }
         Update: {
-          action?: string
-          "CEO comment"?: string | null
-          "Chairperson's comment"?: string | null
-          "Director's Comment"?: string | null
-          "Field officer comment"?: string | null
+          amount?: number
+          category?: string
+          created_at?: string | null
+          created_by?: string
+          date?: string
+          description?: string
           id?: string
-          loan_application_id?: string
-          "Manager's Comment"?: string | null
-          performed_at?: string | null
-          performed_by?: string
-          status?: string | null
+          loan_application_id?: string | null
+          transaction_type?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "loan_appliation_workflow_loan_application_id_fkey"
+            foreignKeyName: "financial_transactions_loan_application_id_fkey"
             columns: ["loan_application_id"]
             isOneToOne: false
             referencedRelation: "loan_applications"
@@ -247,6 +244,68 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      loan_applications_workflow: {
+        Row: {
+          ceo_approved: boolean | null
+          ceo_notes: string | null
+          chairperson_approved: boolean | null
+          chairperson_notes: string | null
+          created_at: string | null
+          current_stage: string
+          director_approved: boolean | null
+          director_notes: string | null
+          field_officer_approved: boolean | null
+          field_officer_notes: string | null
+          id: string
+          loan_application_id: string
+          manager_approved: boolean | null
+          manager_notes: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ceo_approved?: boolean | null
+          ceo_notes?: string | null
+          chairperson_approved?: boolean | null
+          chairperson_notes?: string | null
+          created_at?: string | null
+          current_stage?: string
+          director_approved?: boolean | null
+          director_notes?: string | null
+          field_officer_approved?: boolean | null
+          field_officer_notes?: string | null
+          id?: string
+          loan_application_id: string
+          manager_approved?: boolean | null
+          manager_notes?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ceo_approved?: boolean | null
+          ceo_notes?: string | null
+          chairperson_approved?: boolean | null
+          chairperson_notes?: string | null
+          created_at?: string | null
+          current_stage?: string
+          director_approved?: boolean | null
+          director_notes?: string | null
+          field_officer_approved?: boolean | null
+          field_officer_notes?: string | null
+          id?: string
+          loan_application_id?: string
+          manager_approved?: boolean | null
+          manager_notes?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_loan_app_workflow"
+            columns: ["loan_application_id"]
+            isOneToOne: false
+            referencedRelation: "loan_applications"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loan_workflow_log: {
         Row: {
