@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -175,7 +174,7 @@ const NewLoanApplication = () => {
             
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Need assistance? Contact our support team at <a href="mailto:support@goldcharp.com" className="text-blue-600 hover:underline transition-all duration-200">support@goldcharp.com</a> or call us at +254-700-123-456
+                Need assistance? Contact our support team at <a href="mailto:info@goldcharpinvestments.com" className="text-blue-600 hover:underline transition-all duration-200">info@goldcharpinvestments.com</a> or call us at <a href="tel:+256-393103974" className="text-blue-600 hover:underline">+256-393103974</a>
               </p>
             </div>
           </div>
