@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { NotificationsProvider } from "./contexts/NotificationsContext";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
@@ -52,64 +52,149 @@ import Insurance from "./pages/services/Insurance";
 
 const queryClient = new QueryClient();
 
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Index />,
+  },
+  {
+    path: "/about",
+    element: <About />,
+  },
+  {
+    path: "/loans",
+    element: <Loans />,
+  },
+  {
+    path: "/contact",
+    element: <Contact />,
+  },
+  {
+    path: "/calculator",
+    element: <Calculator />,
+  },
+  {
+    path: "/properties",
+    element: <Properties />,
+  },
+  {
+    path: "/property-evaluation",
+    element: <PropertyEvaluation />,
+  },
+  {
+    path: "/services",
+    element: <ServicesIndex />,
+  },
+  {
+    path: "/services/:serviceId",
+    element: <ServiceDetail />,
+  },
+  {
+    path: "/services/business-support",
+    element: <BusinessSupport />,
+  },
+  {
+    path: "/services/fast-track",
+    element: <FastTrack />,
+  },
+  {
+    path: "/services/insurance",
+    element: <Insurance />,
+  },
+  {
+    path: "/login",
+    element: <PublicRoute><Login /></PublicRoute>,
+  },
+  {
+    path: "/register",
+    element: <PublicRoute><Register /></PublicRoute>,
+  },
+  {
+    path: "/dashboard",
+    element: <PrivateRoute><Dashboard /></PrivateRoute>,
+  },
+  {
+    path: "/clients",
+    element: <PrivateRoute><ClientsList /></PrivateRoute>,
+  },
+  {
+    path: "/clients/:id",
+    element: <PrivateRoute><ClientDetail /></PrivateRoute>,
+  },
+  {
+    path: "/new-client",
+    element: <PrivateRoute><NewClient /></PrivateRoute>,
+  },
+  {
+    path: "/new-loan-application",
+    element: <PrivateRoute><NewLoanApplication /></PrivateRoute>,
+  },
+  {
+    path: "/loan-applications",
+    element: <PrivateRoute><LoanApplicationsList /></PrivateRoute>,
+  },
+  {
+    path: "/loan-applications/:id",
+    element: <PrivateRoute><LoanApprovalPage /></PrivateRoute>,
+  },
+  {
+    path: "/payments",
+    element: <PrivateRoute><Payments /></PrivateRoute>,
+  },
+  {
+    path: "/documents",
+    element: <PrivateRoute><Documents /></PrivateRoute>,
+  },
+  {
+    path: "/notifications",
+    element: <PrivateRoute><Notifications /></PrivateRoute>,
+  },
+  {
+    path: "/reports",
+    element: <PrivateRoute><ReportsPage /></PrivateRoute>,
+  },
+  {
+    path: "/staff/data-collection",
+    element: <StaffRoute><DataCollection /></StaffRoute>,
+  },
+  {
+    path: "/staff/data-collection-dashboard",
+    element: <StaffRoute><DataCollectionDashboard /></StaffRoute>,
+  },
+  {
+    path: "/staff/manager-review",
+    element: <RoleBasedRoute allowedRoles={['manager']}><ManagerReviewDashboard /></RoleBasedRoute>,
+  },
+  {
+    path: "/staff/director-risk",
+    element: <RoleBasedRoute allowedRoles={['director']}><DirectorRiskDashboard /></RoleBasedRoute>,
+  },
+  {
+    path: "/staff/ceo-approval",
+    element: <RoleBasedRoute allowedRoles={['ceo']}><CEOApprovalDashboard /></RoleBasedRoute>,
+  },
+  {
+    path: "/staff/chairperson-approval",
+    element: <RoleBasedRoute allowedRoles={['chairperson']}><ChairpersonFinalDashboard /></RoleBasedRoute>,
+  },
+  {
+    path: "*",
+    element: <NotFound />,
+  },
+]);
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
         <TooltipProvider>
-          <BrowserRouter>
-            <AuthProvider>
-              <NotificationsProvider>
-                <Toaster />
-                <Sonner />
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/loans" element={<Loans />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/calculator" element={<Calculator />} />
-                  <Route path="/properties" element={<Properties />} />
-                  <Route path="/property-evaluation" element={<PropertyEvaluation />} />
-                  
-                  {/* Services routes */}
-                  <Route path="/services" element={<ServicesIndex />} />
-                  <Route path="/services/:serviceId" element={<ServiceDetail />} />
-                  <Route path="/services/business-support" element={<BusinessSupport />} />
-                  <Route path="/services/fast-track" element={<FastTrack />} />
-                  <Route path="/services/insurance" element={<Insurance />} />
-
-                  {/* Auth routes */}
-                  <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-                  <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-
-                  {/* Protected routes */}
-                  <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-                  <Route path="/clients" element={<PrivateRoute><ClientsList /></PrivateRoute>} />
-                  <Route path="/clients/:id" element={<PrivateRoute><ClientDetail /></PrivateRoute>} />
-                  <Route path="/new-client" element={<PrivateRoute><NewClient /></PrivateRoute>} />
-                  <Route path="/new-loan-application" element={<PrivateRoute><NewLoanApplication /></PrivateRoute>} />
-                  <Route path="/loan-applications" element={<PrivateRoute><LoanApplicationsList /></PrivateRoute>} />
-                  <Route path="/loan-applications/:id" element={<PrivateRoute><LoanApprovalPage /></PrivateRoute>} />
-                  <Route path="/payments" element={<PrivateRoute><Payments /></PrivateRoute>} />
-                  <Route path="/documents" element={<PrivateRoute><Documents /></PrivateRoute>} />
-                  <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
-                  <Route path="/reports" element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
-
-                  {/* Staff routes with role-based access */}
-                  <Route path="/staff/data-collection" element={<StaffRoute><DataCollection /></StaffRoute>} />
-                  <Route path="/staff/data-collection-dashboard" element={<StaffRoute><DataCollectionDashboard /></StaffRoute>} />
-                  <Route path="/staff/manager-review" element={<RoleBasedRoute allowedRoles={['manager']}><ManagerReviewDashboard /></RoleBasedRoute>} />
-                  <Route path="/staff/director-risk" element={<RoleBasedRoute allowedRoles={['director']}><DirectorRiskDashboard /></RoleBasedRoute>} />
-                  <Route path="/staff/ceo-approval" element={<RoleBasedRoute allowedRoles={['ceo']}><CEOApprovalDashboard /></RoleBasedRoute>} />
-                  <Route path="/staff/chairperson-approval" element={<RoleBasedRoute allowedRoles={['chairperson']}><ChairpersonFinalDashboard /></RoleBasedRoute>} />
-
-                  {/* 404 route */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </NotificationsProvider>
-            </AuthProvider>
-          </BrowserRouter>
+          <AuthProvider>
+            <NotificationsProvider>
+              <Toaster />
+              <Sonner />
+              <RouterProvider router={router} />
+            </NotificationsProvider>
+          </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
