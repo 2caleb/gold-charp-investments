@@ -54,67 +54,65 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClient>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-          <TooltipProvider>
-            <BrowserRouter>
-              <AuthProvider>
-                <NotificationsProvider>
-                  <Toaster />
-                  <Sonner />
-                  <Routes>
-                    {/* Public routes */}
-                    <Route path="/" element={<Index />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/loans" element={<Loans />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/calculator" element={<Calculator />} />
-                    <Route path="/properties" element={<Properties />} />
-                    <Route path="/property-evaluation" element={<PropertyEvaluation />} />
-                    
-                    {/* Services routes */}
-                    <Route path="/services" element={<ServicesIndex />} />
-                    <Route path="/services/:serviceId" element={<ServiceDetail />} />
-                    <Route path="/services/business-support" element={<BusinessSupport />} />
-                    <Route path="/services/fast-track" element={<FastTrack />} />
-                    <Route path="/services/insurance" element={<Insurance />} />
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+        <TooltipProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <NotificationsProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/loans" element={<Loans />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/calculator" element={<Calculator />} />
+                  <Route path="/properties" element={<Properties />} />
+                  <Route path="/property-evaluation" element={<PropertyEvaluation />} />
+                  
+                  {/* Services routes */}
+                  <Route path="/services" element={<ServicesIndex />} />
+                  <Route path="/services/:serviceId" element={<ServiceDetail />} />
+                  <Route path="/services/business-support" element={<BusinessSupport />} />
+                  <Route path="/services/fast-track" element={<FastTrack />} />
+                  <Route path="/services/insurance" element={<Insurance />} />
 
-                    {/* Auth routes */}
-                    <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-                    <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+                  {/* Auth routes */}
+                  <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+                  <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
-                    {/* Protected routes */}
-                    <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-                    <Route path="/clients" element={<PrivateRoute><ClientsList /></PrivateRoute>} />
-                    <Route path="/clients/:id" element={<PrivateRoute><ClientDetail /></PrivateRoute>} />
-                    <Route path="/new-client" element={<PrivateRoute><NewClient /></PrivateRoute>} />
-                    <Route path="/new-loan-application" element={<PrivateRoute><NewLoanApplication /></PrivateRoute>} />
-                    <Route path="/loan-applications" element={<PrivateRoute><LoanApplicationsList /></PrivateRoute>} />
-                    <Route path="/loan-applications/:id" element={<PrivateRoute><LoanApprovalPage /></PrivateRoute>} />
-                    <Route path="/payments" element={<PrivateRoute><Payments /></PrivateRoute>} />
-                    <Route path="/documents" element={<PrivateRoute><Documents /></PrivateRoute>} />
-                    <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
-                    <Route path="/reports" element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
+                  {/* Protected routes */}
+                  <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                  <Route path="/clients" element={<PrivateRoute><ClientsList /></PrivateRoute>} />
+                  <Route path="/clients/:id" element={<PrivateRoute><ClientDetail /></PrivateRoute>} />
+                  <Route path="/new-client" element={<PrivateRoute><NewClient /></PrivateRoute>} />
+                  <Route path="/new-loan-application" element={<PrivateRoute><NewLoanApplication /></PrivateRoute>} />
+                  <Route path="/loan-applications" element={<PrivateRoute><LoanApplicationsList /></PrivateRoute>} />
+                  <Route path="/loan-applications/:id" element={<PrivateRoute><LoanApprovalPage /></PrivateRoute>} />
+                  <Route path="/payments" element={<PrivateRoute><Payments /></PrivateRoute>} />
+                  <Route path="/documents" element={<PrivateRoute><Documents /></PrivateRoute>} />
+                  <Route path="/notifications" element={<PrivateRoute><Notifications /></PrivateRoute>} />
+                  <Route path="/reports" element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
 
-                    {/* Staff routes with role-based access */}
-                    <Route path="/staff/data-collection" element={<StaffRoute><DataCollection /></StaffRoute>} />
-                    <Route path="/staff/data-collection-dashboard" element={<StaffRoute><DataCollectionDashboard /></StaffRoute>} />
-                    <Route path="/staff/manager-review" element={<RoleBasedRoute allowedRoles={['manager']}><ManagerReviewDashboard /></RoleBasedRoute>} />
-                    <Route path="/staff/director-risk" element={<RoleBasedRoute allowedRoles={['director']}><DirectorRiskDashboard /></RoleBasedRoute>} />
-                    <Route path="/staff/ceo-approval" element={<RoleBasedRoute allowedRoles={['ceo']}><CEOApprovalDashboard /></RoleBasedRoute>} />
-                    <Route path="/staff/chairperson-approval" element={<RoleBasedRoute allowedRoles={['chairperson']}><ChairpersonFinalDashboard /></RoleBasedRoute>} />
+                  {/* Staff routes with role-based access */}
+                  <Route path="/staff/data-collection" element={<StaffRoute><DataCollection /></StaffRoute>} />
+                  <Route path="/staff/data-collection-dashboard" element={<StaffRoute><DataCollectionDashboard /></StaffRoute>} />
+                  <Route path="/staff/manager-review" element={<RoleBasedRoute allowedRoles={['manager']}><ManagerReviewDashboard /></RoleBasedRoute>} />
+                  <Route path="/staff/director-risk" element={<RoleBasedRoute allowedRoles={['director']}><DirectorRiskDashboard /></RoleBasedRoute>} />
+                  <Route path="/staff/ceo-approval" element={<RoleBasedRoute allowedRoles={['ceo']}><CEOApprovalDashboard /></RoleBasedRoute>} />
+                  <Route path="/staff/chairperson-approval" element={<RoleBasedRoute allowedRoles={['chairperson']}><ChairpersonFinalDashboard /></RoleBasedRoute>} />
 
-                    {/* 404 route */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </NotificationsProvider>
-              </AuthProvider>
-            </BrowserRouter>
-          </TooltipProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </QueryClient>
+                  {/* 404 route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </NotificationsProvider>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
