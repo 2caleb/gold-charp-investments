@@ -183,7 +183,11 @@ const router = createBrowserRouter([
   },
 ]);
 
+console.log("App.tsx: Initializing React Router with RouterProvider");
+
 function App() {
+  console.log("App.tsx: Rendering App component");
+  
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
