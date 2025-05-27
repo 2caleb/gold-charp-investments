@@ -27,7 +27,7 @@ export const fetchDashboardData = async (userId: string): Promise<DashboardData>
       .from('loan_applications')
       .select(`
         *,
-        loan_appliations_workflow!loan_appliations_workflow_loan_application_id_fkey(*)
+        loan_applications_workflow!loan_applications_workflow_loan_application_id_fkey(*)
       `)
       .order('created_at', { ascending: false });
 
@@ -73,10 +73,10 @@ export const fetchDashboardData = async (userId: string): Promise<DashboardData>
 export const fetchWorkflowData = async (loanApplicationId: string) => {
   try {
     const { data, error } = await supabase
-      .from('loan_appliations_workflow')
+      .from('loan_applications_workflow')
       .select('*')
       .eq('loan_application_id', loanApplicationId)
-      .order('performed_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching workflow data:', error);
