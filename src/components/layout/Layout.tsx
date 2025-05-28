@@ -1,8 +1,7 @@
 
 import React from 'react';
-import PremiumNavBar from './PremiumNavBar';
-import DesktopNav from './DesktopNav';
-import MobileNav from './MobileNav';
+import RestoredNavBar from './RestoredNavBar';
+import Footer from './Footer';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,22 +9,15 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <PremiumNavBar />
-      <div className="flex">
-        {/* Desktop Sidebar */}
-        <DesktopNav />
-        
-        {/* Main Content */}
-        <main className="flex-1 md:ml-64">
-          <div className="p-6">
-            {children}
-          </div>
-        </main>
-        
-        {/* Mobile Navigation */}
-        <MobileNav />
-      </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <RestoredNavBar />
+      
+      {/* Main Content */}
+      <main className="flex-1">
+        {children}
+      </main>
+      
+      <Footer />
     </div>
   );
 };

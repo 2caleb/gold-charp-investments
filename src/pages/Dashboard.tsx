@@ -1,275 +1,176 @@
 
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import Layout from '@/components/layout/Layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { LoanPerformanceChart } from '@/components/dashboard/LoanPerformanceChart';
-import { RiskProfileMap } from '@/components/dashboard/RiskProfileMap';
-import { PropertyInsights } from '@/components/dashboard/PropertyInsights';
-import { FieldOfficerActivity } from '@/components/dashboard/FieldOfficerActivity';
+import React from 'react';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 import SmartDashboardMonitor from '@/components/dashboard/SmartDashboardMonitor';
-import { useRolePermissions } from '@/hooks/use-role-permissions';
-import { useUser } from '@/hooks/use-user';
+import FieldOfficerActivity from '@/components/dashboard/FieldOfficerActivity';
+import LoanPerformanceChart from '@/components/dashboard/LoanPerformanceChart';
+import PropertyInsights from '@/components/dashboard/PropertyInsights';
+import RiskProfileMap from '@/components/dashboard/RiskProfileMap';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchDashboardData, DashboardData } from '@/services/dashboardService';
-import { ArrowRight, ClipboardCheck, BarChart2, FileCheck, AlertTriangle, Stamp } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Users, FileText, TrendingUp, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-const Dashboard: React.FC = () => {
-  const { userProfile } = useUser();
+const Dashboard = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  const { 
-    userRole, 
-    isFieldOfficer, 
-    isManager, 
-    isDirector, 
-    isCEO, 
-    isChairperson 
-  } = useRolePermissions();
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
+  // Fetch dashboard overview data
+  const { data: overviewData, isLoading } = useQuery({
+    queryKey: ['dashboard-overview'],
+    queryFn: async () => {
+      const [clientsResponse, loansResponse, paymentsResponse] = await Promise.all([
+        supabase.from('client_name').select('id'),
+        supabase.from('loan_applications').select('id, status, loan_amount'),
+        supabase.from('financial_transactions').select('amount, transaction_type')
+      ]);
 
-      try {
-        const data = await fetchDashboardData(user.id);
-        setDashboardData(data);
-        console.log('Dashboard data loaded successfully');
-      } catch (error: any) {
-        console.error('Error loading dashboard data:', error);
-        toast({
-          title: "Error loading dashboard",
-          description: error.message || "Failed to load dashboard data",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      const totalClients = clientsResponse.data?.length || 0;
+      const totalLoans = loansResponse.data?.length || 0;
+      const approvedLoans = loansResponse.data?.filter(loan => loan.status === 'approved').length || 0;
+      const totalLoanAmount = loansResponse.data?.reduce((sum, loan) => sum + (parseFloat(loan.loan_amount) || 0), 0) || 0;
+      const totalIncome = paymentsResponse.data?.filter(t => t.transaction_type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0) || 0;
 
-    loadDashboardData();
-  }, [user, toast]);
+      return {
+        totalClients,
+        totalLoans,
+        approvedLoans,
+        totalLoanAmount,
+        totalIncome
+      };
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="animate-pulse space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
+            ))}
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-serif font-bold mb-2">Welcome back, {userProfile?.full_name || 'User'}</h1>
-            <p className="text-gray-600">
-              Here's an overview of loan applications and their status.
-            </p>
-          </div>
-          
-          <div className="mt-4 md:mt-0 space-x-4">
-            <Button asChild variant="outline">
-              <Link to="/loan-applications">
-                View Applications
-              </Link>
-            </Button>
-            <Button asChild className="bg-purple-700 hover:bg-purple-800">
-              <Link to="/loan-applications/new">
-                New Application
-              </Link>
-            </Button>
-          </div>
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome back, {user?.email || 'User'}!
+          </h1>
+          <p className="text-gray-600">
+            Here's an overview of your loan management activities.
+          </p>
         </div>
 
-        {/* Dashboard Statistics */}
-        {dashboardData && !isLoading && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{dashboardData.totalApplications}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Pending</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">{dashboardData.pendingApplications}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Approved</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">{dashboardData.approvedApplications}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Amount</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">UGX {dashboardData.totalLoanAmount.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {/* Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{overviewData?.totalClients || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                Active client accounts
+              </p>
+            </CardContent>
+          </Card>
 
-        {/* Smart Monitor */}
-        <div className="mb-6">
-          <SmartDashboardMonitor />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Loan Applications</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{overviewData?.totalLoans || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                {overviewData?.approvedLoans || 0} approved
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Portfolio Value</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                UGX {(overviewData?.totalLoanAmount || 0).toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total loan amounts
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Revenue</CardTitle>
+              <Shield className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                UGX {(overviewData?.totalIncome || 0).toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Total income generated
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Role-specific action cards */}
-        {userRole && (
-          <div className="mb-8">
-            <h2 className="text-xl font-medium mb-4">Your Tasks</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {isManager && (
-                <Card className="shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Manager Review Dashboard</CardTitle>
-                    <CardDescription>Review loan applications that need manager approval</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      variant="default" 
-                      className="bg-indigo-600 hover:bg-indigo-700 w-full"
-                      asChild
-                    >
-                      <Link to="/staff/manager-review" className="flex items-center justify-between">
-                        <span className="flex items-center">
-                          <ClipboardCheck className="mr-2 h-4 w-4" />
-                          Review Applications
-                        </span>
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {isDirector && (
-                <Card className="shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Risk Assessment Dashboard</CardTitle>
-                    <CardDescription>Assess risk for approved loan applications</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      variant="default" 
-                      className="bg-amber-600 hover:bg-amber-700 w-full"
-                      asChild
-                    >
-                      <Link to="/staff/director-risk" className="flex items-center justify-between">
-                        <span className="flex items-center">
-                          <AlertTriangle className="mr-2 h-4 w-4" />
-                          Assess Risk
-                        </span>
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {isCEO && (
-                <Card className="shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">CEO Approval Dashboard</CardTitle>
-                    <CardDescription>Review and approve risk-assessed applications</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      variant="default" 
-                      className="bg-blue-600 hover:bg-blue-700 w-full"
-                      asChild
-                    >
-                      <Link to="/staff/ceo-approval" className="flex items-center justify-between">
-                        <span className="flex items-center">
-                          <FileCheck className="mr-2 h-4 w-4" />
-                          Review for Approval
-                        </span>
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {isChairperson && (
-                <Card className="shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Chairperson Final Approval</CardTitle>
-                    <CardDescription>Finalize approvals for CEO-approved applications</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      variant="default" 
-                      className="bg-green-600 hover:bg-green-700 w-full"
-                      asChild
-                    >
-                      <Link to="/staff/chairperson-approval" className="flex items-center justify-between">
-                        <span className="flex items-center">
-                          <Stamp className="mr-2 h-4 w-4" />
-                          Final Approvals
-                        </span>
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-              
-              {isFieldOfficer && (
-                <Card className="shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Data Collection</CardTitle>
-                    <CardDescription>Collect and manage client data</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      variant="default" 
-                      className="bg-purple-600 hover:bg-purple-700 w-full"
-                      asChild
-                    >
-                      <Link to="/staff/data-collection" className="flex items-center justify-between">
-                        <span className="flex items-center">
-                          <BarChart2 className="mr-2 h-4 w-4" />
-                          Collect Data
-                        </span>
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Link to="/new-client">
+                <Button className="w-full" variant="outline">
+                  Add New Client
+                </Button>
+              </Link>
+              <Link to="/new-loan-application">
+                <Button className="w-full" variant="outline">
+                  New Loan Application
+                </Button>
+              </Link>
+              <Link to="/reports">
+                <Button className="w-full" variant="outline">
+                  View Reports
+                </Button>
+              </Link>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Dashboard Components */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <SmartDashboardMonitor />
+            <FieldOfficerActivity />
           </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <LoanPerformanceChart />
-          <RiskProfileMap />
+          <div className="space-y-6">
+            <LoanPerformanceChart />
+            <PropertyInsights />
+          </div>
         </div>
 
-        {/* Property Insights - Now full width for better visibility */}
-        <div className="mb-6">
-          <PropertyInsights />
-        </div>
-        
-        {/* Field Officer Activity */}
-        <div>
-          <FieldOfficerActivity />
-        </div>
+        <RiskProfileMap />
       </div>
-    </Layout>
+    </DashboardLayout>
   );
 };
 
