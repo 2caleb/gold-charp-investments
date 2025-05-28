@@ -1,20 +1,31 @@
 
 import React from 'react';
-import Navbar from './Navbar';
-import Footer from './Footer';
+import PremiumNavBar from './PremiumNavBar';
+import DesktopNav from './DesktopNav';
+import MobileNav from './MobileNav';
 
-type LayoutProps = {
+interface LayoutProps {
   children: React.ReactNode;
-};
+}
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="flex flex-col min-h-screen max-w-full overflow-x-hidden transition-all duration-500">
-      <Navbar />
-      <main className="flex-grow relative w-full pt-16 z-10">
-        {children}
-      </main>
-      <Footer />
+    <div className="min-h-screen bg-gray-50">
+      <PremiumNavBar />
+      <div className="flex">
+        {/* Desktop Sidebar */}
+        <DesktopNav />
+        
+        {/* Main Content */}
+        <main className="flex-1 md:ml-64">
+          <div className="p-6">
+            {children}
+          </div>
+        </main>
+        
+        {/* Mobile Navigation */}
+        <MobileNav />
+      </div>
     </div>
   );
 };

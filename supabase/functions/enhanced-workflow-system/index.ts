@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Define workflow stages in order
+// Define workflow stages in correct order: Field Officer → Manager → Director → Chairman → CEO
 const WORKFLOW_STAGES = ['field_officer', 'manager', 'director', 'chairperson', 'ceo'];
 
 serve(async (req) => {
@@ -73,12 +73,12 @@ async function processWorkflow(
       throw new Error(`Loan application not found: ${loanError?.message}`);
     }
 
-    // Get current workflow data
+    // Get current workflow data - FIXED TABLE NAME
     const { data: workflowData, error: workflowError } = await supabaseClient
-      .from('loan_appliations_workflow')
+      .from('loan_applications_workflow')
       .select('*')
       .eq('loan_application_id', loanId)
-      .order('performed_at', { ascending: false })
+      .order('updated_at', { ascending: false })
       .limit(1);
 
     if (workflowError) {
@@ -122,15 +122,15 @@ async function processWorkflow(
         throw new Error(`Failed to update loan status: ${updateError.message}`);
       }
 
-      // Log the workflow action
+      // Log the workflow action - FIXED TABLE NAME
       const { error: workflowLogError } = await supabaseClient
-        .from('loan_appliations_workflow')
+        .from('loan_applications_workflow')
         .insert({
           loan_application_id: loanId,
-          action: `Approved by ${currentStage}`,
-          performed_by: approverId,
-          performed_at: new Date().toISOString(),
-          status: newStatus
+          current_stage: isFinal ? 'completed' : nextStage,
+          [`${currentStage}_approved`]: true,
+          [`${currentStage}_notes`]: notes,
+          updated_at: new Date().toISOString()
         });
 
       if (workflowLogError) {
@@ -179,15 +179,15 @@ async function processWorkflow(
         throw new Error(`Failed to update loan status: ${updateError.message}`);
       }
 
-      // Log the workflow action
+      // Log the workflow action - FIXED TABLE NAME
       const { error: workflowLogError } = await supabaseClient
-        .from('loan_appliations_workflow')
+        .from('loan_applications_workflow')
         .insert({
           loan_application_id: loanId,
-          action: `Rejected by ${currentStage}`,
-          performed_by: approverId,
-          performed_at: new Date().toISOString(),
-          status: 'rejected'
+          current_stage: 'rejected',
+          [`${currentStage}_approved`]: false,
+          [`${currentStage}_notes`]: notes,
+          updated_at: new Date().toISOString()
         });
 
       if (workflowLogError) {

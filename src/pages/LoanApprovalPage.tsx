@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -11,13 +12,13 @@ import { adaptLoanDataToWorkflowFormat } from '@/utils/workflowAdapter';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
 import { supabase } from '@/integrations/supabase/client';
 
-// Fetch loan data from the database
+// Fetch loan data from the database - FIXED TABLE NAME
 const fetchLoanData = async (id: string): Promise<any> => {
   const { data, error } = await supabase
     .from('loan_applications')
     .select(`
       *,
-      loan_appliations_workflow(*)
+      loan_applications_workflow(*)
     `)
     .eq('id', id)
     .single();

@@ -6,8 +6,8 @@ import { WorkflowLoanData } from "@/types/workflow";
  * This helps maintain compatibility with existing code while we transition to the new format
  */
 export const adaptLoanDataToWorkflowFormat = (loanData: any): WorkflowLoanData => {
-  // Determine the current workflow stage from the loan_appliations_workflow data
-  const workflow = loanData.loan_appliations_workflow || loanData.loan_application_workflow || {};
+  // Determine the current workflow stage from the loan_applications_workflow data - FIXED TABLE NAME
+  const workflow = loanData.loan_applications_workflow || loanData.loan_application_workflow || {};
   const currentStage = workflow.current_stage || getStageFromStatus(loanData.status) || 'field_officer';
   
   // Handle phone number mapping - check multiple possible field names
@@ -69,8 +69,8 @@ const getStageFromStatus = (status: string): string => {
  * Access the workflow stage property regardless of which property name is used
  */
 export const getWorkflowStage = (loanData: any): string => {
-  if (loanData.loan_appliations_workflow?.current_stage) {
-    return loanData.loan_appliations_workflow.current_stage;
+  if (loanData.loan_applications_workflow?.current_stage) {
+    return loanData.loan_applications_workflow.current_stage;
   }
   if (loanData.loan_application_workflow?.current_stage) {
     return loanData.loan_application_workflow.current_stage;
@@ -95,7 +95,7 @@ export const canUserApproveCurrentStage = (userRole: string | null, currentStage
 };
 
 /**
- * Get the next workflow stage based on current stage
+ * Get the next workflow stage based on current stage - UPDATED SEQUENCE
  */
 export const getNextWorkflowStage = (currentStage: string): string | null => {
   const stages = ['field_officer', 'manager', 'director', 'chairperson', 'ceo'];

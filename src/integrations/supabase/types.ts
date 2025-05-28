@@ -248,13 +248,13 @@ export type Database = {
       loan_applications_workflow: {
         Row: {
           ceo_approved: boolean | null
-          ceo_notes: string | null
+          ceo_notes: boolean | null
           chairperson_approved: boolean | null
-          chairperson_notes: string | null
+          chairperson_notes: boolean | null
           created_at: string | null
           current_stage: string
           director_approved: boolean | null
-          director_notes: string | null
+          director_notes: boolean | null
           field_officer_approved: boolean | null
           field_officer_notes: string | null
           id: string
@@ -265,13 +265,13 @@ export type Database = {
         }
         Insert: {
           ceo_approved?: boolean | null
-          ceo_notes?: string | null
+          ceo_notes?: boolean | null
           chairperson_approved?: boolean | null
-          chairperson_notes?: string | null
+          chairperson_notes?: boolean | null
           created_at?: string | null
-          current_stage?: string
+          current_stage: string
           director_approved?: boolean | null
-          director_notes?: string | null
+          director_notes?: boolean | null
           field_officer_approved?: boolean | null
           field_officer_notes?: string | null
           id?: string
@@ -282,13 +282,13 @@ export type Database = {
         }
         Update: {
           ceo_approved?: boolean | null
-          ceo_notes?: string | null
+          ceo_notes?: boolean | null
           chairperson_approved?: boolean | null
-          chairperson_notes?: string | null
+          chairperson_notes?: boolean | null
           created_at?: string | null
           current_stage?: string
           director_approved?: boolean | null
-          director_notes?: string | null
+          director_notes?: boolean | null
           field_officer_approved?: boolean | null
           field_officer_notes?: string | null
           id?: string
