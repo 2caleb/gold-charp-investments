@@ -1,11 +1,10 @@
-
 import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SmartDashboardMonitor from '@/components/dashboard/SmartDashboardMonitor';
-import FieldOfficerActivity from '@/components/dashboard/FieldOfficerActivity';
-import LoanPerformanceChart from '@/components/dashboard/LoanPerformanceChart';
-import PropertyInsights from '@/components/dashboard/PropertyInsights';
-import RiskProfileMap from '@/components/dashboard/RiskProfileMap';
+import { FieldOfficerActivity } from '@/components/dashboard/FieldOfficerActivity';
+import { LoanPerformanceChart } from '@/components/dashboard/LoanPerformanceChart';
+import { PropertyInsights } from '@/components/dashboard/PropertyInsights';
+import { RiskProfileMap } from '@/components/dashboard/RiskProfileMap';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -32,7 +31,7 @@ const Dashboard = () => {
       const totalLoans = loansResponse.data?.length || 0;
       const approvedLoans = loansResponse.data?.filter(loan => loan.status === 'approved').length || 0;
       const totalLoanAmount = loansResponse.data?.reduce((sum, loan) => sum + (parseFloat(loan.loan_amount) || 0), 0) || 0;
-      const totalIncome = paymentsResponse.data?.filter(t => t.transaction_type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0) || 0;
+      const totalIncome = paymentsResponse.data?.filter(t => t.transaction_type === 'income').reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0) || 0;
 
       return {
         totalClients,
