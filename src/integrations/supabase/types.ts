@@ -129,6 +129,39 @@ export type Database = {
         }
         Relationships: []
       }
+      Expenses: {
+        Row: {
+          "Account 2": string | null
+          Amount: string | null
+          "Amount-In return": string | null
+          Date: string | null
+          "Date 2": string | null
+          "Loan Amount": string | null
+          Loan_holders: string
+          Particulars: string | null
+        }
+        Insert: {
+          "Account 2"?: string | null
+          Amount?: string | null
+          "Amount-In return"?: string | null
+          Date?: string | null
+          "Date 2"?: string | null
+          "Loan Amount"?: string | null
+          Loan_holders: string
+          Particulars?: string | null
+        }
+        Update: {
+          "Account 2"?: string | null
+          Amount?: string | null
+          "Amount-In return"?: string | null
+          Date?: string | null
+          "Date 2"?: string | null
+          "Loan Amount"?: string | null
+          Loan_holders?: string
+          Particulars?: string | null
+        }
+        Relationships: []
+      }
       financial_transactions: {
         Row: {
           amount: number
@@ -306,6 +339,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      loan_book: {
+        Row: {
+          Amount_Paid_1: string | null
+          Amount_Paid_2: string | null
+          Amount_Returnable: string | null
+          Date: string
+          Name: string | null
+          Payment_Mode: string | null
+          Remaining_Balance: string | null
+        }
+        Insert: {
+          Amount_Paid_1?: string | null
+          Amount_Paid_2?: string | null
+          Amount_Returnable?: string | null
+          Date: string
+          Name?: string | null
+          Payment_Mode?: string | null
+          Remaining_Balance?: string | null
+        }
+        Update: {
+          Amount_Paid_1?: string | null
+          Amount_Paid_2?: string | null
+          Amount_Returnable?: string | null
+          Date?: string
+          Name?: string | null
+          Payment_Mode?: string | null
+          Remaining_Balance?: string | null
+        }
+        Relationships: []
       }
       loan_workflow_log: {
         Row: {

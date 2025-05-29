@@ -1,6 +1,6 @@
 
 import React from 'react';
-import RestoredNavBar from './RestoredNavBar';
+import PremiumNavBar from './PremiumNavBar';
 import Footer from './Footer';
 
 interface LayoutProps {
@@ -10,10 +10,10 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <RestoredNavBar />
+      <PremiumNavBar />
       
-      {/* Main Content */}
-      <main className="flex-1">
+      {/* Main Content - Add top padding to account for fixed navbar */}
+      <main className="flex-1 pt-16">
         {children}
       </main>
       
