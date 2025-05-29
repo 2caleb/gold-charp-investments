@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
@@ -8,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
@@ -17,22 +15,21 @@ import {
   TrendingUp, 
   TrendingDown, 
   DollarSign, 
-  Calendar,
   Search,
   Filter,
   Download,
-  Plus
+  Plus,
+  Users,
+  PiggyBank
 } from 'lucide-react';
 
 const Payments = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('all');
 
   const { data: paymentData, isLoading } = useQuery({
     queryKey: ['payment-center-data'],
     queryFn: async () => {
       try {
-        // Fetch from all financial tables
         const [expensesRes, transactionsRes, loanBookRes] = await Promise.all([
           supabase.from('Expenses').select('*'),
           supabase.from('financial_transactions').select('*'),
@@ -60,22 +57,27 @@ const Payments = () => {
     }).format(isNaN(numAmount) ? 0 : numAmount);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'overdue': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const getStatusColor = (remainingBalance: string | number) => {
+    const balance = typeof remainingBalance === 'string' ? parseFloat(remainingBalance) : remainingBalance;
+    if (balance <= 0) return 'bg-green-100 text-green-800';
+    if (balance < 50000) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+  };
+
+  const getStatusText = (remainingBalance: string | number) => {
+    const balance = typeof remainingBalance === 'string' ? parseFloat(remainingBalance) : remainingBalance;
+    if (balance <= 0) return 'Paid';
+    if (balance < 50000) return 'Nearly Paid';
+    return 'Outstanding';
   };
 
   if (isLoading) {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-8 space-y-8">
-          <div className="animate-pulse">
+          <div className="animate-pulse p-12">
             <div className="h-32 bg-gray-200 rounded-lg mb-8"></div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="h-64 bg-gray-200 rounded-lg"></div>
               ))}
@@ -86,9 +88,23 @@ const Payments = () => {
     );
   }
 
+  // Calculate loan book metrics
+  const totalLoanValue = paymentData?.loanBook?.reduce((sum, loan) => 
+    sum + parseFloat(loan.Amount_Returnable || '0'), 0) || 0;
+  
+  const totalRepaid = paymentData?.loanBook?.reduce((sum, loan) => {
+    const payment1 = parseFloat(loan.Amount_Paid_1 || '0');
+    const payment2 = parseFloat(loan.Amount_Paid_2 || '0');
+    const payment3 = parseFloat(loan.Amount_paid_3 || '0');
+    return sum + payment1 + payment2 + payment3;
+  }, 0) || 0;
+
+  const totalOutstanding = paymentData?.loanBook?.reduce((sum, loan) => 
+    sum + parseFloat(loan.Remaining_Balance || '0'), 0) || 0;
+
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto px-4 py-8 space-y-12 p-12">
         <PremiumWelcomeSection />
         
         <motion.div
@@ -96,28 +112,82 @@ const Payments = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Premium Payment Center
               </h1>
-              <p className="text-gray-600 mt-2">
-                Comprehensive financial management and payment tracking
+              <p className="text-gray-600 mt-3 text-lg">
+                Comprehensive financial management and payment tracking powered by real data
               </p>
             </div>
-            <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
-              <Plus className="mr-2 h-4 w-4" />
+            <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-12 px-6">
+              <Plus className="mr-2 h-5 w-5" />
               New Transaction
             </Button>
           </div>
         </motion.div>
 
+        {/* Loan Book Summary Cards */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <PremiumFinancialOverview />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="flex items-center">
+                  <div className="w-16 h-16 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <DollarSign className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="ml-6">
+                    <p className="text-sm font-medium text-blue-700">Total Loan Portfolio</p>
+                    <p className="text-3xl font-bold text-blue-900">
+                      {formatCurrency(totalLoanValue)}
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">From loan book</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="flex items-center">
+                  <div className="w-16 h-16 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <PiggyBank className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="ml-6">
+                    <p className="text-sm font-medium text-green-700">Total Repaid</p>
+                    <p className="text-3xl font-bold text-green-900">
+                      {formatCurrency(totalRepaid)}
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      {totalLoanValue > 0 ? ((totalRepaid / totalLoanValue) * 100).toFixed(1) : 0}% collection rate
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-red-50 to-rose-100 border-red-200 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-8">
+                <div className="flex items-center">
+                  <div className="w-16 h-16 bg-red-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <TrendingDown className="h-8 w-8 text-white" />
+                  </div>
+                  <div className="ml-6">
+                    <p className="text-sm font-medium text-red-700">Outstanding Balance</p>
+                    <p className="text-3xl font-bold text-red-900">
+                      {formatCurrency(totalOutstanding)}
+                    </p>
+                    <p className="text-xs text-red-600 mt-1">Remaining to collect</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </motion.div>
 
         <motion.div
@@ -125,25 +195,131 @@ const Payments = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Tabs defaultValue="transactions" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="transactions">
-                <CreditCard className="mr-2 h-4 w-4" />
-                Transactions
-              </TabsTrigger>
-              <TabsTrigger value="expenses">
-                <TrendingDown className="mr-2 h-4 w-4" />
-                Expenses
-              </TabsTrigger>
-              <TabsTrigger value="loan-book">
+          <PremiumFinancialOverview />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Tabs defaultValue="loan-book" className="w-full">
+            <TabsList className="grid w-full grid-cols-4 h-14">
+              <TabsTrigger value="loan-book" className="text-base">
                 <DollarSign className="mr-2 h-4 w-4" />
                 Loan Book
               </TabsTrigger>
-              <TabsTrigger value="reports">
+              <TabsTrigger value="transactions" className="text-base">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Transactions
+              </TabsTrigger>
+              <TabsTrigger value="expenses" className="text-base">
+                <TrendingDown className="mr-2 h-4 w-4" />
+                Expenses
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="text-base">
                 <TrendingUp className="mr-2 h-4 w-4" />
                 Reports
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="loan-book" className="space-y-8 mt-8">
+              <Card className="shadow-lg">
+                <CardHeader className="pb-6">
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center text-xl">
+                      <DollarSign className="mr-3 h-6 w-6" />
+                      Loan Book Management
+                    </span>
+                    <div className="flex gap-3">
+                      <Button variant="outline" size="sm">
+                        <Filter className="mr-2 h-4 w-4" />
+                        Filter
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Download className="mr-2 h-4 w-4" />
+                        Export
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-6">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search by client name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 h-12"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-6">
+                    {paymentData?.loanBook
+                      ?.filter(loan => 
+                        loan.Name?.toLowerCase().includes(searchTerm.toLowerCase()) || ''
+                      )
+                      ?.slice(0, 15).map((loan, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 hover:shadow-lg transition-all duration-300"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Client Name</p>
+                            <p className="font-semibold text-gray-900 text-lg">{loan.Name || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Amount Returnable</p>
+                            <p className="font-bold text-blue-600 text-lg">
+                              {formatCurrency(loan.Amount_Returnable || 0)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Remaining Balance</p>
+                            <p className="font-bold text-red-600 text-lg">
+                              {formatCurrency(loan.Remaining_Balance || 0)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Payment Mode</p>
+                            <Badge variant="outline" className="capitalize text-sm px-3 py-1">
+                              {loan.Payment_Mode || 'Not specified'}
+                            </Badge>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Status</p>
+                            <Badge 
+                              className={`${getStatusColor(loan.Remaining_Balance || 0)} text-sm px-3 py-1`}
+                            >
+                              {getStatusText(loan.Remaining_Balance || 0)}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="mt-6 grid grid-cols-3 gap-6 text-sm border-t pt-4">
+                          <div>
+                            <span className="text-gray-500">Payment 1: </span>
+                            <span className="font-medium">{formatCurrency(loan.Amount_Paid_1 || 0)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Payment 2: </span>
+                            <span className="font-medium">{formatCurrency(loan.Amount_Paid_2 || 0)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Payment 3: </span>
+                            <span className="font-medium">{formatCurrency(loan.Amount_paid_3 || 0)}</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="transactions" className="space-y-6 mt-6">
               <Card>
@@ -260,102 +436,50 @@ const Payments = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="loan-book" className="space-y-6 mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <DollarSign className="mr-2 h-5 w-5" />
-                    Loan Book Management
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {paymentData?.loanBook?.slice(0, 10).map((loan, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100"
-                      >
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Client Name</p>
-                            <p className="font-semibold text-gray-900">{loan.Name}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Amount Returnable</p>
-                            <p className="font-bold text-blue-600">
-                              {formatCurrency(loan.Amount_Returnable)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Remaining Balance</p>
-                            <p className="font-bold text-red-600">
-                              {formatCurrency(loan.Remaining_Balance)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Payment Mode</p>
-                            <Badge variant="outline" className="capitalize">
-                              {loan.Payment_Mode || 'Not specified'}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <span className="text-gray-500">Payment 1: </span>
-                            <span className="font-medium">{formatCurrency(loan.Amount_Paid_1)}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">Payment 2: </span>
-                            <span className="font-medium">{formatCurrency(loan.Amount_Paid_2)}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">Payment 3: </span>
-                            <span className="font-medium">{formatCurrency(loan.Amount_paid_3)}</span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="reports" className="space-y-6 mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
+            <TabsContent value="reports" className="space-y-8 mt-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card className="shadow-lg">
                   <CardHeader>
-                    <CardTitle>Financial Summary</CardTitle>
+                    <CardTitle>Loan Book Summary</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between">
-                        <span>Total Transactions:</span>
-                        <span className="font-semibold">{paymentData?.transactions?.length || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Total Expenses:</span>
-                        <span className="font-semibold">{paymentData?.expenses?.length || 0}</span>
-                      </div>
+                    <div className="space-y-6">
                       <div className="flex justify-between">
                         <span>Active Loans:</span>
                         <span className="font-semibold">{paymentData?.loanBook?.length || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total Portfolio Value:</span>
+                        <span className="font-semibold text-blue-600">{formatCurrency(totalLoanValue)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total Repaid:</span>
+                        <span className="font-semibold text-green-600">{formatCurrency(totalRepaid)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Outstanding Balance:</span>
+                        <span className="font-semibold text-red-600">{formatCurrency(totalOutstanding)}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-4">
+                        <span>Collection Rate:</span>
+                        <span className="font-semibold text-purple-600">
+                          {totalLoanValue > 0 ? ((totalRepaid / totalLoanValue) * 100).toFixed(1) : 0}%
+                        </span>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="shadow-lg">
                   <CardHeader>
                     <CardTitle>Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      <Button className="w-full" variant="outline">Generate Monthly Report</Button>
-                      <Button className="w-full" variant="outline">Export All Data</Button>
-                      <Button className="w-full" variant="outline">Schedule Reports</Button>
+                    <div className="space-y-3">
+                      <Button className="w-full h-12" variant="outline">Generate Loan Book Report</Button>
+                      <Button className="w-full h-12" variant="outline">Export Payment History</Button>
+                      <Button className="w-full h-12" variant="outline">Schedule Collection Reports</Button>
+                      <Button className="w-full h-12" variant="outline">Generate Financial Summary</Button>
                     </div>
                   </CardContent>
                 </Card>
