@@ -1,303 +1,369 @@
 
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Calendar, DollarSign, CreditCard, ChevronRight, PieChart, Clock } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
+import PremiumFinancialOverview from '@/components/dashboard/PremiumFinancialOverview';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { Link } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { motion } from 'framer-motion';
+import { 
+  CreditCard, 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign, 
+  Calendar,
+  Search,
+  Filter,
+  Download,
+  Plus
+} from 'lucide-react';
 
 const Payments = () => {
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("overview");
-  
-  const showToast = () => {
-    toast({
-      title: "Payments Feature",
-      description: "This feature is coming soon. Check back later!",
-    });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState('all');
+
+  const { data: paymentData, isLoading } = useQuery({
+    queryKey: ['payment-center-data'],
+    queryFn: async () => {
+      try {
+        // Fetch from all financial tables
+        const [expensesRes, transactionsRes, loanBookRes] = await Promise.all([
+          supabase.from('Expenses').select('*'),
+          supabase.from('financial_transactions').select('*'),
+          supabase.from('loan_book').select('*')
+        ]);
+
+        return {
+          expenses: expensesRes.data || [],
+          transactions: transactionsRes.data || [],
+          loanBook: loanBookRes.data || []
+        };
+      } catch (error) {
+        console.error('Error fetching payment data:', error);
+        return { expenses: [], transactions: [], loanBook: [] };
+      }
+    },
+  });
+
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-UG', {
+      style: 'currency',
+      currency: 'UGX',
+      minimumFractionDigits: 0,
+    }).format(isNaN(numAmount) ? 0 : numAmount);
   };
 
-  // Sample data for the payment overview
-  const upcomingPayments = [
-    { id: 1, date: "May 25, 2025", amount: "UGX 2,500,000", status: "Pending" },
-    { id: 2, date: "June 25, 2025", amount: "UGX 2,500,000", status: "Scheduled" },
-    { id: 3, date: "July 25, 2025", amount: "UGX 2,500,000", status: "Scheduled" },
-  ];
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'paid': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'overdue': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-  const recentPayments = [
-    { id: 1, date: "April 25, 2025", amount: "UGX 2,500,000", status: "Completed" },
-    { id: 2, date: "March 25, 2025", amount: "UGX 2,500,000", status: "Completed" },
-  ];
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8 space-y-8">
+          <div className="animate-pulse">
+            <div className="h-32 bg-gray-200 rounded-lg mb-8"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-64 bg-gray-200 rounded-lg"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <section className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8 md:py-16 min-h-screen transition-all duration-500">
-        <div className="container mx-auto px-4">
-          <div className="mb-8 md:mb-10">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-3xl md:text-5xl font-serif font-bold mb-2 dark:text-white bg-clip-text text-transparent bg-gradient-to-r from-blue-900 to-blue-700 dark:from-blue-400 dark:to-blue-200">
-                  Payment Center
-                </h1>
-                <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
-                  Manage your loan repayments and track payment history.
-                </p>
-              </div>
-              <div className="mt-4 md:mt-0">
-                <Button onClick={showToast} className="bg-blue-700 hover:bg-blue-800 shadow-md hover:shadow-lg transition-all">
-                  <DollarSign className="h-5 w-5 mr-2" />
-                  Make a Payment
-                </Button>
-              </div>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <PremiumWelcomeSection />
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Premium Payment Center
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Comprehensive financial management and payment tracking
+              </p>
             </div>
+            <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700">
+              <Plus className="mr-2 h-4 w-4" />
+              New Transaction
+            </Button>
           </div>
+        </motion.div>
 
-          <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-3 max-w-md mb-8">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
-              <TabsTrigger value="schedule">Schedule</TabsTrigger>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <PremiumFinancialOverview />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Tabs defaultValue="transactions" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="transactions">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Transactions
+              </TabsTrigger>
+              <TabsTrigger value="expenses">
+                <TrendingDown className="mr-2 h-4 w-4" />
+                Expenses
+              </TabsTrigger>
+              <TabsTrigger value="loan-book">
+                <DollarSign className="mr-2 h-4 w-4" />
+                Loan Book
+              </TabsTrigger>
+              <TabsTrigger value="reports">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Reports
+              </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="overview" className="space-y-8 animate-fade-in">
-              {/* Payment Summary Card */}
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all bg-white dark:bg-gray-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center text-2xl">
-                    <PieChart className="h-6 w-6 text-blue-600 mr-2" />
-                    Payment Summary
-                  </CardTitle>
-                  <CardDescription>Current loan repayment status</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
-                      <p className="text-blue-700 dark:text-blue-400 font-medium mb-1 text-sm">Next Payment</p>
-                      <p className="text-2xl font-bold mb-1">UGX 2,500,000</p>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" /> May 25, 2025
-                      </p>
-                    </div>
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 p-6 rounded-xl border border-green-200 dark:border-green-800">
-                      <p className="text-green-700 dark:text-green-400 font-medium mb-1 text-sm">Total Paid</p>
-                      <p className="text-2xl font-bold mb-1">UGX 5,000,000</p>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center">
-                        <DollarSign className="h-4 w-4 mr-1" /> 2 payments made
-                      </p>
-                    </div>
-                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 p-6 rounded-xl border border-purple-200 dark:border-purple-800">
-                      <p className="text-purple-700 dark:text-purple-400 font-medium mb-1 text-sm">Remaining Balance</p>
-                      <p className="text-2xl font-bold mb-1">UGX 42,500,000</p>
-                      <p className="text-gray-500 dark:text-gray-400 text-sm flex items-center">
-                        <Clock className="h-4 w-4 mr-1" /> 17 payments remaining
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* Upcoming Payments */}
-              <Card className="border-0 shadow-lg transition-all bg-white dark:bg-gray-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center">
-                    <Calendar className="h-5 w-5 text-blue-600 mr-2" />
-                    Upcoming Payments
-                  </CardTitle>
-                  <CardDescription>Your next scheduled payments</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b dark:border-gray-700">
-                          <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Due Date</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Amount</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Status</th>
-                          <th className="text-right py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {upcomingPayments.map((payment) => (
-                          <tr key={payment.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                            <td className="py-3 px-4">{payment.date}</td>
-                            <td className="py-3 px-4 font-medium">{payment.amount}</td>
-                            <td className="py-3 px-4">
-                              <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                                payment.status === "Pending" 
-                                  ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" 
-                                  : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                              }`}>
-                                {payment.status}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <Button variant="ghost" size="sm" onClick={showToast} className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                                Pay Now
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="history" className="space-y-8 animate-fade-in">
-              <Card className="border-0 shadow-lg transition-all bg-white dark:bg-gray-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center">
-                    <Clock className="h-5 w-5 text-blue-600 mr-2" />
-                    Payment History
-                  </CardTitle>
-                  <CardDescription>All your completed payments</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b dark:border-gray-700">
-                          <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Payment Date</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Amount</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Status</th>
-                          <th className="text-right py-3 px-4 font-medium text-gray-600 dark:text-gray-400">Receipt</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recentPayments.map((payment) => (
-                          <tr key={payment.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                            <td className="py-3 px-4">{payment.date}</td>
-                            <td className="py-3 px-4 font-medium">{payment.amount}</td>
-                            <td className="py-3 px-4">
-                              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                {payment.status}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <Button variant="ghost" size="sm" onClick={showToast} className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20">
-                                Download
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="schedule" className="animate-fade-in">
-              <Card className="border-0 shadow-lg transition-all bg-white dark:bg-gray-800">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center">
-                    <Calendar className="h-5 w-5 text-blue-600 mr-2" />
-                    Amortization Schedule
-                  </CardTitle>
-                  <CardDescription>Complete breakdown of your loan repayment plan</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">Loan Amount</p>
-                        <p className="text-lg font-bold">UGX 50,000,000</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">Interest Rate</p>
-                        <p className="text-lg font-bold">18% per annum</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm">Loan Term</p>
-                        <p className="text-lg font-bold">20 months</p>
-                      </div>
-                    </div>
-                    
-                    <div className="text-center py-12">
-                      <div className="w-20 h-20 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-                        <CreditCard className="h-10 w-10 text-blue-700 dark:text-blue-400" />
-                      </div>
-                      <h3 className="text-xl font-medium mb-2">View Detailed Schedule</h3>
-                      <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-                        Access your complete payment schedule with principal and interest breakdown for each payment
-                      </p>
-                      <Button onClick={showToast} className="bg-blue-700 hover:bg-blue-800 shadow-md hover:shadow-lg transition-all">
-                        Download Full Schedule
+            <TabsContent value="transactions" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <CreditCard className="mr-2 h-5 w-5" />
+                      Financial Transactions
+                    </span>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Filter className="mr-2 h-4 w-4" />
+                        Filter
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Download className="mr-2 h-4 w-4" />
+                        Export
                       </Button>
                     </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search transactions..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {paymentData?.transactions?.slice(0, 10).map((transaction, index) => (
+                      <motion.div
+                        key={transaction.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg border hover:shadow-md transition-all duration-200"
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            transaction.transaction_type === 'income' 
+                              ? 'bg-green-100 text-green-600' 
+                              : 'bg-red-100 text-red-600'
+                          }`}>
+                            {transaction.transaction_type === 'income' ? 
+                              <TrendingUp className="h-5 w-5" /> : 
+                              <TrendingDown className="h-5 w-5" />
+                            }
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{transaction.description}</p>
+                            <p className="text-sm text-gray-500 capitalize">{transaction.category}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-bold ${
+                            transaction.transaction_type === 'income' 
+                              ? 'text-green-600' 
+                              : 'text-red-600'
+                          }`}>
+                            {transaction.transaction_type === 'income' ? '+' : '-'}
+                            {formatCurrency(transaction.amount)}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(transaction.date).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
+
+            <TabsContent value="expenses" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <TrendingDown className="mr-2 h-5 w-5" />
+                    Expense Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {paymentData?.expenses?.slice(0, 10).map((expense, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-100"
+                      >
+                        <div>
+                          <p className="font-semibold text-gray-900">{expense.Particulars}</p>
+                          <p className="text-sm text-gray-500">Loan Holder: {expense.Loan_holders}</p>
+                          <p className="text-sm text-gray-500">Account: {expense['Account 2']}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-red-600">
+                            {formatCurrency(expense.Amount)}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {expense.Date ? new Date(expense.Date).toLocaleDateString() : 'N/A'}
+                          </p>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="loan-book" className="space-y-6 mt-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <DollarSign className="mr-2 h-5 w-5" />
+                    Loan Book Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {paymentData?.loanBook?.slice(0, 10).map((loan, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Client Name</p>
+                            <p className="font-semibold text-gray-900">{loan.Name}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Amount Returnable</p>
+                            <p className="font-bold text-blue-600">
+                              {formatCurrency(loan.Amount_Returnable)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Remaining Balance</p>
+                            <p className="font-bold text-red-600">
+                              {formatCurrency(loan.Remaining_Balance)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Payment Mode</p>
+                            <Badge variant="outline" className="capitalize">
+                              {loan.Payment_Mode || 'Not specified'}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-500">Payment 1: </span>
+                            <span className="font-medium">{formatCurrency(loan.Amount_Paid_1)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Payment 2: </span>
+                            <span className="font-medium">{formatCurrency(loan.Amount_Paid_2)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Payment 3: </span>
+                            <span className="font-medium">{formatCurrency(loan.Amount_paid_3)}</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="reports" className="space-y-6 mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Financial Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between">
+                        <span>Total Transactions:</span>
+                        <span className="font-semibold">{paymentData?.transactions?.length || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Total Expenses:</span>
+                        <span className="font-semibold">{paymentData?.expenses?.length || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Active Loans:</span>
+                        <span className="font-semibold">{paymentData?.loanBook?.length || 0}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <Button className="w-full" variant="outline">Generate Monthly Report</Button>
+                      <Button className="w-full" variant="outline">Export All Data</Button>
+                      <Button className="w-full" variant="outline">Schedule Reports</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
           </Tabs>
-          
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg mt-8 p-6 border-0">
-            <h3 className="text-xl font-medium mb-6">Payment Methods</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="h-full border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
-                <CardHeader>
-                  <CardTitle className="text-lg">Mobile Money</CardTitle>
-                  <CardDescription>Pay using MTN or Airtel Money</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Send payment to our registered number and get instant confirmation.
-                  </p>
-                </CardContent>
-                <div className="p-4 pt-0 mt-auto">
-                  <Button onClick={showToast} variant="outline" className="w-full">Select</Button>
-                </div>
-              </Card>
-              
-              <Card className="h-full border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
-                <CardHeader>
-                  <CardTitle className="text-lg">Bank Transfer</CardTitle>
-                  <CardDescription>Make a direct bank deposit</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Transfer funds to our bank account and upload your deposit slip.
-                  </p>
-                </CardContent>
-                <div className="p-4 pt-0 mt-auto">
-                  <Button onClick={showToast} variant="outline" className="w-full">Select</Button>
-                </div>
-              </Card>
-              
-              <Card className="h-full border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all">
-                <CardHeader>
-                  <CardTitle className="text-lg">Debit/Credit Card</CardTitle>
-                  <CardDescription>Pay with your card online</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Secure payment using Visa, Mastercard or any other major card.
-                  </p>
-                </CardContent>
-                <div className="p-4 pt-0 mt-auto">
-                  <Button onClick={showToast} variant="outline" className="w-full">Select</Button>
-                </div>
-              </Card>
-            </div>
-          </div>
-          
-          <div className="text-center mt-12">
-            <p className="text-gray-500 dark:text-gray-400">
-              For payment assistance, please contact our support team at 
-              <a href="mailto:support@goldcharp.com" className="text-blue-600 dark:text-blue-400 ml-1 hover:underline">
-                support@goldcharp.com
-              </a>
-              {' '}or call 
-              <a href="tel:+256-393103974" className="text-blue-600 dark:text-blue-400 ml-1 hover:underline">
-                +256-393103974
-              </a>
-            </p>
-          </div>
-        </div>
-      </section>
+        </motion.div>
+      </div>
     </Layout>
   );
 };

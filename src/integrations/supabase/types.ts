@@ -164,7 +164,7 @@ export type Database = {
       }
       financial_transactions: {
         Row: {
-          amount: number
+          amount: string
           category: string
           created_at: string | null
           created_by: string
@@ -176,7 +176,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          amount: number
+          amount: string
           category: string
           created_at?: string | null
           created_by: string
@@ -188,7 +188,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          amount?: number
+          amount?: string
           category?: string
           created_at?: string | null
           created_by?: string
@@ -344,6 +344,7 @@ export type Database = {
         Row: {
           Amount_Paid_1: string | null
           Amount_Paid_2: string | null
+          Amount_paid_3: string | null
           Amount_Returnable: string | null
           Date: string
           Name: string | null
@@ -353,6 +354,7 @@ export type Database = {
         Insert: {
           Amount_Paid_1?: string | null
           Amount_Paid_2?: string | null
+          Amount_paid_3?: string | null
           Amount_Returnable?: string | null
           Date: string
           Name?: string | null
@@ -362,6 +364,7 @@ export type Database = {
         Update: {
           Amount_Paid_1?: string | null
           Amount_Paid_2?: string | null
+          Amount_paid_3?: string | null
           Amount_Returnable?: string | null
           Date?: string
           Name?: string | null

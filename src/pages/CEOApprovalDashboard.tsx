@@ -1,7 +1,8 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
+import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
+import PremiumFinancialOverview from '@/components/dashboard/PremiumFinancialOverview';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
 import { useQuery } from '@tanstack/react-query';
 import CEOFinancialDashboard from '@/components/dashboard/CEOFinancialDashboard';
+import { motion } from 'framer-motion';
 
 const CEOApprovalDashboard = () => {
   const { toast } = useToast();
@@ -52,8 +54,8 @@ const CEOApprovalDashboard = () => {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-6">CEO Dashboard</h1>
-          <Card>
+          <PremiumWelcomeSection />
+          <Card className="mt-8">
             <CardContent className="flex items-center justify-center p-8">
               <p className="text-lg text-gray-600">
                 You do not have permission to access this page. This page is only available for users with the CEO role.
@@ -67,23 +69,35 @@ const CEOApprovalDashboard = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">CEO Executive Dashboard</h1>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <PremiumWelcomeSection />
+        
+        <div>
+          <motion.h1 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent"
+          >
+            CEO Executive Dashboard
+          </motion.h1>
           <p className="text-lg text-gray-600">
             Comprehensive overview of loan approvals, financial performance, and business metrics.
           </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="applications" className="flex items-center">
               <FileText className="mr-2 h-4 w-4" />
               Loan Approvals
             </TabsTrigger>
             <TabsTrigger value="financial" className="flex items-center">
               <TrendingUp className="mr-2 h-4 w-4" />
-              Financial Dashboard
+              Financial Overview
+            </TabsTrigger>
+            <TabsTrigger value="dashboard" className="flex items-center">
+              <DollarSign className="mr-2 h-4 w-4" />
+              Executive Dashboard
             </TabsTrigger>
           </TabsList>
 
@@ -218,6 +232,10 @@ const CEOApprovalDashboard = () => {
           </TabsContent>
 
           <TabsContent value="financial">
+            <PremiumFinancialOverview />
+          </TabsContent>
+
+          <TabsContent value="dashboard">
             <CEOFinancialDashboard />
           </TabsContent>
         </Tabs>
