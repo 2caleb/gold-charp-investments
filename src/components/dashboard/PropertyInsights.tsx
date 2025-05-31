@@ -91,27 +91,29 @@ export const PropertyInsights = () => {
 
   if (isLoading) {
     return (
-      <Card className="p-12">
-        <div className="flex justify-center items-center h-32">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-700" />
-          <span className="ml-3 text-gray-600">Loading property insights...</span>
-        </div>
+      <Card className="shadow-lg">
+        <CardContent className="p-12">
+          <div className="flex justify-center items-center h-32">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-700" />
+            <span className="ml-3 text-gray-600">Loading property insights...</span>
+          </div>
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-8 w-full">
-      {/* Header Section */}
+    <div className="space-y-6 w-full">
+      {/* Header Section - Improved Spacing */}
       <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200 shadow-lg">
-        <CardHeader className="pb-6">
+        <CardHeader className="p-4 lg:p-6">
           <div className="flex items-center">
-            <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center mr-4">
-              <TrendingUp className="h-6 w-6 text-white" />
+            <div className="w-10 h-10 lg:w-12 lg:h-12 bg-purple-500 rounded-xl flex items-center justify-center mr-3 lg:mr-4 flex-shrink-0">
+              <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
             </div>
-            <div>
-              <CardTitle className="text-2xl text-purple-900">Property Analytics Dashboard</CardTitle>
-              <CardDescription className="text-purple-600 mt-1">
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-lg lg:text-2xl text-purple-900 truncate">Property Analytics Dashboard</CardTitle>
+              <CardDescription className="text-purple-600 mt-1 text-sm">
                 Real-time insights into property portfolio performance and market trends
               </CardDescription>
             </div>
@@ -119,19 +121,19 @@ export const PropertyInsights = () => {
         </CardHeader>
       </Card>
 
-      {/* Main Analytics Section - Improved Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      {/* Main Analytics Section - Improved Responsive Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Property Type Distribution */}
         <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center text-lg">
-              <DollarSign className="mr-2 h-5 w-5 text-purple-600" />
-              Property Type Distribution
+            <CardTitle className="flex items-center text-base lg:text-lg">
+              <DollarSign className="mr-2 h-4 w-4 lg:h-5 lg:w-5 text-purple-600 flex-shrink-0" />
+              <span className="truncate">Property Type Distribution</span>
             </CardTitle>
-            <CardDescription>Portfolio breakdown by property category</CardDescription>
+            <CardDescription className="text-sm">Portfolio breakdown by property category</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-80 w-full">
+          <CardContent className="p-4 lg:p-6">
+            <div className="w-full" style={{ height: '280px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -139,7 +141,7 @@ export const PropertyInsights = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={100}
+                    outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
@@ -152,14 +154,14 @@ export const PropertyInsights = () => {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex justify-center gap-6 mt-4">
+            <div className="flex flex-wrap justify-center gap-3 lg:gap-6 mt-4">
               {typeData.map((entry) => (
                 <div key={entry.name} className="flex items-center">
                   <div 
-                    className="w-4 h-4 mr-2 rounded-sm" 
+                    className="w-3 h-3 lg:w-4 lg:h-4 mr-2 rounded-sm flex-shrink-0" 
                     style={{ backgroundColor: entry.color }} 
                   />
-                  <span className="text-sm font-medium">{entry.name}: {entry.value}%</span>
+                  <span className="text-xs lg:text-sm font-medium truncate">{entry.name}: {entry.value}%</span>
                 </div>
               ))}
             </div>
@@ -169,49 +171,59 @@ export const PropertyInsights = () => {
         {/* Property Price Trends */}
         <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center text-lg">
-              <TrendingUp className="mr-2 h-5 w-5 text-blue-600" />
-              Property Price Trends
+            <CardTitle className="flex items-center text-base lg:text-lg">
+              <TrendingUp className="mr-2 h-4 w-4 lg:h-5 lg:w-5 text-blue-600 flex-shrink-0" />
+              <span className="truncate">Property Price Trends</span>
             </CardTitle>
-            <CardDescription>Monthly price movements across property types</CardDescription>
+            <CardDescription className="text-sm">Monthly price movements across property types</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-80 w-full">
+          <CardContent className="p-4 lg:p-6">
+            <div className="w-full" style={{ height: '280px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={priceData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  margin={{ top: 20, right: 20, left: 10, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis dataKey="month" />
-                  <YAxis tickFormatter={(value) => `${value}K`} />
-                  <Tooltip formatter={(value) => `UGX ${Number(value).toLocaleString()}K`} />
-                  <Legend />
+                  <XAxis 
+                    dataKey="month" 
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => `${value}K`}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip 
+                    formatter={(value) => [`UGX ${Number(value).toLocaleString()}K`, '']}
+                    labelStyle={{ fontSize: '12px' }}
+                    contentStyle={{ fontSize: '12px' }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
                   <Line 
                     type="monotone" 
                     dataKey="residential" 
                     stroke="#8884d8" 
-                    strokeWidth={3}
-                    dot={{ r: 5 }}
-                    activeDot={{ r: 7 }}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
                     name="Residential" 
                   />
                   <Line 
                     type="monotone" 
                     dataKey="commercial" 
                     stroke="#82ca9d" 
-                    strokeWidth={3}
-                    dot={{ r: 5 }}
-                    activeDot={{ r: 7 }}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
                     name="Commercial" 
                   />
                   <Line 
                     type="monotone" 
                     dataKey="agricultural" 
                     stroke="#ffc658" 
-                    strokeWidth={3}
-                    dot={{ r: 5 }}
-                    activeDot={{ r: 7 }}
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    activeDot={{ r: 5 }}
                     name="Agricultural" 
                   />
                 </LineChart>
@@ -221,34 +233,34 @@ export const PropertyInsights = () => {
         </Card>
       </div>
 
-      {/* Top Properties Section - Improved Table Design */}
+      {/* Top Properties Section - Improved Responsive Table */}
       <Card className="shadow-lg hover:shadow-xl transition-all duration-300">
-        <CardHeader className="pb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <MapPin className="mr-2 h-5 w-5 text-green-600" />
-              <div>
-                <CardTitle className="text-xl">Top Performing Properties</CardTitle>
-                <CardDescription className="mt-1">Highest valued property transactions this quarter</CardDescription>
+        <CardHeader className="p-4 lg:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center min-w-0 flex-1">
+              <MapPin className="mr-2 h-4 w-4 lg:h-5 lg:w-5 text-green-600 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-lg lg:text-xl truncate">Top Performing Properties</CardTitle>
+                <CardDescription className="mt-1 text-sm">Highest valued property transactions this quarter</CardDescription>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-green-600">
+            <div className="text-right flex-shrink-0">
+              <p className="text-xl lg:text-2xl font-bold text-green-600">
                 {topProperties.length}
               </p>
               <p className="text-sm text-gray-500">Properties</p>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 lg:p-6">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100">
-                  <TableHead className="font-semibold text-gray-700 py-4">Location</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Type</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Sale Price</TableHead>
-                  <TableHead className="font-semibold text-gray-700 py-4">Sale Date</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-3 text-sm">Location</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-3 text-sm">Type</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-3 text-sm">Sale Price</TableHead>
+                  <TableHead className="font-semibold text-gray-700 py-3 text-sm">Sale Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -260,10 +272,10 @@ export const PropertyInsights = () => {
                     transition={{ delay: index * 0.1 }}
                     className="hover:bg-gradient-to-r hover:from-gray-50 hover:to-blue-50 transition-all duration-200"
                   >
-                    <TableCell className="font-medium py-4">{property.location}</TableCell>
-                    <TableCell className="py-4">
+                    <TableCell className="font-medium py-3 text-sm truncate max-w-32">{property.location}</TableCell>
+                    <TableCell className="py-3">
                       <span 
-                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
                           property.type === 'Residential' 
                             ? 'bg-purple-100 text-purple-800' 
                             : property.type === 'Commercial' 
@@ -274,10 +286,10 @@ export const PropertyInsights = () => {
                         {property.type}
                       </span>
                     </TableCell>
-                    <TableCell className="font-mono font-semibold text-green-600 py-4">
+                    <TableCell className="font-mono font-semibold text-green-600 py-3 text-sm truncate">
                       UGX {property.price.toLocaleString()}
                     </TableCell>
-                    <TableCell className="text-gray-600 py-4">
+                    <TableCell className="text-gray-600 py-3 text-sm">
                       {new Date(property.salesDate).toLocaleDateString()}
                     </TableCell>
                   </motion.tr>

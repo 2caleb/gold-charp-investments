@@ -128,17 +128,17 @@ const EnhancedSmartDashboardMonitor = () => {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
+      <Card className="shadow-lg">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center text-lg">
             <Activity className="mr-2 h-5 w-5" />
             Smart Dashboard Monitor
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center py-12">
             <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-            <span>Loading dashboard metrics...</span>
+            <span className="text-sm text-gray-600">Loading dashboard metrics...</span>
           </div>
         </CardContent>
       </Card>
@@ -147,18 +147,18 @@ const EnhancedSmartDashboardMonitor = () => {
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-red-600">
+      <Card className="shadow-lg">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center text-red-600 text-lg">
             <WifiOff className="mr-2 h-5 w-5" />
             Dashboard Monitor - Connection Error
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <Alert className="border-red-200">
             <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Failed to load dashboard data. Please check your connection.
+            <AlertDescription className="flex items-center justify-between">
+              <span className="text-sm">Failed to load dashboard data. Please check your connection.</span>
               <Button onClick={() => refetch()} variant="outline" size="sm" className="ml-2">
                 <RefreshCw className="h-4 w-4 mr-1" />
                 Retry
@@ -172,97 +172,99 @@ const EnhancedSmartDashboardMonitor = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center">
+      <Card className="shadow-lg">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center min-w-0">
               {isConnected ? (
-                <Wifi className="mr-2 h-5 w-5 text-green-600" />
+                <Wifi className="mr-2 h-5 w-5 text-green-600 flex-shrink-0" />
               ) : (
-                <WifiOff className="mr-2 h-5 w-5 text-red-600" />
+                <WifiOff className="mr-2 h-5 w-5 text-red-600 flex-shrink-0" />
               )}
-              Smart Dashboard Monitor
+              <CardTitle className="text-lg truncate">Smart Dashboard Monitor</CardTitle>
             </div>
-            <div className="flex items-center text-sm text-gray-500">
+            <div className="flex items-center text-sm text-gray-500 flex-shrink-0">
               <Clock className="mr-1 h-4 w-4" />
-              Last updated: {lastUpdate.toLocaleTimeString()}
+              <span className="truncate">Last updated: {lastUpdate.toLocaleTimeString()}</span>
             </div>
-          </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent>
-          {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
+        <CardContent className="p-6">
+          {/* Key Metrics - Improved Responsive Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
               <div className="flex items-center">
-                <FileText className="h-8 w-8 text-blue-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-blue-600">Total Applications</p>
-                  <p className="text-2xl font-bold text-blue-900">{metrics?.totalApplications}</p>
+                <FileText className="h-8 w-8 text-blue-600 flex-shrink-0" />
+                <div className="ml-3 min-w-0 flex-1">
+                  <p className="text-sm font-medium text-blue-600 truncate">Total Applications</p>
+                  <p className="text-2xl font-bold text-blue-900 truncate">{metrics?.totalApplications}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-yellow-50 p-4 rounded-lg">
+            <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
               <div className="flex items-center">
-                <Clock className="h-8 w-8 text-yellow-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-yellow-600">Pending Approval</p>
-                  <p className="text-2xl font-bold text-yellow-900">{metrics?.pendingApplications}</p>
+                <Clock className="h-8 w-8 text-yellow-600 flex-shrink-0" />
+                <div className="ml-3 min-w-0 flex-1">
+                  <p className="text-sm font-medium text-yellow-600 truncate">Pending Approval</p>
+                  <p className="text-2xl font-bold text-yellow-900 truncate">{metrics?.pendingApplications}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-green-50 p-4 rounded-lg">
+            <div className="bg-green-50 p-4 rounded-lg border border-green-100">
               <div className="flex items-center">
-                <CheckCircle className="h-8 w-8 text-green-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-green-600">Approved</p>
-                  <p className="text-2xl font-bold text-green-900">{metrics?.approvedApplications}</p>
+                <CheckCircle className="h-8 w-8 text-green-600 flex-shrink-0" />
+                <div className="ml-3 min-w-0 flex-1">
+                  <p className="text-sm font-medium text-green-600 truncate">Approved</p>
+                  <p className="text-2xl font-bold text-green-900 truncate">{metrics?.approvedApplications}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-purple-50 p-4 rounded-lg">
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
               <div className="flex items-center">
-                <Users className="h-8 w-8 text-purple-600" />
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-purple-600">Total Clients</p>
-                  <p className="text-2xl font-bold text-purple-900">{metrics?.totalClients}</p>
+                <Users className="h-8 w-8 text-purple-600 flex-shrink-0" />
+                <div className="ml-3 min-w-0 flex-1">
+                  <p className="text-sm font-medium text-purple-600 truncate">Total Clients</p>
+                  <p className="text-2xl font-bold text-purple-900 truncate">{metrics?.totalClients}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Portfolio Value */}
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg mb-6">
-            <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-green-600" />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-600">Total Portfolio Value</p>
-                <p className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(metrics?.totalLoanAmount || 0)}
-                </p>
+          {/* Portfolio Value - Improved Layout */}
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg border border-green-100 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center min-w-0 flex-1">
+                <DollarSign className="h-8 w-8 text-green-600 flex-shrink-0" />
+                <div className="ml-3 min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-600">Total Portfolio Value</p>
+                  <p className="text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+                    {formatCurrency(metrics?.totalLoanAmount || 0)}
+                  </p>
+                </div>
               </div>
-              <TrendingUp className="ml-auto h-6 w-6 text-green-600" />
+              <TrendingUp className="h-6 w-6 text-green-600 flex-shrink-0" />
             </div>
           </div>
 
-          {/* System Alerts */}
+          {/* System Alerts - Improved Spacing */}
           {metrics?.systemAlerts && metrics.systemAlerts.length > 0 && (
             <div className="mb-6">
-              <h4 className="text-lg font-semibold mb-3 flex items-center">
-                <AlertTriangle className="mr-2 h-5 w-5 text-orange-500" />
-                System Alerts
+              <h4 className="text-lg font-semibold mb-4 flex items-center">
+                <AlertTriangle className="mr-2 h-5 w-5 text-orange-500 flex-shrink-0" />
+                <span className="truncate">System Alerts</span>
               </h4>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {metrics.systemAlerts.map((alert, index) => (
                   <Alert key={index} className={`${
                     alert.type === 'warning' ? 'border-orange-200 bg-orange-50' : 'border-blue-200 bg-blue-50'
                   }`}>
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription className="flex items-center justify-between">
-                      {alert.message}
-                      <Badge variant={alert.priority === 'high' ? 'destructive' : 'secondary'}>
+                    <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                    <AlertDescription className="flex items-center justify-between gap-2">
+                      <span className="text-sm flex-1 min-w-0">{alert.message}</span>
+                      <Badge variant={alert.priority === 'high' ? 'destructive' : 'secondary'} className="flex-shrink-0">
                         {alert.priority}
                       </Badge>
                     </AlertDescription>
@@ -272,24 +274,24 @@ const EnhancedSmartDashboardMonitor = () => {
             </div>
           )}
 
-          {/* Recent Activity */}
+          {/* Recent Activity - Improved Layout */}
           <div>
-            <h4 className="text-lg font-semibold mb-3 flex items-center">
-              <Activity className="mr-2 h-5 w-5 text-blue-500" />
-              Recent Activity
+            <h4 className="text-lg font-semibold mb-4 flex items-center">
+              <Activity className="mr-2 h-5 w-5 text-blue-500 flex-shrink-0" />
+              <span className="truncate">Recent Activity</span>
             </h4>
             {metrics?.recentActivity && metrics.recentActivity.length > 0 ? (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
+              <div className="space-y-3 max-h-64 overflow-y-auto">
                 {metrics.recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium">{activity.action}</p>
-                      <p className="text-sm text-gray-600">
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg gap-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate">{activity.action}</p>
+                      <p className="text-xs text-gray-600 truncate">
                         {new Date(activity.performed_at).toLocaleString()}
                       </p>
                     </div>
                     {activity.status && (
-                      <Badge className={getStatusBadgeColor(activity.status)}>
+                      <Badge className={`${getStatusBadgeColor(activity.status)} flex-shrink-0`}>
                         {activity.status}
                       </Badge>
                     )}
@@ -297,7 +299,9 @@ const EnhancedSmartDashboardMonitor = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-4">No recent activity</p>
+              <div className="text-gray-500 text-center py-8">
+                <p className="text-sm">No recent activity</p>
+              </div>
             )}
           </div>
         </CardContent>

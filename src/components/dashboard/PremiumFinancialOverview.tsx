@@ -107,22 +107,22 @@ const PremiumFinancialOverview = () => {
 
   return (
     <div className="space-y-6">
-      {/* Main Financial Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Main Financial Metrics - Improved Grid and Spacing */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200 hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200 hover:shadow-xl transition-all duration-300 h-full">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center">
-                <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <TrendingUp className="h-6 w-6 text-white" />
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-green-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-green-700">Total Income</p>
-                  <p className="text-xl font-bold text-green-900">
+                <div className="ml-3 lg:ml-4 min-w-0 flex-1">
+                  <p className="text-xs lg:text-sm font-medium text-green-700">Total Income</p>
+                  <p className="text-lg lg:text-xl font-bold text-green-900 truncate">
                     {formatCurrency(metrics?.totalIncome || 0)}
                   </p>
                   <p className="text-xs text-green-600 mt-1">From transactions</p>
@@ -137,15 +137,15 @@ const PremiumFinancialOverview = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="bg-gradient-to-br from-red-50 to-rose-100 border-red-200 hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="bg-gradient-to-br from-red-50 to-rose-100 border-red-200 hover:shadow-xl transition-all duration-300 h-full">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center">
-                <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <TrendingDown className="h-6 w-6 text-white" />
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-red-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <TrendingDown className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-red-700">Total Expenses</p>
-                  <p className="text-xl font-bold text-red-900">
+                <div className="ml-3 lg:ml-4 min-w-0 flex-1">
+                  <p className="text-xs lg:text-sm font-medium text-red-700">Total Expenses</p>
+                  <p className="text-lg lg:text-xl font-bold text-red-900 truncate">
                     {formatCurrency(metrics?.totalExpenses || 0)}
                   </p>
                   <p className="text-xs text-red-600 mt-1">From transactions</p>
@@ -160,15 +160,15 @@ const PremiumFinancialOverview = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200 hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200 hover:shadow-xl transition-all duration-300 h-full">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center">
-                <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <DollarSign className="h-6 w-6 text-white" />
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <DollarSign className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-blue-700">Loan Portfolio</p>
-                  <p className="text-xl font-bold text-blue-900">
+                <div className="ml-3 lg:ml-4 min-w-0 flex-1">
+                  <p className="text-xs lg:text-sm font-medium text-blue-700">Loan Portfolio</p>
+                  <p className="text-lg lg:text-xl font-bold text-blue-900 truncate">
                     {formatCurrency(metrics?.totalLoanAmount || 0)}
                   </p>
                   <p className="text-xs text-blue-600 mt-1">From loan book</p>
@@ -183,15 +183,15 @@ const PremiumFinancialOverview = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="bg-gradient-to-br from-purple-50 to-violet-100 border-purple-200 hover:shadow-xl transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="bg-gradient-to-br from-purple-50 to-violet-100 border-purple-200 hover:shadow-xl transition-all duration-300 h-full">
+            <CardContent className="p-4 lg:p-6">
               <div className="flex items-center">
-                <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <PiggyBank className="h-6 w-6 text-white" />
+                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-purple-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                  <PiggyBank className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-purple-700">Total Repaid</p>
-                  <p className="text-xl font-bold text-purple-900">
+                <div className="ml-3 lg:ml-4 min-w-0 flex-1">
+                  <p className="text-xs lg:text-sm font-medium text-purple-700">Total Repaid</p>
+                  <p className="text-lg lg:text-xl font-bold text-purple-900 truncate">
                     {formatCurrency(metrics?.totalRepaid || 0)}
                   </p>
                   <p className="text-xs text-purple-600 mt-1">From loan book</p>
@@ -202,40 +202,40 @@ const PremiumFinancialOverview = () => {
         </motion.div>
       </div>
 
-      {/* Additional Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Additional Insights - Improved Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <Card className="bg-gradient-to-br from-gray-50 to-slate-100 border-gray-200 shadow-lg">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center text-lg">
-              <CreditCard className="mr-3 h-5 w-5 text-gray-600" />
-              Loan Performance
+              <CreditCard className="mr-3 h-5 w-5 text-gray-600 flex-shrink-0" />
+              <span className="truncate">Loan Performance</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Active Loan Holders</span>
-              <Badge variant="outline" className="font-semibold px-3 py-1">
+            <div className="flex justify-between items-center gap-2">
+              <span className="text-sm text-gray-600 min-w-0 flex-1">Active Loan Holders</span>
+              <Badge variant="outline" className="font-semibold px-3 py-1 flex-shrink-0">
                 {metrics?.activeLoanHolders || 0}
               </Badge>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Collection Rate</span>
+            <div className="flex justify-between items-center gap-2">
+              <span className="text-sm text-gray-600 min-w-0 flex-1">Collection Rate</span>
               <Badge 
                 variant={metrics?.collectionRate >= 80 ? "default" : metrics?.collectionRate >= 60 ? "secondary" : "destructive"}
-                className="font-semibold px-3 py-1"
+                className="font-semibold px-3 py-1 flex-shrink-0"
               >
                 {metrics?.collectionRate.toFixed(1)}%
               </Badge>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Outstanding Balance</span>
-              <span className="font-semibold text-red-600">
+            <div className="flex justify-between items-center gap-2">
+              <span className="text-sm text-gray-600 min-w-0 flex-1">Outstanding Balance</span>
+              <span className="font-semibold text-red-600 text-sm truncate flex-shrink-0">
                 {formatCurrency(metrics?.remainingBalance || 0)}
               </span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Net Income</span>
-              <span className={`font-semibold ${metrics?.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <div className="flex justify-between items-center gap-2">
+              <span className="text-sm text-gray-600 min-w-0 flex-1">Net Income</span>
+              <span className={`font-semibold text-sm truncate flex-shrink-0 ${metrics?.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {formatCurrency(Math.abs(metrics?.netIncome || 0))}
               </span>
             </div>
@@ -244,14 +244,14 @@ const PremiumFinancialOverview = () => {
 
         <Card className="bg-gradient-to-br from-gray-50 to-slate-100 border-gray-200 shadow-lg">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Top Expense Categories</CardTitle>
+            <CardTitle className="text-lg truncate">Top Expense Categories</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {metrics?.expenseCategories.map((category, index) => (
-                <div key={category.category} className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600 capitalize">{category.category}</span>
-                  <span className="font-semibold">
+                <div key={category.category} className="flex justify-between items-center gap-2">
+                  <span className="text-sm text-gray-600 capitalize min-w-0 flex-1 truncate">{category.category}</span>
+                  <span className="font-semibold text-sm truncate flex-shrink-0">
                     {formatCurrency(category.amount)}
                   </span>
                 </div>
