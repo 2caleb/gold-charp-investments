@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
@@ -19,7 +20,8 @@ import {
   Filter,
   Download,
   Plus,
-  PiggyBank
+  PiggyBank,
+  BarChart3
 } from 'lucide-react';
 
 const Payments = () => {
@@ -207,7 +209,7 @@ const Payments = () => {
                 Expenses
               </TabsTrigger>
               <TabsTrigger value="reports" className="text-sm">
-                <TrendingUp className="mr-2 h-4 w-4" />
+                <BarChart3 className="mr-2 h-4 w-4" />
                 Reports
               </TabsTrigger>
             </TabsList>
@@ -390,16 +392,16 @@ const Payments = () => {
                         className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-100"
                       >
                         <div>
-                          <p className="font-semibold text-gray-900">{expense.Particulars}</p>
+                          <p className="font-semibold text-gray-900">{expense.particulars}</p>
                           <p className="text-sm text-gray-500">Loan Holder: {expense.Loan_holders}</p>
-                          <p className="text-sm text-gray-500">Account: {expense['Account 2']}</p>
+                          <p className="text-sm text-gray-500">Account: {expense.account_2}</p>
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-red-600">
-                            {formatCurrency(expense.Amount)}
+                            {formatCurrency(expense.amount)}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {expense.Date ? new Date(expense.Date).toLocaleDateString() : 'N/A'}
+                            {expense.date ? new Date(expense.date).toLocaleDateString() : 'N/A'}
                           </p>
                         </div>
                       </motion.div>
