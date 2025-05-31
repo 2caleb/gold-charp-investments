@@ -131,40 +131,82 @@ export type Database = {
       }
       Expenses: {
         Row: {
-          "Account 2": string | null
-          Amount: string | null
-          "Amount-In return": string | null
-          Date: string | null
-          "Date 2": string | null
-          "Loan Amount": string | null
+          account_2: string | null
+          amount: string | null
+          date: string | null
+          date_2: string | null
+          loan_amount: string | null
           Loan_holders: string
-          Particulars: string | null
+          particulars: string | null
         }
         Insert: {
-          "Account 2"?: string | null
-          Amount?: string | null
-          "Amount-In return"?: string | null
-          Date?: string | null
-          "Date 2"?: string | null
-          "Loan Amount"?: string | null
+          account_2?: string | null
+          amount?: string | null
+          date?: string | null
+          date_2?: string | null
+          loan_amount?: string | null
           Loan_holders: string
-          Particulars?: string | null
+          particulars?: string | null
         }
         Update: {
-          "Account 2"?: string | null
-          Amount?: string | null
-          "Amount-In return"?: string | null
-          Date?: string | null
-          "Date 2"?: string | null
-          "Loan Amount"?: string | null
+          account_2?: string | null
+          amount?: string | null
+          date?: string | null
+          date_2?: string | null
+          loan_amount?: string | null
           Loan_holders?: string
-          Particulars?: string | null
+          particulars?: string | null
+        }
+        Relationships: []
+      }
+      financial_summary: {
+        Row: {
+          active_loan_holders: number
+          calculated_at: string
+          collection_rate: number
+          created_at: string
+          id: string
+          net_income: number
+          outstanding_balance: number
+          total_expenses: number
+          total_income: number
+          total_loan_portfolio: number
+          total_repaid: number
+          updated_at: string
+        }
+        Insert: {
+          active_loan_holders?: number
+          calculated_at?: string
+          collection_rate?: number
+          created_at?: string
+          id?: string
+          net_income?: number
+          outstanding_balance?: number
+          total_expenses?: number
+          total_income?: number
+          total_loan_portfolio?: number
+          total_repaid?: number
+          updated_at?: string
+        }
+        Update: {
+          active_loan_holders?: number
+          calculated_at?: string
+          collection_rate?: number
+          created_at?: string
+          id?: string
+          net_income?: number
+          outstanding_balance?: number
+          total_expenses?: number
+          total_income?: number
+          total_loan_portfolio?: number
+          total_repaid?: number
+          updated_at?: string
         }
         Relationships: []
       }
       financial_transactions: {
         Row: {
-          amount: string
+          amount: number
           category: string
           created_at: string | null
           created_by: string
@@ -176,7 +218,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          amount: string
+          amount: number
           category: string
           created_at?: string | null
           created_by: string
@@ -188,7 +230,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          amount?: string
+          amount?: number
           category?: string
           created_at?: string | null
           created_by?: string
@@ -342,34 +384,37 @@ export type Database = {
       }
       loan_book: {
         Row: {
-          Amount_Paid_1: string | null
+          Amount_Paid_1: number | null
           Amount_Paid_2: string | null
           Amount_paid_3: string | null
-          Amount_Returnable: string | null
+          Amount_Paid_3: number | null
+          Amount_Returnable: number | null
           Date: string
           Name: string | null
           Payment_Mode: string | null
-          Remaining_Balance: string | null
+          Remaining_Balance: number | null
         }
         Insert: {
-          Amount_Paid_1?: string | null
+          Amount_Paid_1?: number | null
           Amount_Paid_2?: string | null
           Amount_paid_3?: string | null
-          Amount_Returnable?: string | null
+          Amount_Paid_3?: number | null
+          Amount_Returnable?: number | null
           Date: string
           Name?: string | null
           Payment_Mode?: string | null
-          Remaining_Balance?: string | null
+          Remaining_Balance?: number | null
         }
         Update: {
-          Amount_Paid_1?: string | null
+          Amount_Paid_1?: number | null
           Amount_Paid_2?: string | null
           Amount_paid_3?: string | null
-          Amount_Returnable?: string | null
+          Amount_Paid_3?: number | null
+          Amount_Returnable?: number | null
           Date?: string
           Name?: string | null
           Payment_Mode?: string | null
-          Remaining_Balance?: string | null
+          Remaining_Balance?: number | null
         }
         Relationships: []
       }
@@ -602,6 +647,10 @@ export type Database = {
           created_at: string
           updated_at: string
         }[]
+      }
+      update_financial_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
