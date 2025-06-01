@@ -14,7 +14,6 @@ import {
   Shield,
   UserCheck,
   ClipboardList,
-  TrendingUp,
   Settings
 } from 'lucide-react';
 
@@ -93,30 +92,6 @@ const staffNavItems = [
     href: '/staff/data-collection-dashboard',
     icon: ClipboardList,
     description: 'Collection Overview'
-  },
-  {
-    title: 'Manager Review',
-    href: '/staff/manager-review',
-    icon: Shield,
-    description: 'Manager Approval'
-  },
-  {
-    title: 'Director Risk',
-    href: '/staff/director-risk',
-    icon: TrendingUp,
-    description: 'Risk Assessment'
-  },
-  {
-    title: 'CEO Approval',
-    href: '/staff/ceo-approval',
-    icon: Settings,
-    description: 'Executive Review'
-  },
-  {
-    title: 'Final Approval',
-    href: '/staff/chairperson-approval',
-    icon: Shield,
-    description: 'Chairperson Review'
   }
 ];
 

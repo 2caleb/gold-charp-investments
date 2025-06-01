@@ -5,8 +5,6 @@ import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection'
 import PremiumFinancialOverview from '@/components/dashboard/PremiumFinancialOverview';
 import SmartDashboardMonitor from '@/components/dashboard/SmartDashboardMonitor';
 import { FieldOfficerActivity } from '@/components/dashboard/FieldOfficerActivity';
-import { LoanPerformanceChart } from '@/components/dashboard/LoanPerformanceChart';
-import { PropertyInsights } from '@/components/dashboard/PropertyInsights';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
@@ -189,8 +187,7 @@ const Dashboard = () => {
             <FieldOfficerActivity />
           </div>
           <div className="space-y-6">
-            <LoanPerformanceChart />
-            <PropertyInsights />
+            {/* Additional dashboard components can be added here */}
           </div>
         </motion.div>
       </div>

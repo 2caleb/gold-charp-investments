@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
@@ -26,6 +27,7 @@ import {
 
 const Payments = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
 
   const { data: paymentData, isLoading } = useQuery({
     queryKey: ['payment-center-data'],
@@ -52,7 +54,7 @@ const Payments = () => {
   });
 
   const formatCurrency = (amount: string | number) => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    const numAmount = typeof amount === 'string' ? parseFloat(amount.replace(/,/g, '')) : amount;
     return new Intl.NumberFormat('en-UG', {
       style: 'currency',
       currency: 'UGX',
@@ -60,19 +62,14 @@ const Payments = () => {
     }).format(isNaN(numAmount) ? 0 : numAmount);
   };
 
-  const getStatusColor = (remainingBalance: string | number) => {
-    const balance = typeof remainingBalance === 'string' ? parseFloat(remainingBalance) : remainingBalance;
-    if (balance <= 0) return 'bg-green-100 text-green-800';
-    if (balance < 50000) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
-  };
+  const filteredLoanBook = paymentData?.loanBook?.filter(loan => 
+    loan.Name?.toLowerCase().includes(searchTerm.toLowerCase()) || ''
+  ) || [];
 
-  const getStatusText = (remainingBalance: string | number) => {
-    const balance = typeof remainingBalance === 'string' ? parseFloat(remainingBalance) : remainingBalance;
-    if (balance <= 0) return 'Paid';
-    if (balance < 50000) return 'Nearly Paid';
-    return 'Outstanding';
-  };
+  const filteredExpenses = paymentData?.expenses?.filter(expense => 
+    expense.Loan_holders?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) ||
+    expense.particulars?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) || ''
+  ) || [];
 
   if (isLoading) {
     return (
@@ -246,51 +243,54 @@ const Payments = () => {
                       />
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    {paymentData?.loanBook
-                      ?.filter(loan => 
-                        loan.Name?.toLowerCase().includes(searchTerm.toLowerCase()) || ''
-                      )
-                      ?.slice(0, 10).map((loan, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 hover:shadow-lg transition-all duration-300"
-                      >
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Client Name</p>
-                            <p className="font-semibold text-gray-900 truncate">{loan.Name || 'N/A'}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Amount Returnable</p>
-                            <p className="font-bold text-blue-600">
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Client Name</TableHead>
+                          <TableHead>Amount Returnable</TableHead>
+                          <TableHead>Amount Paid 1</TableHead>
+                          <TableHead>Amount Paid 2</TableHead>
+                          <TableHead>Amount Paid 3</TableHead>
+                          <TableHead>Remaining Balance</TableHead>
+                          <TableHead>Payment Mode</TableHead>
+                          <TableHead>Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredLoanBook.map((loan, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{loan.Name || 'N/A'}</TableCell>
+                            <TableCell className="text-blue-600 font-semibold">
                               {formatCurrency(loan.Amount_Returnable || 0)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Remaining Balance</p>
-                            <p className="font-bold text-red-600">
+                            </TableCell>
+                            <TableCell className="text-green-600">
+                              {formatCurrency(loan.Amount_Paid_1 || 0)}
+                            </TableCell>
+                            <TableCell className="text-green-600">
+                              {formatCurrency(loan.Amount_Paid_2 || 0)}
+                            </TableCell>
+                            <TableCell className="text-green-600">
+                              {formatCurrency(loan.Amount_Paid_3 || 0)}
+                            </TableCell>
+                            <TableCell className="text-red-600 font-semibold">
                               {formatCurrency(loan.Remaining_Balance || 0)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Payment Mode</p>
-                            <Badge variant="outline" className="text-xs px-2 py-1">
-                              {loan.Payment_Mode || 'Not specified'}
-                            </Badge>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500">Status</p>
-                            <Badge className={`${getStatusColor(loan.Remaining_Balance || 0)} text-xs px-2 py-1`}>
-                              {getStatusText(loan.Remaining_Balance || 0)}
-                            </Badge>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{loan.Payment_Mode || 'Not specified'}</Badge>
+                            </TableCell>
+                            <TableCell>{loan.Date || 'N/A'}</TableCell>
+                          </TableRow>
+                        ))}
+                        {filteredLoanBook.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                              No loan records found
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>
@@ -317,17 +317,6 @@ const Payments = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Search transactions..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
                   <div className="space-y-4">
                     {paymentData?.transactions?.slice(0, 10).map((transaction, index) => (
                       <motion.div
@@ -376,36 +365,73 @@ const Payments = () => {
             <TabsContent value="expenses" className="space-y-4 mt-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <TrendingDown className="mr-2 h-5 w-5" />
-                    Expense Management
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <TrendingDown className="mr-2 h-5 w-5" />
+                      Expense Management
+                    </span>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Filter className="mr-2 h-4 w-4" />
+                        Filter
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Download className="mr-2 h-4 w-4" />
+                        Export
+                      </Button>
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {paymentData?.expenses?.slice(0, 10).map((expense, index) => (
-                      <motion.div
-                        key={index}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="flex items-center justify-between p-4 bg-gradient-to-r from-red-50 to-pink-50 rounded-lg border border-red-100"
-                      >
-                        <div>
-                          <p className="font-semibold text-gray-900">{expense.particulars}</p>
-                          <p className="text-sm text-gray-500">Loan Holder: {expense.Loan_holders}</p>
-                          <p className="text-sm text-gray-500">Account: {expense.account_2}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-red-600">
-                            {formatCurrency(expense.amount)}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {expense.date ? new Date(expense.date).toLocaleDateString() : 'N/A'}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
+                  <div className="mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search expenses..."
+                        value={expenseSearchTerm}
+                        onChange={(e) => setExpenseSearchTerm(e.target.value)}
+                        className="pl-10 h-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Loan Holder</TableHead>
+                          <TableHead>Particulars</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Account</TableHead>
+                          <TableHead>Loan Amount</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredExpenses.map((expense, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{expense.Loan_holders || 'N/A'}</TableCell>
+                            <TableCell>{expense.particulars || 'N/A'}</TableCell>
+                            <TableCell className="text-red-600 font-semibold">
+                              {formatCurrency(expense.amount || 0)}
+                            </TableCell>
+                            <TableCell>
+                              {expense.date ? new Date(expense.date).toLocaleDateString() : expense.date_2 || 'N/A'}
+                            </TableCell>
+                            <TableCell>{expense.account_2 || 'N/A'}</TableCell>
+                            <TableCell className="text-blue-600">
+                              {formatCurrency(expense.loan_amount || 0)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {filteredExpenses.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                              No expense records found
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
                 </CardContent>
               </Card>

@@ -42,7 +42,7 @@ const NavLinks = ({ type = 'desktop', className = '', onItemClick, isMobile }: N
     { name: 'Contact', href: '/contact', icon: Phone },
   ];
   
-  // Role-specific links - simplified to only essential staff tools
+  // Role-specific links - only essential staff tools
   const roleLinks = [];
   
   if (isFieldOfficer) {

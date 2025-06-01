@@ -385,36 +385,39 @@ export type Database = {
       loan_book: {
         Row: {
           Amount_Paid_1: number | null
-          Amount_Paid_2: string | null
+          Amount_Paid_2: number | null
           Amount_paid_3: string | null
           Amount_Paid_3: number | null
+          Amount_paid_4: number | null
           Amount_Returnable: number | null
           Date: string
           Name: string | null
           Payment_Mode: string | null
-          Remaining_Balance: number | null
+          Remaining_Balance: string | null
         }
         Insert: {
           Amount_Paid_1?: number | null
-          Amount_Paid_2?: string | null
+          Amount_Paid_2?: number | null
           Amount_paid_3?: string | null
           Amount_Paid_3?: number | null
+          Amount_paid_4?: number | null
           Amount_Returnable?: number | null
           Date: string
           Name?: string | null
           Payment_Mode?: string | null
-          Remaining_Balance?: number | null
+          Remaining_Balance?: string | null
         }
         Update: {
           Amount_Paid_1?: number | null
-          Amount_Paid_2?: string | null
+          Amount_Paid_2?: number | null
           Amount_paid_3?: string | null
           Amount_Paid_3?: number | null
+          Amount_paid_4?: number | null
           Amount_Returnable?: number | null
           Date?: string
           Name?: string | null
           Payment_Mode?: string | null
-          Remaining_Balance?: number | null
+          Remaining_Balance?: string | null
         }
         Relationships: []
       }

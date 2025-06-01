@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import RealTimeUpdates from '@/components/loans/RealTimeUpdates';
@@ -7,7 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, Users, Calendar, ArrowUpRight } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { TrendingUp, TrendingDown, DollarSign, Users, Calendar, ArrowUpRight, Building, CreditCard } from 'lucide-react';
 
 interface LoanApplication {
   id: string;
@@ -18,94 +20,122 @@ interface LoanApplication {
   created_at: string;
   purpose_of_loan: string;
   employment_status: string;
+  monthly_income: number;
+  address: string;
 }
 
-interface MonthlyStats {
+interface DashboardStats {
+  totalApplications: number;
+  approvedApplications: number;
+  pendingApplications: number;
   totalDisbursed: number;
-  applicationCount: number;
   averageAmount: number;
-  topEmploymentStatus: string;
+  totalClients: number;
+  monthlyApplications: number;
+  collectionRate: number;
 }
 
 const DataCollectionDashboard = () => {
   const { user } = useAuth();
   const [recentApplications, setRecentApplications] = useState<LoanApplication[]>([]);
-  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats>({
-    totalDisbursed: 0,
-    applicationCount: 0,
-    averageAmount: 0,
-    topEmploymentStatus: ''
+
+  // Fetch dashboard statistics
+  const { data: dashboardStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['data-collection-stats'],
+    queryFn: async (): Promise<DashboardStats> => {
+      try {
+        // Get current month boundaries
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+        const [
+          allApplicationsRes,
+          monthlyApplicationsRes,
+          clientsRes,
+          financialSummaryRes
+        ] = await Promise.all([
+          supabase.from('loan_applications').select('*'),
+          supabase.from('loan_applications')
+            .select('*')
+            .gte('created_at', firstDayOfMonth.toISOString())
+            .lte('created_at', lastDayOfMonth.toISOString()),
+          supabase.from('client_name').select('id'),
+          supabase.from('financial_summary')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+        ]);
+
+        const allApplications = allApplicationsRes.data || [];
+        const monthlyApplications = monthlyApplicationsRes.data || [];
+        const totalClients = clientsRes.data?.length || 0;
+        const financialSummary = financialSummaryRes.data;
+
+        const approvedApplications = allApplications.filter(app => app.status === 'approved').length;
+        const pendingApplications = allApplications.filter(app => app.status === 'pending' || app.status === 'submitted').length;
+        
+        const totalDisbursed = allApplications
+          .filter(app => app.status === 'approved')
+          .reduce((sum, app) => sum + parseFloat(app.loan_amount.replace(/,/g, '')), 0);
+        
+        const averageAmount = approvedApplications > 0 ? totalDisbursed / approvedApplications : 0;
+        const collectionRate = financialSummary?.collection_rate || 0;
+
+        return {
+          totalApplications: allApplications.length,
+          approvedApplications,
+          pendingApplications,
+          totalDisbursed,
+          averageAmount,
+          totalClients,
+          monthlyApplications: monthlyApplications.length,
+          collectionRate
+        };
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        return {
+          totalApplications: 0,
+          approvedApplications: 0,
+          pendingApplications: 0,
+          totalDisbursed: 0,
+          averageAmount: 0,
+          totalClients: 0,
+          monthlyApplications: 0,
+          collectionRate: 0
+        };
+      }
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
-  const [loading, setLoading] = useState(true);
 
-  const fetchRecentApplications = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('loan_applications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (error) throw error;
-      setRecentApplications(data || []);
-    } catch (error) {
-      console.error('Error fetching applications:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch loan applications',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMonthlyStats = async () => {
-    try {
-      const currentMonth = new Date();
-      const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-      const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
-
-      // Fetch disbursed applications for current month (approved status = disbursed)
-      const { data: disbursedData, error: disbursedError } = await supabase
-        .from('loan_applications')
-        .select('loan_amount, employment_status')
-        .eq('status', 'approved')
-        .gte('created_at', firstDay.toISOString())
-        .lte('created_at', lastDay.toISOString());
-
-      if (disbursedError) throw disbursedError;
-
-      const totalDisbursed = disbursedData?.reduce((sum, app) => 
-        sum + parseFloat(app.loan_amount.replace(/,/g, '')), 0) || 0;
-      
-      const applicationCount = disbursedData?.length || 0;
-      const averageAmount = applicationCount > 0 ? totalDisbursed / applicationCount : 0;
-
-      const employmentStatusCount = disbursedData?.reduce((acc, app) => {
-        acc[app.employment_status] = (acc[app.employment_status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {};
-
-      const topEmploymentStatus = Object.keys(employmentStatusCount).reduce((a, b) => 
-        employmentStatusCount[a] > employmentStatusCount[b] ? a : b, '') || 'None';
-
-      setMonthlyStats({
-        totalDisbursed,
-        applicationCount,
-        averageAmount,
-        topEmploymentStatus
-      });
-    } catch (error) {
-      console.error('Error fetching monthly stats:', error);
-    }
-  };
+  // Fetch recent applications
+  const { data: recentAppsData, isLoading: appsLoading } = useQuery({
+    queryKey: ['recent-applications'],
+    queryFn: async (): Promise<LoanApplication[]> => {
+      try {
+        const { data, error } = await supabase
+          .from('loan_applications')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (error) throw error;
+        return data || [];
+      } catch (error) {
+        console.error('Error fetching recent applications:', error);
+        return [];
+      }
+    },
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
 
   useEffect(() => {
-    fetchRecentApplications();
-    fetchMonthlyStats();
-  }, [user]);
+    if (recentAppsData) {
+      setRecentApplications(recentAppsData);
+    }
+  }, [recentAppsData]);
 
   useEffect(() => {
     const channel = supabase
@@ -119,8 +149,6 @@ const DataCollectionDashboard = () => {
         },
         (payload) => {
           console.log('Real-time update received:', payload);
-          fetchRecentApplications();
-          fetchMonthlyStats();
           
           if (payload.eventType === 'INSERT') {
             toast({
@@ -142,17 +170,6 @@ const DataCollectionDashboard = () => {
     };
   }, []);
 
-  const handleLoanUpdate = (payload: any) => {
-    if (payload.eventType === 'INSERT') {
-      const newApp = payload.new;
-      setRecentApplications(prev => [newApp, ...prev].slice(0, 10));
-    } else if (payload.eventType === 'UPDATE') {
-      setRecentApplications(prev => 
-        prev.map(app => app.id === payload.new.id ? payload.new : app)
-      );
-    }
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-UG', {
       style: 'currency',
@@ -171,9 +188,11 @@ const DataCollectionDashboard = () => {
     }
   };
 
+  const isLoading = statsLoading || appsLoading;
+
   return (
     <Layout>
-      <RealTimeUpdates onLoanUpdate={handleLoanUpdate} />
+      <RealTimeUpdates onLoanUpdate={() => {}} />
       
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-900 dark:to-indigo-900">
         <div className="container mx-auto px-6 py-8">
@@ -182,7 +201,7 @@ const DataCollectionDashboard = () => {
               Data Collection Dashboard
             </h1>
             <p className="text-gray-600 dark:text-gray-300 text-lg">
-              Smart real-time monitoring of loan applications and disbursements
+              Real-time monitoring of loan applications and financial data
             </p>
           </div>
 
@@ -191,69 +210,148 @@ const DataCollectionDashboard = () => {
             <SmartDashboardMonitor />
           </div>
 
-          {/* Monthly Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card className="premium-card hover-lift">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Monthly Disbursed</CardTitle>
-                <DollarSign className="h-5 w-5 text-green-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-700">
-                  {formatCurrency(monthlyStats.totalDisbursed)}
-                </div>
-                <p className="text-xs text-gray-500 flex items-center mt-1">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  Approved applications only
-                </p>
-              </CardContent>
-            </Card>
+          {/* Enhanced Statistics Cards */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[...Array(8)].map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="h-20 bg-gray-200 rounded"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card className="premium-card hover-lift bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-blue-700">Total Applications</CardTitle>
+                  <CreditCard className="h-5 w-5 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {dashboardStats?.totalApplications || 0}
+                  </div>
+                  <p className="text-xs text-blue-600 flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    All time total
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="premium-card hover-lift">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Applications Count</CardTitle>
-                <Users className="h-5 w-5 text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-700">
-                  {monthlyStats.applicationCount}
-                </div>
-                <p className="text-xs text-gray-500 flex items-center mt-1">
-                  <Calendar className="h-3 w-3 mr-1" />
-                  This month
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="premium-card hover-lift bg-gradient-to-br from-green-50 to-emerald-100 border-green-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-green-700">Approved Loans</CardTitle>
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-900">
+                    {dashboardStats?.approvedApplications || 0}
+                  </div>
+                  <p className="text-xs text-green-600 flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    Successfully approved
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="premium-card hover-lift">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Average Amount</CardTitle>
-                <TrendingUp className="h-5 w-5 text-purple-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-purple-700">
-                  {formatCurrency(monthlyStats.averageAmount)}
-                </div>
-                <p className="text-xs text-gray-500 flex items-center mt-1">
-                  <ArrowUpRight className="h-3 w-3 mr-1" />
-                  Per application
-                </p>
-              </CardContent>
-            </Card>
+              <Card className="premium-card hover-lift bg-gradient-to-br from-yellow-50 to-amber-100 border-yellow-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-yellow-700">Pending Review</CardTitle>
+                  <Calendar className="h-5 w-5 text-yellow-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-900">
+                    {dashboardStats?.pendingApplications || 0}
+                  </div>
+                  <p className="text-xs text-yellow-600 flex items-center mt-1">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Awaiting approval
+                  </p>
+                </CardContent>
+              </Card>
 
-            <Card className="premium-card hover-lift">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">Top Employment</CardTitle>
-                <Users className="h-5 w-5 text-orange-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-orange-700 capitalize">
-                  {monthlyStats.topEmploymentStatus || 'N/A'}
-                </div>
-                <p className="text-xs text-gray-500">Most common status</p>
-              </CardContent>
-            </Card>
-          </div>
+              <Card className="premium-card hover-lift bg-gradient-to-br from-purple-50 to-violet-100 border-purple-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-purple-700">Total Clients</CardTitle>
+                  <Users className="h-5 w-5 text-purple-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-900">
+                    {dashboardStats?.totalClients || 0}
+                  </div>
+                  <p className="text-xs text-purple-600 flex items-center mt-1">
+                    <Users className="h-3 w-3 mr-1" />
+                    Registered clients
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="premium-card hover-lift bg-gradient-to-br from-indigo-50 to-blue-100 border-indigo-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-indigo-700">Total Disbursed</CardTitle>
+                  <DollarSign className="h-5 w-5 text-indigo-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-indigo-900">
+                    {formatCurrency(dashboardStats?.totalDisbursed || 0)}
+                  </div>
+                  <p className="text-xs text-indigo-600 flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    Approved loans value
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="premium-card hover-lift bg-gradient-to-br from-pink-50 to-rose-100 border-pink-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-pink-700">Average Amount</CardTitle>
+                  <ArrowUpRight className="h-5 w-5 text-pink-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-pink-900">
+                    {formatCurrency(dashboardStats?.averageAmount || 0)}
+                  </div>
+                  <p className="text-xs text-pink-600 flex items-center mt-1">
+                    <ArrowUpRight className="h-3 w-3 mr-1" />
+                    Per approved loan
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="premium-card hover-lift bg-gradient-to-br from-teal-50 to-cyan-100 border-teal-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-teal-700">This Month</CardTitle>
+                  <Calendar className="h-5 w-5 text-teal-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-teal-900">
+                    {dashboardStats?.monthlyApplications || 0}
+                  </div>
+                  <p className="text-xs text-teal-600 flex items-center mt-1">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Monthly applications
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="premium-card hover-lift bg-gradient-to-br from-orange-50 to-amber-100 border-orange-200">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-orange-700">Collection Rate</CardTitle>
+                  <TrendingUp className="h-5 w-5 text-orange-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-900">
+                    {(dashboardStats?.collectionRate || 0).toFixed(1)}%
+                  </div>
+                  <p className="text-xs text-orange-600 flex items-center mt-1">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    Payment collection
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Recent Applications */}
           <Card className="premium-card">
@@ -265,7 +363,7 @@ const DataCollectionDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {appsLoading ? (
                 <div className="flex items-center justify-center h-32">
                   <div className="relative">
                     <div className="w-12 h-12 border-4 border-blue-200 rounded-full"></div>
@@ -285,7 +383,7 @@ const DataCollectionDashboard = () => {
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-300">
                           <div>
-                            <span className="font-medium">Amount:</span> UGX {parseInt(app.loan_amount).toLocaleString()}
+                            <span className="font-medium">Amount:</span> {formatCurrency(parseInt(app.loan_amount.replace(/,/g, '')))}
                           </div>
                           <div>
                             <span className="font-medium">Type:</span> {app.loan_type}
