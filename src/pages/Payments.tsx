@@ -22,7 +22,8 @@ import {
   Download,
   Plus,
   PiggyBank,
-  BarChart3
+  BarChart3,
+  AlertCircle
 } from 'lucide-react';
 
 const Payments = () => {
@@ -38,7 +39,7 @@ const Payments = () => {
         .select('*')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching financial summary:', error);
@@ -315,7 +316,7 @@ const Payments = () => {
                       <TableBody>
                         {filteredLoanBook.length > 0 ? (
                           filteredLoanBook.map((loan, index) => (
-                            <TableRow key={index}>
+                            <TableRow key={loan.Date + index}>
                               <TableCell className="font-medium">{loan.Name || 'N/A'}</TableCell>
                               <TableCell className="text-blue-600 font-semibold">
                                 {formatCurrency(loan.Amount_Returnable)}
@@ -340,8 +341,13 @@ const Payments = () => {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                              {loanBookData?.length === 0 ? 'No loan records available' : 'No records match your search'}
+                            <TableCell colSpan={8} className="text-center py-8">
+                              <div className="flex flex-col items-center gap-2">
+                                <AlertCircle className="h-8 w-8 text-gray-400" />
+                                <p className="text-gray-500">
+                                  {loanBookData && loanBookData.length === 0 ? 'No loan records available' : 'No records match your search'}
+                                </p>
+                              </div>
                             </TableCell>
                           </TableRow>
                         )}
@@ -415,8 +421,11 @@ const Payments = () => {
                         </motion.div>
                       ))
                     ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        No transaction records available
+                      <div className="text-center py-8">
+                        <div className="flex flex-col items-center gap-2">
+                          <AlertCircle className="h-8 w-8 text-gray-400" />
+                          <p className="text-gray-500">No transaction records available</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -471,7 +480,7 @@ const Payments = () => {
                       <TableBody>
                         {filteredExpenses.length > 0 ? (
                           filteredExpenses.map((expense, index) => (
-                            <TableRow key={index}>
+                            <TableRow key={expense.Loan_holders + index}>
                               <TableCell className="font-medium">{expense.Loan_holders || 'N/A'}</TableCell>
                               <TableCell>{expense.particulars || 'N/A'}</TableCell>
                               <TableCell className="text-red-600 font-semibold">
@@ -488,8 +497,13 @@ const Payments = () => {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                              {expensesData?.length === 0 ? 'No expense records available' : 'No records match your search'}
+                            <TableCell colSpan={6} className="text-center py-8">
+                              <div className="flex flex-col items-center gap-2">
+                                <AlertCircle className="h-8 w-8 text-gray-400" />
+                                <p className="text-gray-500">
+                                  {expensesData && expensesData.length === 0 ? 'No expense records available' : 'No records match your search'}
+                                </p>
+                              </div>
                             </TableCell>
                           </TableRow>
                         )}

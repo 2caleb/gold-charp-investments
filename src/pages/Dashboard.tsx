@@ -3,7 +3,6 @@ import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
 import PremiumFinancialOverview from '@/components/dashboard/PremiumFinancialOverview';
-import SmartDashboardMonitor from '@/components/dashboard/SmartDashboardMonitor';
 import { FieldOfficerActivity } from '@/components/dashboard/FieldOfficerActivity';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -175,20 +174,13 @@ const Dashboard = () => {
           </Card>
         </motion.div>
 
-        {/* Dashboard Components Grid */}
+        {/* Field Officer Activity */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         >
-          <div className="space-y-6">
-            <SmartDashboardMonitor />
-            <FieldOfficerActivity />
-          </div>
-          <div className="space-y-6">
-            {/* Additional dashboard components can be added here */}
-          </div>
+          <FieldOfficerActivity />
         </motion.div>
       </div>
     </DashboardLayout>

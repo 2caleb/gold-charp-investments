@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent } from "@/components/ui/card";
@@ -163,7 +164,7 @@ const About = () => {
             <div className="text-center">
               <div className="mb-4">
                 <Avatar className="w-40 h-40 mx-auto">
-                  <AvatarImage src="/lovable-uploads/3c2e17b4-bb64-4ecf-8989-85e4b5fd420d.png" alt="Ronald Mutebi" className="object-cover" />
+                  <AvatarImage src="/lovable-uploads/c656d13a-aa85-490b-90d0-99af1b33c945.png" alt="Ronald Mutebi" className="object-cover" />
                   <AvatarFallback className="bg-purple-100 text-purple-700 text-4xl">RM</AvatarFallback>
                 </Avatar>
               </div>
