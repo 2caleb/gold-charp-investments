@@ -1,4 +1,3 @@
-
 import React from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent } from "@/components/ui/card";
@@ -118,7 +117,7 @@ const About = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
             <div className="text-center">
               <div className="mb-4 relative">
                 <Avatar className="w-40 h-40 mx-auto">
@@ -158,6 +157,20 @@ const About = () => {
               <p className="text-purple-700 font-medium mb-2">Chief Financial Officer</p>
               <p className="text-gray-600 max-w-xs mx-auto">
                 Paul brings his financial expertise to help our clients make sound investment decisions.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="mb-4">
+                <Avatar className="w-40 h-40 mx-auto">
+                  <AvatarImage src="/lovable-uploads/3c2e17b4-bb64-4ecf-8989-85e4b5fd420d.png" alt="Ronald Mutebi" className="object-cover" />
+                  <AvatarFallback className="bg-purple-100 text-purple-700 text-4xl">RM</AvatarFallback>
+                </Avatar>
+              </div>
+              <h3 className="text-xl font-bold">Ronald Mutebi</h3>
+              <p className="text-purple-700 font-medium mb-2">Chairman of the Board</p>
+              <p className="text-gray-600 max-w-xs mx-auto">
+                Ronald provides strategic leadership and governance oversight, bringing decades of business expertise to guide our long-term vision.
               </p>
             </div>
           </div>

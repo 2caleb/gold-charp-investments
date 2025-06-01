@@ -387,7 +387,6 @@ export type Database = {
           Amount_Paid_1: number | null
           Amount_Paid_2: number | null
           Amount_paid_3: string | null
-          Amount_Paid_3: number | null
           Amount_paid_4: number | null
           Amount_Returnable: number | null
           Date: string
@@ -399,7 +398,6 @@ export type Database = {
           Amount_Paid_1?: number | null
           Amount_Paid_2?: number | null
           Amount_paid_3?: string | null
-          Amount_Paid_3?: number | null
           Amount_paid_4?: number | null
           Amount_Returnable?: number | null
           Date: string
@@ -411,7 +409,6 @@ export type Database = {
           Amount_Paid_1?: number | null
           Amount_Paid_2?: number | null
           Amount_paid_3?: string | null
-          Amount_Paid_3?: number | null
           Amount_paid_4?: number | null
           Amount_Returnable?: number | null
           Date?: string

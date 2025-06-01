@@ -29,47 +29,104 @@ const Payments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
 
-  const { data: paymentData, isLoading } = useQuery({
-    queryKey: ['payment-center-data'],
+  // Fetch financial summary data
+  const { data: summaryData, isLoading: summaryLoading } = useQuery({
+    queryKey: ['financial-summary'],
     queryFn: async () => {
-      try {
-        const [summaryRes, expensesRes, transactionsRes, loanBookRes] = await Promise.all([
-          supabase.from('financial_summary').select('*').order('created_at', { ascending: false }).limit(1).single(),
-          supabase.from('Expenses').select('*'),
-          supabase.from('financial_transactions').select('*'),
-          supabase.from('loan_book').select('*')
-        ]);
-
-        return {
-          summary: summaryRes.data,
-          expenses: expensesRes.data || [],
-          transactions: transactionsRes.data || [],
-          loanBook: loanBookRes.data || []
-        };
-      } catch (error) {
-        console.error('Error fetching payment data:', error);
-        return { summary: null, expenses: [], transactions: [], loanBook: [] };
+      const { data, error } = await supabase
+        .from('financial_summary')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching financial summary:', error);
+        return null;
       }
+      return data;
     },
   });
 
-  const formatCurrency = (amount: string | number) => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount.replace(/,/g, '')) : amount;
+  // Fetch loan book data
+  const { data: loanBookData, isLoading: loanBookLoading } = useQuery({
+    queryKey: ['loan-book'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('loan_book')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching loan book:', error);
+        return [];
+      }
+      return data || [];
+    },
+  });
+
+  // Fetch expenses data
+  const { data: expensesData, isLoading: expensesLoading } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('Expenses')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching expenses:', error);
+        return [];
+      }
+      return data || [];
+    },
+  });
+
+  // Fetch transactions data
+  const { data: transactionsData, isLoading: transactionsLoading } = useQuery({
+    queryKey: ['financial-transactions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        return [];
+      }
+      return data || [];
+    },
+  });
+
+  const formatCurrency = (amount: string | number | null | undefined) => {
+    if (!amount) return 'UGX 0';
+    
+    let numAmount: number;
+    if (typeof amount === 'string') {
+      // Remove commas and convert to number
+      numAmount = parseFloat(amount.replace(/,/g, ''));
+    } else {
+      numAmount = amount;
+    }
+    
+    if (isNaN(numAmount)) return 'UGX 0';
+    
     return new Intl.NumberFormat('en-UG', {
       style: 'currency',
       currency: 'UGX',
       minimumFractionDigits: 0,
-    }).format(isNaN(numAmount) ? 0 : numAmount);
+    }).format(numAmount);
   };
 
-  const filteredLoanBook = paymentData?.loanBook?.filter(loan => 
+  const filteredLoanBook = loanBookData?.filter(loan => 
     loan.Name?.toLowerCase().includes(searchTerm.toLowerCase()) || ''
   ) || [];
 
-  const filteredExpenses = paymentData?.expenses?.filter(expense => 
+  const filteredExpenses = expensesData?.filter(expense => 
     expense.Loan_holders?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) ||
     expense.particulars?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) || ''
   ) || [];
+
+  const isLoading = summaryLoading || loanBookLoading || expensesLoading || transactionsLoading;
 
   if (isLoading) {
     return (
@@ -87,8 +144,6 @@ const Payments = () => {
       </Layout>
     );
   }
-
-  const summary = paymentData?.summary;
 
   return (
     <Layout>
@@ -116,7 +171,7 @@ const Payments = () => {
           </div>
         </motion.div>
 
-        {/* Financial Summary Cards from financial_summary table */}
+        {/* Financial Summary Cards */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -132,7 +187,7 @@ const Payments = () => {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-blue-700">Total Loan Portfolio</p>
                     <p className="text-2xl font-bold text-blue-900">
-                      {formatCurrency(summary?.total_loan_portfolio || 0)}
+                      {formatCurrency(summaryData?.total_loan_portfolio || 0)}
                     </p>
                     <p className="text-xs text-blue-600 mt-1">From loan book</p>
                   </div>
@@ -149,10 +204,10 @@ const Payments = () => {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-green-700">Total Repaid</p>
                     <p className="text-2xl font-bold text-green-900">
-                      {formatCurrency(summary?.total_repaid || 0)}
+                      {formatCurrency(summaryData?.total_repaid || 0)}
                     </p>
                     <p className="text-xs text-green-600 mt-1">
-                      {summary?.collection_rate?.toFixed(1) || 0}% collection rate
+                      {summaryData?.collection_rate?.toFixed(1) || 0}% collection rate
                     </p>
                   </div>
                 </div>
@@ -168,7 +223,7 @@ const Payments = () => {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-red-700">Outstanding Balance</p>
                     <p className="text-2xl font-bold text-red-900">
-                      {formatCurrency(summary?.outstanding_balance || 0)}
+                      {formatCurrency(summaryData?.outstanding_balance || 0)}
                     </p>
                     <p className="text-xs text-red-600 mt-1">Remaining to collect</p>
                   </div>
@@ -217,7 +272,7 @@ const Payments = () => {
                   <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <span className="flex items-center text-lg">
                       <DollarSign className="mr-3 h-5 w-5" />
-                      Loan Book Management
+                      Loan Book Management ({filteredLoanBook.length} records)
                     </span>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm">
@@ -258,34 +313,35 @@ const Payments = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredLoanBook.map((loan, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{loan.Name || 'N/A'}</TableCell>
-                            <TableCell className="text-blue-600 font-semibold">
-                              {formatCurrency(loan.Amount_Returnable || 0)}
-                            </TableCell>
-                            <TableCell className="text-green-600">
-                              {formatCurrency(loan.Amount_Paid_1 || 0)}
-                            </TableCell>
-                            <TableCell className="text-green-600">
-                              {formatCurrency(loan.Amount_Paid_2 || 0)}
-                            </TableCell>
-                            <TableCell className="text-green-600">
-                              {formatCurrency(loan.Amount_Paid_3 || 0)}
-                            </TableCell>
-                            <TableCell className="text-red-600 font-semibold">
-                              {formatCurrency(loan.Remaining_Balance || 0)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{loan.Payment_Mode || 'Not specified'}</Badge>
-                            </TableCell>
-                            <TableCell>{loan.Date || 'N/A'}</TableCell>
-                          </TableRow>
-                        ))}
-                        {filteredLoanBook.length === 0 && (
+                        {filteredLoanBook.length > 0 ? (
+                          filteredLoanBook.map((loan, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium">{loan.Name || 'N/A'}</TableCell>
+                              <TableCell className="text-blue-600 font-semibold">
+                                {formatCurrency(loan.Amount_Returnable)}
+                              </TableCell>
+                              <TableCell className="text-green-600">
+                                {formatCurrency(loan.Amount_Paid_1)}
+                              </TableCell>
+                              <TableCell className="text-green-600">
+                                {formatCurrency(loan.Amount_Paid_2)}
+                              </TableCell>
+                              <TableCell className="text-green-600">
+                                {formatCurrency(loan.Amount_paid_3)}
+                              </TableCell>
+                              <TableCell className="text-red-600 font-semibold">
+                                {formatCurrency(loan.Remaining_Balance)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{loan.Payment_Mode || 'Not specified'}</Badge>
+                              </TableCell>
+                              <TableCell>{loan.Date || 'N/A'}</TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
                           <TableRow>
                             <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                              No loan records found
+                              {loanBookData?.length === 0 ? 'No loan records available' : 'No records match your search'}
                             </TableCell>
                           </TableRow>
                         )}
@@ -302,7 +358,7 @@ const Payments = () => {
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center">
                       <CreditCard className="mr-2 h-5 w-5" />
-                      Financial Transactions
+                      Financial Transactions ({transactionsData?.length || 0} records)
                     </span>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm">
@@ -318,45 +374,51 @@ const Payments = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {paymentData?.transactions?.slice(0, 10).map((transaction, index) => (
-                      <motion.div
-                        key={transaction.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg border hover:shadow-md transition-all duration-200"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                            transaction.transaction_type === 'income' 
-                              ? 'bg-green-100 text-green-600' 
-                              : 'bg-red-100 text-red-600'
-                          }`}>
-                            {transaction.transaction_type === 'income' ? 
-                              <TrendingUp className="h-5 w-5" /> : 
-                              <TrendingDown className="h-5 w-5" />
-                            }
+                    {transactionsData && transactionsData.length > 0 ? (
+                      transactionsData.slice(0, 10).map((transaction, index) => (
+                        <motion.div
+                          key={transaction.id}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg border hover:shadow-md transition-all duration-200"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              transaction.transaction_type === 'income' 
+                                ? 'bg-green-100 text-green-600' 
+                                : 'bg-red-100 text-red-600'
+                            }`}>
+                              {transaction.transaction_type === 'income' ? 
+                                <TrendingUp className="h-5 w-5" /> : 
+                                <TrendingDown className="h-5 w-5" />
+                              }
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900">{transaction.description}</p>
+                              <p className="text-sm text-gray-500 capitalize">{transaction.category}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">{transaction.description}</p>
-                            <p className="text-sm text-gray-500 capitalize">{transaction.category}</p>
+                          <div className="text-right">
+                            <p className={`font-bold ${
+                              transaction.transaction_type === 'income' 
+                                ? 'text-green-600' 
+                                : 'text-red-600'
+                            }`}>
+                              {transaction.transaction_type === 'income' ? '+' : '-'}
+                              {formatCurrency(transaction.amount)}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(transaction.date).toLocaleDateString()}
+                            </p>
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <p className={`font-bold ${
-                            transaction.transaction_type === 'income' 
-                              ? 'text-green-600' 
-                              : 'text-red-600'
-                          }`}>
-                            {transaction.transaction_type === 'income' ? '+' : '-'}
-                            {formatCurrency(transaction.amount)}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(transaction.date).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No transaction records available
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -368,7 +430,7 @@ const Payments = () => {
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center">
                       <TrendingDown className="mr-2 h-5 w-5" />
-                      Expense Management
+                      Expense Management ({filteredExpenses.length} records)
                     </span>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm">
@@ -407,26 +469,27 @@ const Payments = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredExpenses.map((expense, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{expense.Loan_holders || 'N/A'}</TableCell>
-                            <TableCell>{expense.particulars || 'N/A'}</TableCell>
-                            <TableCell className="text-red-600 font-semibold">
-                              {formatCurrency(expense.amount || 0)}
-                            </TableCell>
-                            <TableCell>
-                              {expense.date ? new Date(expense.date).toLocaleDateString() : expense.date_2 || 'N/A'}
-                            </TableCell>
-                            <TableCell>{expense.account_2 || 'N/A'}</TableCell>
-                            <TableCell className="text-blue-600">
-                              {formatCurrency(expense.loan_amount || 0)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {filteredExpenses.length === 0 && (
+                        {filteredExpenses.length > 0 ? (
+                          filteredExpenses.map((expense, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium">{expense.Loan_holders || 'N/A'}</TableCell>
+                              <TableCell>{expense.particulars || 'N/A'}</TableCell>
+                              <TableCell className="text-red-600 font-semibold">
+                                {formatCurrency(expense.amount)}
+                              </TableCell>
+                              <TableCell>
+                                {expense.date ? new Date(expense.date).toLocaleDateString() : expense.date_2 || 'N/A'}
+                              </TableCell>
+                              <TableCell>{expense.account_2 || 'N/A'}</TableCell>
+                              <TableCell className="text-blue-600">
+                                {formatCurrency(expense.loan_amount)}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
                           <TableRow>
                             <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                              No expense records found
+                              {expensesData?.length === 0 ? 'No expense records available' : 'No records match your search'}
                             </TableCell>
                           </TableRow>
                         )}
@@ -447,24 +510,24 @@ const Payments = () => {
                     <div className="space-y-4">
                       <div className="flex justify-between">
                         <span>Active Loans:</span>
-                        <span className="font-semibold">{summary?.active_loan_holders || 0}</span>
+                        <span className="font-semibold">{summaryData?.active_loan_holders || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Total Portfolio Value:</span>
-                        <span className="font-semibold text-blue-600">{formatCurrency(summary?.total_loan_portfolio || 0)}</span>
+                        <span className="font-semibold text-blue-600">{formatCurrency(summaryData?.total_loan_portfolio || 0)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Total Repaid:</span>
-                        <span className="font-semibold text-green-600">{formatCurrency(summary?.total_repaid || 0)}</span>
+                        <span className="font-semibold text-green-600">{formatCurrency(summaryData?.total_repaid || 0)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Outstanding Balance:</span>
-                        <span className="font-semibold text-red-600">{formatCurrency(summary?.outstanding_balance || 0)}</span>
+                        <span className="font-semibold text-red-600">{formatCurrency(summaryData?.outstanding_balance || 0)}</span>
                       </div>
                       <div className="flex justify-between border-t pt-3">
                         <span>Collection Rate:</span>
                         <span className="font-semibold text-purple-600">
-                          {summary?.collection_rate?.toFixed(1) || 0}%
+                          {summaryData?.collection_rate?.toFixed(1) || 0}%
                         </span>
                       </div>
                     </div>
