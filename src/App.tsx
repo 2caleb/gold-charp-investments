@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NotificationsProvider } from "@/contexts/NotificationsContext";
@@ -87,13 +87,13 @@ function App() {
                   <Route path="/money-transfer" element={<MoneyTransfer />} />
                   
                   {/* Auth routes - only accessible when not logged in */}
-                  <Route element={<PublicRoute />}>
+                  <Route element={<PublicRoute><Outlet /></PublicRoute>}>
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                   </Route>
 
                   {/* Protected routes - require authentication */}
-                  <Route element={<PrivateRoute />}>
+                  <Route element={<PrivateRoute><Outlet /></PrivateRoute>}>
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/clients" element={<ClientsList />} />
                     <Route path="/clients/:id" element={<ClientDetail />} />
@@ -108,25 +108,25 @@ function App() {
                   </Route>
 
                   {/* Staff-only routes */}
-                  <Route element={<StaffRoute />}>
+                  <Route element={<StaffRoute><Outlet /></StaffRoute>}>
                     <Route path="/staff/data-collection" element={<DataCollection />} />
                     <Route path="/staff/data-collection-dashboard" element={<DataCollectionDashboard />} />
                   </Route>
 
                   {/* Role-based routes */}
-                  <Route element={<RoleBasedRoute allowedRoles={['manager', 'director', 'ceo', 'chairperson']} />}>
+                  <Route element={<RoleBasedRoute allowedRoles={['manager', 'director', 'ceo', 'chairperson']}><Outlet /></RoleBasedRoute>}>
                     <Route path="/staff/manager-review" element={<ManagerReviewDashboard />} />
                   </Route>
 
-                  <Route element={<RoleBasedRoute allowedRoles={['director', 'ceo', 'chairperson']} />}>
+                  <Route element={<RoleBasedRoute allowedRoles={['director', 'ceo', 'chairperson']}><Outlet /></RoleBasedRoute>}>
                     <Route path="/staff/director-risk" element={<DirectorRiskDashboard />} />
                   </Route>
 
-                  <Route element={<RoleBasedRoute allowedRoles={['ceo', 'chairperson']} />}>
+                  <Route element={<RoleBasedRoute allowedRoles={['ceo', 'chairperson']}><Outlet /></RoleBasedRoute>}>
                     <Route path="/staff/ceo-approval" element={<CEOApprovalDashboard />} />
                   </Route>
 
-                  <Route element={<RoleBasedRoute allowedRoles={['chairperson']} />}>
+                  <Route element={<RoleBasedRoute allowedRoles={['chairperson']}><Outlet /></RoleBasedRoute>}>
                     <Route path="/staff/chairperson-final" element={<ChairpersonFinalDashboard />} />
                   </Route>
 

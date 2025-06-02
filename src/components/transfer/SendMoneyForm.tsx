@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowRight, DollarSign, Clock, Shield } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowRight, DollarSign, Clock, Shield, Send } from 'lucide-react';
 
 interface SendMoneyFormProps {
   exchangeRates: any[];
@@ -16,6 +16,7 @@ interface SendMoneyFormProps {
 
 const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     sendAmount: '',
@@ -45,13 +46,18 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates }) => {
 
   // Fetch user's saved recipients
   useEffect(() => {
-    fetchRecipients();
-  }, []);
+    if (user) {
+      fetchRecipients();
+    }
+  }, [user]);
 
   const fetchRecipients = async () => {
+    if (!user) return;
+    
     const { data, error } = await supabase
       .from('transfer_recipients')
       .select('*')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (!error && data) {
@@ -128,6 +134,15 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates }) => {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to send money transfers.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       // Create recipient if new
@@ -142,6 +157,7 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates }) => {
         const { data: newRecipient, error: recipientError } = await supabase
           .from('transfer_recipients')
           .insert({
+            user_id: user.id,
             full_name: formData.recipientName,
             phone_number: formData.recipientPhone,
             email: formData.recipientEmail,
@@ -163,6 +179,7 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates }) => {
       const { error: transferError } = await supabase
         .from('money_transfers')
         .insert({
+          sender_id: user.id,
           recipient_id: recipientId,
           send_amount: parseFloat(formData.sendAmount),
           send_currency: formData.sendCurrency,
@@ -531,7 +548,7 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates }) => {
           )}
           <Button 
             onClick={handleSubmit}
-            disabled={isLoading || !formData.sendAmount}
+            disabled={isLoading || !formData.sendAmount || !user}
             className="ml-auto"
           >
             {isLoading ? 'Processing...' : step === 3 ? 'Confirm Transfer' : 'Next'}
