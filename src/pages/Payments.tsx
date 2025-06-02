@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
 import PremiumFinancialOverview from '@/components/dashboard/PremiumFinancialOverview';
@@ -23,7 +22,8 @@ import {
   Plus,
   PiggyBank,
   BarChart3,
-  AlertCircle
+  AlertCircle,
+  Send
 } from 'lucide-react';
 
 const Payments = () => {
@@ -49,32 +49,34 @@ const Payments = () => {
     },
   });
 
-  // Fetch loan book data
-  const { data: loanBookData, isLoading: loanBookLoading } = useQuery({
-    queryKey: ['loan-book'],
+  // Fetch loan book live data with real-time updates
+  const { data: loanBookData, isLoading: loanBookLoading, refetch: refetchLoanBook } = useQuery({
+    queryKey: ['loan-book-live'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('loan_book')
-        .select('*');
+        .from('loan_book_live')
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching loan book:', error);
+        console.error('Error fetching loan book live:', error);
         return [];
       }
       return data || [];
     },
   });
 
-  // Fetch expenses data
-  const { data: expensesData, isLoading: expensesLoading } = useQuery({
-    queryKey: ['expenses'],
+  // Fetch expenses live data with real-time updates
+  const { data: expensesData, isLoading: expensesLoading, refetch: refetchExpenses } = useQuery({
+    queryKey: ['expenses-live'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('Expenses')
-        .select('*');
+        .from('expenses_live')
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching expenses:', error);
+        console.error('Error fetching expenses live:', error);
         return [];
       }
       return data || [];
@@ -98,12 +100,33 @@ const Payments = () => {
     },
   });
 
+  // Set up real-time subscriptions
+  useEffect(() => {
+    const loanBookChannel = supabase
+      .channel('loan_book_live_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'loan_book_live' }, () => {
+        refetchLoanBook();
+      })
+      .subscribe();
+
+    const expensesChannel = supabase
+      .channel('expenses_live_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses_live' }, () => {
+        refetchExpenses();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(loanBookChannel);
+      supabase.removeChannel(expensesChannel);
+    };
+  }, [refetchLoanBook, refetchExpenses]);
+
   const formatCurrency = (amount: string | number | null | undefined) => {
     if (!amount) return 'UGX 0';
     
     let numAmount: number;
     if (typeof amount === 'string') {
-      // Remove commas and convert to number
       numAmount = parseFloat(amount.replace(/,/g, ''));
     } else {
       numAmount = amount;
@@ -119,11 +142,11 @@ const Payments = () => {
   };
 
   const filteredLoanBook = loanBookData?.filter(loan => 
-    loan.Name?.toLowerCase().includes(searchTerm.toLowerCase()) || ''
+    loan.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) || ''
   ) || [];
 
   const filteredExpenses = expensesData?.filter(expense => 
-    expense.Loan_holders?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) ||
+    expense.loan_holder?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) ||
     expense.particulars?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) || ''
   ) || [];
 
@@ -162,13 +185,19 @@ const Payments = () => {
                 Premium Payment Center
               </h1>
               <p className="text-gray-600 mt-2">
-                Comprehensive financial management and payment tracking powered by real data
+                Real-time financial management and payment tracking with live data updates
               </p>
             </div>
-            <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-10 px-4 shrink-0">
-              <Plus className="mr-2 h-4 w-4" />
-              New Transaction
-            </Button>
+            <div className="flex gap-2">
+              <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-10 px-4 shrink-0">
+                <Plus className="mr-2 h-4 w-4" />
+                New Transaction
+              </Button>
+              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 h-10 px-4 shrink-0">
+                <Send className="mr-2 h-4 w-4" />
+                Money Transfer
+              </Button>
+            </div>
           </div>
         </motion.div>
 
@@ -190,7 +219,7 @@ const Payments = () => {
                     <p className="text-2xl font-bold text-blue-900">
                       {formatCurrency(summaryData?.total_loan_portfolio || 0)}
                     </p>
-                    <p className="text-xs text-blue-600 mt-1">From loan book</p>
+                    <p className="text-xs text-blue-600 mt-1">From live loan book</p>
                   </div>
                 </div>
               </CardContent>
@@ -251,7 +280,7 @@ const Payments = () => {
             <TabsList className="grid w-full grid-cols-4 h-12">
               <TabsTrigger value="loan-book" className="text-sm">
                 <DollarSign className="mr-2 h-4 w-4" />
-                Loan Book
+                Live Loan Book
               </TabsTrigger>
               <TabsTrigger value="transactions" className="text-sm">
                 <CreditCard className="mr-2 h-4 w-4" />
@@ -259,7 +288,7 @@ const Payments = () => {
               </TabsTrigger>
               <TabsTrigger value="expenses" className="text-sm">
                 <TrendingDown className="mr-2 h-4 w-4" />
-                Expenses
+                Live Expenses
               </TabsTrigger>
               <TabsTrigger value="reports" className="text-sm">
                 <BarChart3 className="mr-2 h-4 w-4" />
@@ -273,7 +302,8 @@ const Payments = () => {
                   <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <span className="flex items-center text-lg">
                       <DollarSign className="mr-3 h-5 w-5" />
-                      Loan Book Management ({filteredLoanBook.length} records)
+                      Live Loan Book ({filteredLoanBook.length} records) 
+                      <Badge variant="outline" className="ml-2 bg-green-50 text-green-700">Real-time</Badge>
                     </span>
                     <div className="flex gap-2">
                       <Button variant="outline" size="sm">
@@ -310,33 +340,139 @@ const Payments = () => {
                           <TableHead>Amount Paid 3</TableHead>
                           <TableHead>Remaining Balance</TableHead>
                           <TableHead>Payment Mode</TableHead>
-                          <TableHead>Date</TableHead>
+                          <TableHead>Loan Date</TableHead>
+                          <TableHead>Status</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredLoanBook.length > 0 ? (
-                          filteredLoanBook.map((loan, index) => (
-                            <TableRow key={loan.Date + index}>
-                              <TableCell className="font-medium">{loan.Name || 'N/A'}</TableCell>
+                          filteredLoanBook.map((loan) => (
+                            <TableRow key={loan.id}>
+                              <TableCell className="font-medium">{loan.client_name}</TableCell>
                               <TableCell className="text-blue-600 font-semibold">
-                                {formatCurrency(loan.Amount_Returnable)}
+                                {formatCurrency(loan.amount_returnable)}
                               </TableCell>
                               <TableCell className="text-green-600">
-                                {formatCurrency(loan.Amount_Paid_1)}
+                                {formatCurrency(loan.amount_paid_1)}
                               </TableCell>
                               <TableCell className="text-green-600">
-                                {formatCurrency(loan.Amount_Paid_2)}
+                                {formatCurrency(loan.amount_paid_2)}
                               </TableCell>
                               <TableCell className="text-green-600">
-                                {formatCurrency(loan.Amount_paid_3)}
+                                {formatCurrency(loan.amount_paid_3)}
                               </TableCell>
                               <TableCell className="text-red-600 font-semibold">
-                                {formatCurrency(loan.Remaining_Balance)}
+                                {formatCurrency(loan.remaining_balance)}
                               </TableCell>
                               <TableCell>
-                                <Badge variant="outline">{loan.Payment_Mode || 'Not specified'}</Badge>
+                                <Badge variant="outline">{loan.payment_mode || 'Not specified'}</Badge>
                               </TableCell>
-                              <TableCell>{loan.Date || 'N/A'}</TableCell>
+                              <TableCell>{new Date(loan.loan_date).toLocaleDateString()}</TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={loan.status === 'active' ? 'default' : 'secondary'}
+                                  className={loan.status === 'active' ? 'bg-green-100 text-green-800' : ''}
+                                >
+                                  {loan.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={9} className="text-center py-8">
+                              <div className="flex flex-col items-center gap-2">
+                                <AlertCircle className="h-8 w-8 text-gray-400" />
+                                <p className="text-gray-500">
+                                  {loanBookData && loanBookData.length === 0 ? 'No loan records available' : 'No records match your search'}
+                                </p>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="expenses" className="space-y-4 mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center">
+                      <TrendingDown className="mr-2 h-5 w-5" />
+                      Live Expense Management ({filteredExpenses.length} records)
+                      <Badge variant="outline" className="ml-2 bg-red-50 text-red-700">Real-time</Badge>
+                    </span>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Filter className="mr-2 h-4 w-4" />
+                        Filter
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Download className="mr-2 h-4 w-4" />
+                        Export
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search expenses..."
+                        value={expenseSearchTerm}
+                        onChange={(e) => setExpenseSearchTerm(e.target.value)}
+                        className="pl-10 h-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="rounded-md border overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Loan Holder</TableHead>
+                          <TableHead>Particulars</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Expense Date</TableHead>
+                          <TableHead>Account</TableHead>
+                          <TableHead>Loan Amount</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredExpenses.length > 0 ? (
+                          filteredExpenses.map((expense) => (
+                            <TableRow key={expense.id}>
+                              <TableCell className="font-medium">{expense.loan_holder}</TableCell>
+                              <TableCell>{expense.particulars}</TableCell>
+                              <TableCell className="text-red-600 font-semibold">
+                                {formatCurrency(expense.amount)}
+                              </TableCell>
+                              <TableCell>
+                                {new Date(expense.expense_date).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell>{expense.account_name || 'N/A'}</TableCell>
+                              <TableCell className="text-blue-600">
+                                {formatCurrency(expense.loan_amount)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="capitalize">
+                                  {expense.category}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={expense.status === 'approved' ? 'default' : 'secondary'}
+                                  className={expense.status === 'approved' ? 'bg-green-100 text-green-800' : ''}
+                                >
+                                  {expense.status}
+                                </Badge>
+                              </TableCell>
                             </TableRow>
                           ))
                         ) : (
@@ -345,7 +481,7 @@ const Payments = () => {
                               <div className="flex flex-col items-center gap-2">
                                 <AlertCircle className="h-8 w-8 text-gray-400" />
                                 <p className="text-gray-500">
-                                  {loanBookData && loanBookData.length === 0 ? 'No loan records available' : 'No records match your search'}
+                                  {expensesData && expensesData.length === 0 ? 'No expense records available' : 'No records match your search'}
                                 </p>
                               </div>
                             </TableCell>
@@ -433,87 +569,6 @@ const Payments = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="expenses" className="space-y-4 mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="flex items-center">
-                      <TrendingDown className="mr-2 h-5 w-5" />
-                      Expense Management ({filteredExpenses.length} records)
-                    </span>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Filter className="mr-2 h-4 w-4" />
-                        Filter
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Search expenses..."
-                        value={expenseSearchTerm}
-                        onChange={(e) => setExpenseSearchTerm(e.target.value)}
-                        className="pl-10 h-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="rounded-md border overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Loan Holder</TableHead>
-                          <TableHead>Particulars</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Account</TableHead>
-                          <TableHead>Loan Amount</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredExpenses.length > 0 ? (
-                          filteredExpenses.map((expense, index) => (
-                            <TableRow key={expense.Loan_holders + index}>
-                              <TableCell className="font-medium">{expense.Loan_holders || 'N/A'}</TableCell>
-                              <TableCell>{expense.particulars || 'N/A'}</TableCell>
-                              <TableCell className="text-red-600 font-semibold">
-                                {formatCurrency(expense.amount)}
-                              </TableCell>
-                              <TableCell>
-                                {expense.date ? new Date(expense.date).toLocaleDateString() : expense.date_2 || 'N/A'}
-                              </TableCell>
-                              <TableCell>{expense.account_2 || 'N/A'}</TableCell>
-                              <TableCell className="text-blue-600">
-                                {formatCurrency(expense.loan_amount)}
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8">
-                              <div className="flex flex-col items-center gap-2">
-                                <AlertCircle className="h-8 w-8 text-gray-400" />
-                                <p className="text-gray-500">
-                                  {expensesData && expensesData.length === 0 ? 'No expense records available' : 'No records match your search'}
-                                </p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
             <TabsContent value="reports" className="space-y-6 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card className="shadow-lg">
@@ -524,7 +579,7 @@ const Payments = () => {
                     <div className="space-y-4">
                       <div className="flex justify-between">
                         <span>Active Loans:</span>
-                        <span className="font-semibold">{summaryData?.active_loan_holders || 0}</span>
+                        <span className="font-semibold">{loanBookData?.length || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Total Portfolio Value:</span>
@@ -554,10 +609,10 @@ const Payments = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      <Button className="w-full h-10" variant="outline">Generate Loan Book Report</Button>
-                      <Button className="w-full h-10" variant="outline">Export Payment History</Button>
-                      <Button className="w-full h-10" variant="outline">Schedule Collection Reports</Button>
-                      <Button className="w-full h-10" variant="outline">Generate Financial Summary</Button>
+                      <Button className="w-full h-10" variant="outline">Generate Live Loan Report</Button>
+                      <Button className="w-full h-10" variant="outline">Export Live Payment Data</Button>
+                      <Button className="w-full h-10" variant="outline">Real-time Collection Reports</Button>
+                      <Button className="w-full h-10" variant="outline">Generate Live Summary</Button>
                     </div>
                   </CardContent>
                 </Card>

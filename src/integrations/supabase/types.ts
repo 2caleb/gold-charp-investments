@@ -129,6 +129,36 @@ export type Database = {
         }
         Relationships: []
       }
+      exchange_rates: {
+        Row: {
+          created_at: string | null
+          effective_date: string | null
+          from_currency: string
+          id: string
+          rate: number
+          to_currency: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          effective_date?: string | null
+          from_currency: string
+          id?: string
+          rate: number
+          to_currency: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          effective_date?: string | null
+          from_currency?: string
+          id?: string
+          rate?: number
+          to_currency?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       Expenses: {
         Row: {
           account_2: string | null
@@ -156,6 +186,51 @@ export type Database = {
           loan_amount?: string | null
           Loan_holders?: string
           particulars?: string | null
+        }
+        Relationships: []
+      }
+      expenses_live: {
+        Row: {
+          account_name: string | null
+          amount: number
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          expense_date: string
+          id: string
+          loan_amount: number | null
+          loan_holder: string
+          particulars: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          amount: number
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          expense_date?: string
+          id?: string
+          loan_amount?: number | null
+          loan_holder: string
+          particulars: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          amount?: number
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          expense_date?: string
+          id?: string
+          loan_amount?: number | null
+          loan_holder?: string
+          particulars?: string
+          status?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -418,6 +493,54 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_book_live: {
+        Row: {
+          amount_paid_1: number | null
+          amount_paid_2: number | null
+          amount_paid_3: number | null
+          amount_returnable: number
+          client_name: string
+          created_at: string | null
+          id: string
+          loan_date: string
+          payment_mode: string | null
+          remaining_balance: number | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount_paid_1?: number | null
+          amount_paid_2?: number | null
+          amount_paid_3?: number | null
+          amount_returnable?: number
+          client_name: string
+          created_at?: string | null
+          id?: string
+          loan_date?: string
+          payment_mode?: string | null
+          remaining_balance?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount_paid_1?: number | null
+          amount_paid_2?: number | null
+          amount_paid_3?: number | null
+          amount_returnable?: number
+          client_name?: string
+          created_at?: string | null
+          id?: string
+          loan_date?: string
+          payment_mode?: string | null
+          remaining_balance?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       loan_workflow_log: {
         Row: {
           action: string
@@ -476,6 +599,80 @@ export type Database = {
           status?: string | null
         }
         Relationships: []
+      }
+      money_transfers: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          estimated_delivery: string | null
+          exchange_rate: number
+          id: string
+          pickup_location: string | null
+          purpose: string | null
+          receive_amount: number
+          receive_currency: string
+          recipient_id: string
+          reference_number: string
+          send_amount: number
+          send_currency: string
+          sender_id: string
+          status: string | null
+          total_amount: number
+          transfer_fee: number
+          transfer_method: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          estimated_delivery?: string | null
+          exchange_rate: number
+          id?: string
+          pickup_location?: string | null
+          purpose?: string | null
+          receive_amount: number
+          receive_currency: string
+          recipient_id: string
+          reference_number?: string
+          send_amount: number
+          send_currency?: string
+          sender_id: string
+          status?: string | null
+          total_amount: number
+          transfer_fee: number
+          transfer_method: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          estimated_delivery?: string | null
+          exchange_rate?: number
+          id?: string
+          pickup_location?: string | null
+          purpose?: string | null
+          receive_amount?: number
+          receive_currency?: string
+          recipient_id?: string
+          reference_number?: string
+          send_amount?: number
+          send_currency?: string
+          sender_id?: string
+          status?: string | null
+          total_amount?: number
+          transfer_fee?: number
+          transfer_method?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "money_transfers_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "transfer_recipients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -570,6 +767,126 @@ export type Database = {
           full_name?: string | null
           id?: string
           role?: string | null
+        }
+        Relationships: []
+      }
+      transfer_agents: {
+        Row: {
+          address: string
+          agent_name: string
+          city: string
+          country: string
+          created_at: string | null
+          email: string | null
+          id: string
+          operating_hours: string | null
+          phone_number: string | null
+          services: Json | null
+          status: string | null
+        }
+        Insert: {
+          address: string
+          agent_name: string
+          city: string
+          country: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          operating_hours?: string | null
+          phone_number?: string | null
+          services?: Json | null
+          status?: string | null
+        }
+        Update: {
+          address?: string
+          agent_name?: string
+          city?: string
+          country?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          operating_hours?: string | null
+          phone_number?: string | null
+          services?: Json | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      transfer_fees: {
+        Row: {
+          amount_max: number
+          amount_min: number
+          created_at: string | null
+          currency: string
+          fee_percentage: number | null
+          fixed_fee: number | null
+          id: string
+          transfer_method: string
+        }
+        Insert: {
+          amount_max: number
+          amount_min: number
+          created_at?: string | null
+          currency?: string
+          fee_percentage?: number | null
+          fixed_fee?: number | null
+          id?: string
+          transfer_method: string
+        }
+        Update: {
+          amount_max?: number
+          amount_min?: number
+          created_at?: string | null
+          currency?: string
+          fee_percentage?: number | null
+          fixed_fee?: number | null
+          id?: string
+          transfer_method?: string
+        }
+        Relationships: []
+      }
+      transfer_recipients: {
+        Row: {
+          account_number: string | null
+          address: string | null
+          bank_name: string | null
+          city: string | null
+          country: string
+          created_at: string | null
+          email: string | null
+          full_name: string
+          id: string
+          phone_number: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_number?: string | null
+          address?: string | null
+          bank_name?: string | null
+          city?: string | null
+          country: string
+          created_at?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_number?: string | null
+          address?: string | null
+          bank_name?: string | null
+          city?: string | null
+          country?: string
+          created_at?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

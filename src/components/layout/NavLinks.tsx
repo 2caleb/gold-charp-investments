@@ -1,90 +1,96 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { 
-  Home, 
-  Users, 
-  FileText, 
-  Calculator, 
-  Landmark, 
-  FileCheck, 
-  Phone, 
-  UserRound,
-  ClipboardCheck,
-  Building2,
-  CreditCard,
-  BarChart3
-} from 'lucide-react';
-import { useRolePermissions } from '@/hooks/use-role-permissions';
 
-type NavLinksProps = {
-  type?: 'mobile' | 'desktop';
+interface NavLinksProps {
   className?: string;
-  onItemClick?: () => void;
-  isMobile?: boolean;
-};
+  onClick?: () => void;
+}
 
-const NavLinks = ({ type = 'desktop', className = '', onItemClick, isMobile }: NavLinksProps) => {
-  const { isFieldOfficer } = useRolePermissions();
+const NavLinks: React.FC<NavLinksProps> = ({ className, onClick }) => {
+  const location = useLocation();
 
-  // Base links for all users
-  const baseLinks = [
-    { name: 'Home', href: '/', icon: Home },
-    { name: 'Dashboard', href: '/dashboard', icon: Landmark },
-    { name: 'Clients', href: '/clients', icon: Users },
-    { name: 'Loan Applications', href: '/loan-applications', icon: FileText },
-    { name: 'Property Evaluation', href: '/property-evaluation', icon: Building2 },
-    { name: 'Calculator', href: '/calculator', icon: Calculator },
-    { name: 'Payments', href: '/payments', icon: CreditCard },
-    { name: 'Reports', href: '/reports', icon: BarChart3 },
-    { name: 'Documents', href: '/documents', icon: FileText },
-    { name: 'Contact', href: '/contact', icon: Phone },
-  ];
-  
-  // Role-specific links - only essential staff tools
-  const roleLinks = [];
-  
-  if (isFieldOfficer) {
-    roleLinks.push(
-      { name: 'Data Collection', href: '/staff/data-collection', icon: ClipboardCheck }
-    );
-  }
-
-  // Combine base links with role-specific links
-  const links = [...baseLinks, ...roleLinks];
-
-  if (type === 'mobile' || isMobile === true) {
-    return (
-      <div className={cn('flex flex-col space-y-3', className)}>
-        {links.map((link) => (
-          <Link 
-            key={link.name}
-            to={link.href}
-            className="text-base font-medium transition-colors hover:text-primary px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center"
-            onClick={onItemClick}
-          >
-            {link.icon && <link.icon className="mr-3 h-4 w-4" />}
-            {link.name}
-          </Link>
-        ))}
-      </div>
-    );
-  }
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
 
   return (
-    <div className={cn('flex gap-1 md:gap-2 flex-wrap', className)}>
-      {links.map((link) => (
-        <Link 
-          key={link.name}
-          to={link.href}
-          className="text-sm font-medium transition-colors hover:text-primary px-3 py-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center"
-        >
-          {link.icon && <link.icon className="mr-2 h-4 w-4" />}
-          <span className="truncate">{link.name}</span>
-        </Link>
-      ))}
-    </div>
+    <nav className={cn("flex gap-8", className)}>
+      <Link
+        to="/"
+        className={cn(
+          "font-medium transition-colors hover:text-purple-700",
+          isActive('/') ? "text-purple-700" : "text-gray-700"
+        )}
+        onClick={onClick}
+      >
+        Home
+      </Link>
+      <Link
+        to="/about"
+        className={cn(
+          "font-medium transition-colors hover:text-purple-700",
+          isActive('/about') ? "text-purple-700" : "text-gray-700"
+        )}
+        onClick={onClick}
+      >
+        About
+      </Link>
+      <Link
+        to="/properties"
+        className={cn(
+          "font-medium transition-colors hover:text-purple-700",
+          isActive('/properties') ? "text-purple-700" : "text-gray-700"
+        )}
+        onClick={onClick}
+      >
+        Properties
+      </Link>
+      <Link
+        to="/loans"
+        className={cn(
+          "font-medium transition-colors hover:text-purple-700",
+          isActive('/loans') ? "text-purple-700" : "text-gray-700"
+        )}
+        onClick={onClick}
+      >
+        Loans
+      </Link>
+      <Link
+        to="/money-transfer"
+        className={cn(
+          "font-medium transition-colors hover:text-purple-700",
+          isActive('/money-transfer') ? "text-purple-700" : "text-gray-700"
+        )}
+        onClick={onClick}
+      >
+        Money Transfer
+      </Link>
+      <Link
+        to="/services"
+        className={cn(
+          "font-medium transition-colors hover:text-purple-700",
+          isActive('/services') ? "text-purple-700" : "text-gray-700"
+        )}
+        onClick={onClick}
+      >
+        Services
+      </Link>
+      <Link
+        to="/contact"
+        className={cn(
+          "font-medium transition-colors hover:text-purple-700",
+          isActive('/contact') ? "text-purple-700" : "text-gray-700"
+        )}
+        onClick={onClick}
+      >
+        Contact
+      </Link>
+    </nav>
   );
 };
 
