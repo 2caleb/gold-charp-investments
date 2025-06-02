@@ -1,6 +1,6 @@
-
 import React, { useEffect } from 'react';
 import Hero from '@/components/home/Hero';
+import MoneyTransferHero from '@/components/home/MoneyTransferHero';
 import Services from '@/components/home/Services';
 import FeaturedProperties from '@/components/home/FeaturedProperties';
 import LoanOptions from '@/components/home/LoanOptions';
@@ -40,6 +40,10 @@ const Index = () => {
     <Layout>
       <div className="w-full">
         <Hero />
+        
+        <ScrollFade delay={0.1}>
+          <MoneyTransferHero />
+        </ScrollFade>
         
         <ScrollFade delay={0.2}>
           <Services />

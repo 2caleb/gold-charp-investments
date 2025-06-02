@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -50,6 +49,9 @@ import ManagerReviewDashboard from "./pages/staff/ManagerReviewDashboard";
 import DirectorRiskDashboard from "./pages/staff/DirectorRiskDashboard";
 import CEOApprovalDashboard from "./pages/staff/CEOApprovalDashboard";
 import ChairpersonFinalDashboard from "./pages/staff/ChairpersonFinalDashboard";
+
+// Admin pages
+import MoneyTransferDashboard from "./pages/admin/MoneyTransferDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -128,6 +130,11 @@ function App() {
 
                   <Route element={<RoleBasedRoute allowedRoles={['chairperson']}><Outlet /></RoleBasedRoute>}>
                     <Route path="/staff/chairperson-final" element={<ChairpersonFinalDashboard />} />
+                  </Route>
+
+                  {/* Admin Money Transfer Dashboard */}
+                  <Route element={<RoleBasedRoute allowedRoles={['manager', 'director', 'ceo', 'chairperson']}><Outlet /></RoleBasedRoute>}>
+                    <Route path="/admin/money-transfer" element={<MoneyTransferDashboard />} />
                   </Route>
 
                   {/* 404 route */}

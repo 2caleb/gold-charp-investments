@@ -191,43 +191,43 @@ export type Database = {
       }
       expenses_live: {
         Row: {
+          Account: string
           account_name: string | null
           amount: number
           category: string | null
           created_at: string | null
           created_by: string | null
           expense_date: string
+          Final_amount: number | null
           id: string
-          loan_amount: number | null
-          loan_holder: string
           particulars: string
           status: string | null
           updated_at: string | null
         }
         Insert: {
+          Account: string
           account_name?: string | null
           amount: number
           category?: string | null
           created_at?: string | null
           created_by?: string | null
           expense_date?: string
+          Final_amount?: number | null
           id?: string
-          loan_amount?: number | null
-          loan_holder: string
           particulars: string
           status?: string | null
           updated_at?: string | null
         }
         Update: {
+          Account?: string
           account_name?: string | null
           amount?: number
           category?: string | null
           created_at?: string | null
           created_by?: string | null
           expense_date?: string
+          Final_amount?: number | null
           id?: string
-          loan_amount?: number | null
-          loan_holder?: string
           particulars?: string
           status?: string | null
           updated_at?: string | null
@@ -498,6 +498,7 @@ export type Database = {
           amount_paid_1: number | null
           amount_paid_2: number | null
           amount_paid_3: number | null
+          amount_paid_4: number | null
           amount_returnable: number
           client_name: string
           created_at: string | null
@@ -513,6 +514,7 @@ export type Database = {
           amount_paid_1?: number | null
           amount_paid_2?: number | null
           amount_paid_3?: number | null
+          amount_paid_4?: number | null
           amount_returnable?: number
           client_name: string
           created_at?: string | null
@@ -528,6 +530,7 @@ export type Database = {
           amount_paid_1?: number | null
           amount_paid_2?: number | null
           amount_paid_3?: number | null
+          amount_paid_4?: number | null
           amount_returnable?: number
           client_name?: string
           created_at?: string | null
