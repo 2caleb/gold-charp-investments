@@ -50,7 +50,7 @@ const ChairpersonFinalDashboard = () => {
   }, [toast, userRole]);
 
   const handleViewApplication = (id: string) => {
-    navigate(`/loan-applications/${id}`);
+    navigate(`/loan-approval/${id}`);
   };
 
   if (userRole !== 'chairperson') {

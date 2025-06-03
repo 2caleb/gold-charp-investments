@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -50,7 +49,7 @@ const CEOApprovalDashboard = () => {
   }, [toast, userRole]);
 
   const handleViewApplication = (id: string) => {
-    navigate(`/loan-applications/${id}`);
+    navigate(`/loan-approval/${id}`);
   };
 
   if (userRole !== 'ceo') {

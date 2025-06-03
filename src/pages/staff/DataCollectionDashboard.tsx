@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -97,8 +96,8 @@ const DataCollectionDashboard = () => {
   };
 
   const handleViewApplication = (applicationId: string) => {
-    // Navigate to the client detail page with the application ID
-    navigate(`/loan-applications/${applicationId}`);
+    // Navigate to the loan approval page with the application ID
+    navigate(`/loan-approval/${applicationId}`);
   };
 
   const stats = {
