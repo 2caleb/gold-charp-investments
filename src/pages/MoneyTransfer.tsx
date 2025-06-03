@@ -62,28 +62,11 @@ const MoneyTransfer = () => {
     },
   });
 
-  // Fetch transfer agents
-  const { data: agents } = useQuery({
-    queryKey: ['transfer-agents'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transfer_agents')
-        .select('*')
-        .eq('status', 'active');
-      
-      if (error) {
-        console.error('Error fetching agents:', error);
-        return [];
-      }
-      return data || [];
-    },
-  });
-
   const features = [
     {
       icon: <Globe className="h-6 w-6" />,
       title: "Global Reach",
-      description: "Send money to over 200 countries and territories worldwide"
+      description: "Send money to USA, South Africa, and Uganda"
     },
     {
       icon: <Shield className="h-6 w-6" />,
@@ -176,7 +159,7 @@ const MoneyTransfer = () => {
             </TabsContent>
 
             <TabsContent value="agents">
-              <AgentLocator agents={agents} />
+              <AgentLocator />
             </TabsContent>
           </Tabs>
         </motion.div>
@@ -192,7 +175,7 @@ const MoneyTransfer = () => {
             <h2 className="text-2xl font-bold text-gray-900">Why Choose Gold Charp Money Transfer?</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2">50+</div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">3</div>
                 <p className="text-gray-600">Countries Served</p>
               </div>
               <div className="text-center">

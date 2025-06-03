@@ -224,7 +224,7 @@ const AgentLocator = () => {
                     <div className="border-t pt-4">
                       <h4 className="font-medium text-gray-900 mb-3">Available Services</h4>
                       <div className="grid grid-cols-1 gap-2">
-                        {agent.services.map((service, serviceIndex) => (
+                        {(agent.services as string[]).map((service, serviceIndex) => (
                           <div
                             key={serviceIndex}
                             className="flex items-center p-2 bg-gray-50 rounded-lg"
