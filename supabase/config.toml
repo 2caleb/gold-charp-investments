@@ -1,26 +1,15 @@
 
 project_id = "bjsxekgraxbfqzhbqjff"
 
-[functions.enhanced-workflow-system]
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[functions.process-money-transfer]
 verify_jwt = true
 
-[functions.send-approval-email]
-verify_jwt = true
-
-[functions.insert-client]
-verify_jwt = true
-
-[functions.process-loan-application]
-verify_jwt = true
-
-[functions.loan-approval]
-verify_jwt = true
-
-[functions.calculate-repayment]
-verify_jwt = true
-
-[functions.send-notification]
-verify_jwt = true
-
-[functions.get_loan_workflow]
-verify_jwt = true
+[functions.flutterwave-webhook]
+verify_jwt = false

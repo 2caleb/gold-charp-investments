@@ -605,64 +605,88 @@ export type Database = {
       }
       money_transfers: {
         Row: {
+          audit_trail: Json | null
           completed_at: string | null
           created_at: string | null
           estimated_delivery: string | null
           exchange_rate: number
+          failure_reason: string | null
+          flutterwave_reference: string | null
+          flutterwave_transaction_id: string | null
           id: string
           pickup_location: string | null
+          processor_response: Json | null
           purpose: string | null
           receive_amount: number
           receive_currency: string
+          receiver_phone: string
           recipient_id: string
           reference_number: string
           send_amount: number
           send_currency: string
           sender_id: string
+          sender_phone: string | null
           status: string | null
           total_amount: number
+          transaction_hash: string | null
           transfer_fee: number
           transfer_method: string
           updated_at: string | null
         }
         Insert: {
+          audit_trail?: Json | null
           completed_at?: string | null
           created_at?: string | null
           estimated_delivery?: string | null
           exchange_rate: number
+          failure_reason?: string | null
+          flutterwave_reference?: string | null
+          flutterwave_transaction_id?: string | null
           id?: string
           pickup_location?: string | null
+          processor_response?: Json | null
           purpose?: string | null
           receive_amount: number
           receive_currency: string
+          receiver_phone?: string
           recipient_id: string
           reference_number?: string
           send_amount: number
           send_currency?: string
           sender_id: string
+          sender_phone?: string | null
           status?: string | null
           total_amount: number
+          transaction_hash?: string | null
           transfer_fee: number
           transfer_method: string
           updated_at?: string | null
         }
         Update: {
+          audit_trail?: Json | null
           completed_at?: string | null
           created_at?: string | null
           estimated_delivery?: string | null
           exchange_rate?: number
+          failure_reason?: string | null
+          flutterwave_reference?: string | null
+          flutterwave_transaction_id?: string | null
           id?: string
           pickup_location?: string | null
+          processor_response?: Json | null
           purpose?: string | null
           receive_amount?: number
           receive_currency?: string
+          receiver_phone?: string
           recipient_id?: string
           reference_number?: string
           send_amount?: number
           send_currency?: string
           sender_id?: string
+          sender_phone?: string | null
           status?: string | null
           total_amount?: number
+          transaction_hash?: string | null
           transfer_fee?: number
           transfer_method?: string
           updated_at?: string | null
@@ -772,6 +796,50 @@ export type Database = {
           role?: string | null
         }
         Relationships: []
+      }
+      transaction_audit_log: {
+        Row: {
+          action: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          new_status: string | null
+          old_status: string | null
+          timestamp: string | null
+          transaction_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          new_status?: string | null
+          old_status?: string | null
+          timestamp?: string | null
+          transaction_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          new_status?: string | null
+          old_status?: string | null
+          timestamp?: string | null
+          transaction_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_audit_log_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "money_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transfer_agents: {
         Row: {

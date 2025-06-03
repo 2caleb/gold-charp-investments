@@ -1,80 +1,64 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { ArrowRight, DollarSign, Clock, Shield, Send } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { 
+  Send, 
+  CreditCard, 
+  MapPin, 
+  Phone,
+  User,
+  DollarSign,
+  ArrowRight,
+  Shield,
+  Clock
+} from 'lucide-react';
 
 interface SendMoneyFormProps {
-  exchangeRates: any[];
+  exchangeRates?: any[];
 }
 
-const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates }) => {
+const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates = [] }) => {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
+    senderPhone: '',
+    receiverPhone: '',
+    recipientName: '',
+    recipientCountry: 'Uganda',
     sendAmount: '',
     sendCurrency: 'UGX',
     receiveCurrency: 'USD',
     transferMethod: 'bank_transfer',
     purpose: '',
-    recipientName: '',
-    recipientPhone: '',
-    recipientEmail: '',
-    recipientCountry: '',
-    recipientCity: '',
-    recipientAddress: '',
-    bankName: '',
+    bankCode: '',
     accountNumber: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [calculationResult, setCalculationResult] = useState(null);
 
-  const [calculation, setCalculation] = useState({
-    receiveAmount: 0,
-    exchangeRate: 0,
-    transferFee: 0,
-    totalAmount: 0
-  });
+  const supportedCountries = [
+    { code: 'UG', name: 'Uganda', currency: 'UGX' },
+    { code: 'US', name: 'USA', currency: 'USD' },
+    { code: 'ZA', name: 'South Africa', currency: 'ZAR' }
+  ];
 
-  const [recipients, setRecipients] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const transferMethods = [
+    { value: 'bank_transfer', label: 'Bank Transfer', icon: CreditCard },
+    { value: 'mobile_money', label: 'Mobile Money', icon: Phone },
+    { value: 'cash_pickup', label: 'Cash Pickup', icon: MapPin }
+  ];
 
-  // Fetch user's saved recipients
-  useEffect(() => {
-    if (user) {
-      fetchRecipients();
-    }
-  }, [user]);
-
-  const fetchRecipients = async () => {
-    if (!user) return;
-    
-    const { data, error } = await supabase
-      .from('transfer_recipients')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setRecipients(data);
-    }
-  };
-
-  // Calculate transfer details when amount or currencies change
-  useEffect(() => {
-    if (formData.sendAmount && exchangeRates.length > 0) {
-      calculateTransfer();
-    }
-  }, [formData.sendAmount, formData.sendCurrency, formData.receiveCurrency, formData.transferMethod, exchangeRates]);
-
-  const calculateTransfer = async () => {
+  const calculateTransfer = () => {
     const sendAmount = parseFloat(formData.sendAmount);
-    if (!sendAmount) return;
+    if (!sendAmount || sendAmount <= 0) return;
 
     // Find exchange rate
     const rate = exchangeRates.find(r => 
@@ -82,481 +66,441 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates }) => {
       r.to_currency === formData.receiveCurrency
     )?.rate || 1;
 
-    // Calculate fees
-    const { data: feeStructure } = await supabase
-      .from('transfer_fees')
-      .select('*')
-      .eq('transfer_method', formData.transferMethod)
-      .eq('currency', formData.sendCurrency)
-      .lte('amount_min', sendAmount)
-      .gte('amount_max', sendAmount)
-      .single();
-
-    const fee = feeStructure 
-      ? (feeStructure.fixed_fee || 0) + (sendAmount * (feeStructure.fee_percentage || 0) / 100)
-      : sendAmount * 0.02; // Default 2% fee
-
+    // Calculate fees (simplified - in production, get from transfer_fees table)
+    const feePercentage = formData.transferMethod === 'bank_transfer' ? 2.0 : 
+                         formData.transferMethod === 'mobile_money' ? 1.5 : 1.8;
+    const fixedFee = formData.sendCurrency === 'UGX' ? 20000 : 
+                    formData.sendCurrency === 'USD' ? 12 : 40;
+    
+    const transferFee = (sendAmount * feePercentage / 100) + fixedFee;
+    const totalAmount = sendAmount + transferFee;
     const receiveAmount = sendAmount * rate;
-    const totalAmount = sendAmount + fee;
 
-    setCalculation({
+    setCalculationResult({
+      sendAmount,
+      transferFee,
+      totalAmount,
       receiveAmount,
       exchangeRate: rate,
-      transferFee: fee,
-      totalAmount
+      estimatedDelivery: formData.transferMethod === 'cash_pickup' ? 'Instant' : 
+                        formData.transferMethod === 'mobile_money' ? '5-10 minutes' : '1-3 business days'
     });
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleRecipientSelect = (recipientId: string) => {
-    const recipient = recipients.find((r: any) => r.id === recipientId);
-    if (recipient) {
-      setFormData(prev => ({
-        ...prev,
-        recipientName: recipient.full_name,
-        recipientPhone: recipient.phone_number || '',
-        recipientEmail: recipient.email || '',
-        recipientCountry: recipient.country,
-        recipientCity: recipient.city || '',
-        recipientAddress: recipient.address || '',
-        bankName: recipient.bank_name || '',
-        accountNumber: recipient.account_number || ''
-      }));
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (step < 3) {
-      setStep(step + 1);
-      return;
-    }
-
-    if (!user) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!calculationResult) {
       toast({
-        title: "Authentication Required",
-        description: "Please log in to send money transfers.",
+        title: "Error",
+        description: "Please calculate the transfer first",
         variant: "destructive"
       });
       return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      // Create recipient if new
-      let recipientId = null;
-      const existingRecipient = recipients.find((r: any) => 
-        r.full_name === formData.recipientName && r.country === formData.recipientCountry
-      );
+      // Create recipient first
+      const { data: recipient, error: recipientError } = await supabase
+        .from('transfer_recipients')
+        .insert({
+          full_name: formData.recipientName,
+          country: formData.recipientCountry,
+          phone_number: formData.receiverPhone,
+          account_number: formData.accountNumber,
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select()
+        .single();
 
-      if (existingRecipient) {
-        recipientId = existingRecipient.id;
-      } else {
-        const { data: newRecipient, error: recipientError } = await supabase
-          .from('transfer_recipients')
-          .insert({
-            user_id: user.id,
-            full_name: formData.recipientName,
-            phone_number: formData.recipientPhone,
-            email: formData.recipientEmail,
-            country: formData.recipientCountry,
-            city: formData.recipientCity,
-            address: formData.recipientAddress,
-            bank_name: formData.bankName,
-            account_number: formData.accountNumber
-          })
-          .select()
-          .single();
+      if (recipientError) throw recipientError;
 
-        if (recipientError) throw recipientError;
-        recipientId = newRecipient.id;
-        await fetchRecipients();
-      }
-
-      // Create transfer
-      const { error: transferError } = await supabase
+      // Create transfer record
+      const { data: transfer, error: transferError } = await supabase
         .from('money_transfers')
         .insert({
-          sender_id: user.id,
-          recipient_id: recipientId,
-          send_amount: parseFloat(formData.sendAmount),
+          sender_id: (await supabase.auth.getUser()).data.user?.id,
+          sender_phone: formData.senderPhone,
+          receiver_phone: formData.receiverPhone,
+          recipient_id: recipient.id,
+          send_amount: calculationResult.sendAmount,
           send_currency: formData.sendCurrency,
-          receive_amount: calculation.receiveAmount,
+          receive_amount: calculationResult.receiveAmount,
           receive_currency: formData.receiveCurrency,
-          exchange_rate: calculation.exchangeRate,
-          transfer_fee: calculation.transferFee,
-          total_amount: calculation.totalAmount,
+          exchange_rate: calculationResult.exchangeRate,
+          transfer_fee: calculationResult.transferFee,
+          total_amount: calculationResult.totalAmount,
           transfer_method: formData.transferMethod,
           purpose: formData.purpose,
-          status: 'pending'
-        });
+          estimated_delivery: new Date(Date.now() + (formData.transferMethod === 'cash_pickup' ? 0 : 24 * 60 * 60 * 1000)).toISOString()
+        })
+        .select()
+        .single();
 
       if (transferError) throw transferError;
 
+      // Process with Flutterwave
+      const { data: processResult, error: processError } = await supabase.functions.invoke('process-money-transfer', {
+        body: {
+          transferData: {
+            transferId: transfer.id,
+            referenceNumber: transfer.reference_number,
+            sendAmount: calculationResult.sendAmount,
+            sendCurrency: formData.sendCurrency,
+            receiveAmount: calculationResult.receiveAmount,
+            receiveCurrency: formData.receiveCurrency,
+            recipientName: formData.recipientName,
+            accountNumber: formData.accountNumber,
+            bankCode: formData.bankCode,
+            purpose: formData.purpose
+          }
+        }
+      });
+
+      if (processError) throw processError;
+
       toast({
         title: "Transfer Initiated Successfully!",
-        description: "Your money transfer has been submitted and is being processed.",
+        description: `Reference: ${transfer.reference_number}. You will receive updates via SMS.`,
       });
 
       // Reset form
       setFormData({
+        senderPhone: '',
+        receiverPhone: '',
+        recipientName: '',
+        recipientCountry: 'Uganda',
         sendAmount: '',
         sendCurrency: 'UGX',
         receiveCurrency: 'USD',
         transferMethod: 'bank_transfer',
         purpose: '',
-        recipientName: '',
-        recipientPhone: '',
-        recipientEmail: '',
-        recipientCountry: '',
-        recipientCity: '',
-        recipientAddress: '',
-        bankName: '',
+        bankCode: '',
         accountNumber: ''
       });
-      setStep(1);
+      setCalculationResult(null);
 
     } catch (error) {
       console.error('Transfer error:', error);
       toast({
         title: "Transfer Failed",
-        description: "There was an error processing your transfer. Please try again.",
+        description: error.message || "An error occurred while processing your transfer",
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const renderStep1 = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="sendAmount">Send Amount</Label>
-            <Input
-              id="sendAmount"
-              type="number"
-              placeholder="0.00"
-              value={formData.sendAmount}
-              onChange={(e) => handleInputChange('sendAmount', e.target.value)}
-              className="text-lg h-12"
-            />
-          </div>
-          <div>
-            <Label htmlFor="sendCurrency">From Currency</Label>
-            <Select value={formData.sendCurrency} onValueChange={(value) => handleInputChange('sendCurrency', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="UGX">UGX - Ugandan Shilling</SelectItem>
-                <SelectItem value="USD">USD - US Dollar</SelectItem>
-                <SelectItem value="EUR">EUR - Euro</SelectItem>
-                <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                <SelectItem value="KES">KES - Kenyan Shilling</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+      >
+        <Card className="shadow-xl border-purple-200">
+          <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
+            <CardTitle className="flex items-center text-xl">
+              <Send className="mr-3 h-6 w-6" />
+              Send Money Globally
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Contact Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="senderPhone" className="flex items-center">
+                    <Phone className="mr-2 h-4 w-4" />
+                    Your Phone Number
+                  </Label>
+                  <Input
+                    id="senderPhone"
+                    type="tel"
+                    placeholder="+256700000000"
+                    value={formData.senderPhone}
+                    onChange={(e) => setFormData({...formData, senderPhone: e.target.value})}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="receiverPhone" className="flex items-center">
+                    <Phone className="mr-2 h-4 w-4" />
+                    Receiver's Phone Number
+                  </Label>
+                  <Input
+                    id="receiverPhone"
+                    type="tel"
+                    placeholder="+1234567890"
+                    value={formData.receiverPhone}
+                    onChange={(e) => setFormData({...formData, receiverPhone: e.target.value})}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+              </div>
 
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="receiveAmount">Recipient Gets</Label>
-            <Input
-              id="receiveAmount"
-              type="text"
-              value={calculation.receiveAmount.toFixed(2)}
-              readOnly
-              className="text-lg h-12 bg-gray-50"
-            />
-          </div>
-          <div>
-            <Label htmlFor="receiveCurrency">To Currency</Label>
-            <Select value={formData.receiveCurrency} onValueChange={(value) => handleInputChange('receiveCurrency', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">USD - US Dollar</SelectItem>
-                <SelectItem value="EUR">EUR - Euro</SelectItem>
-                <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                <SelectItem value="KES">KES - Kenyan Shilling</SelectItem>
-                <SelectItem value="UGX">UGX - Ugandan Shilling</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
+              {/* Recipient Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="recipientName" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    Recipient Name
+                  </Label>
+                  <Input
+                    id="recipientName"
+                    placeholder="Full name as on ID"
+                    value={formData.recipientName}
+                    onChange={(e) => setFormData({...formData, recipientName: e.target.value})}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="recipientCountry">Recipient Country</Label>
+                  <Select value={formData.recipientCountry} onValueChange={(value) => setFormData({...formData, recipientCountry: value})}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {supportedCountries.map((country) => (
+                        <SelectItem key={country.code} value={country.name}>
+                          {country.name} ({country.currency})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-      <div>
-        <Label htmlFor="transferMethod">Transfer Method</Label>
-        <Select value={formData.transferMethod} onValueChange={(value) => handleInputChange('transferMethod', value)}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-            <SelectItem value="mobile_money">Mobile Money</SelectItem>
-            <SelectItem value="cash_pickup">Cash Pickup</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+              {/* Transfer Amount */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="sendAmount" className="flex items-center">
+                    <DollarSign className="mr-2 h-4 w-4" />
+                    Send Amount
+                  </Label>
+                  <Input
+                    id="sendAmount"
+                    type="number"
+                    placeholder="0.00"
+                    value={formData.sendAmount}
+                    onChange={(e) => setFormData({...formData, sendAmount: e.target.value})}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="sendCurrency">From Currency</Label>
+                  <Select value={formData.sendCurrency} onValueChange={(value) => setFormData({...formData, sendCurrency: value})}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="UGX">UGX - Ugandan Shilling</SelectItem>
+                      <SelectItem value="USD">USD - US Dollar</SelectItem>
+                      <SelectItem value="ZAR">ZAR - South African Rand</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="receiveCurrency">To Currency</Label>
+                  <Select value={formData.receiveCurrency} onValueChange={(value) => setFormData({...formData, receiveCurrency: value})}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="UGX">UGX - Ugandan Shilling</SelectItem>
+                      <SelectItem value="USD">USD - US Dollar</SelectItem>
+                      <SelectItem value="ZAR">ZAR - South African Rand</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-      <div>
-        <Label htmlFor="purpose">Purpose of Transfer</Label>
-        <Select value={formData.purpose} onValueChange={(value) => handleInputChange('purpose', value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select purpose" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="family_support">Family Support</SelectItem>
-            <SelectItem value="education">Education</SelectItem>
-            <SelectItem value="business">Business</SelectItem>
-            <SelectItem value="medical">Medical</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+              {/* Transfer Method */}
+              <div>
+                <Label>Transfer Method</Label>
+                <div className="grid grid-cols-3 gap-4 mt-2">
+                  {transferMethods.map((method) => (
+                    <div
+                      key={method.value}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.transferMethod === method.value
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-purple-300'
+                      }`}
+                      onClick={() => setFormData({...formData, transferMethod: method.value})}
+                    >
+                      <method.icon className="h-6 w-6 mx-auto mb-2 text-purple-600" />
+                      <p className="text-sm text-center font-medium">{method.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-      {formData.sendAmount && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-4">
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>Send Amount:</span>
-                <span className="font-semibold">{formData.sendCurrency} {parseFloat(formData.sendAmount).toLocaleString()}</span>
+              {/* Bank Details (if bank transfer) */}
+              {formData.transferMethod === 'bank_transfer' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="bankCode">Bank Code</Label>
+                    <Input
+                      id="bankCode"
+                      placeholder="e.g., 044 for Access Bank"
+                      value={formData.bankCode}
+                      onChange={(e) => setFormData({...formData, bankCode: e.target.value})}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="accountNumber">Account Number</Label>
+                    <Input
+                      id="accountNumber"
+                      placeholder="Recipient's account number"
+                      value={formData.accountNumber}
+                      onChange={(e) => setFormData({...formData, accountNumber: e.target.value})}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Purpose */}
+              <div>
+                <Label htmlFor="purpose">Purpose of Transfer</Label>
+                <Textarea
+                  id="purpose"
+                  placeholder="e.g., Family support, Business payment, etc."
+                  value={formData.purpose}
+                  onChange={(e) => setFormData({...formData, purpose: e.target.value})}
+                  className="mt-1"
+                />
               </div>
-              <div className="flex justify-between">
-                <span>Exchange Rate:</span>
-                <span>1 {formData.sendCurrency} = {calculation.exchangeRate} {formData.receiveCurrency}</span>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={calculateTransfer}
+                  disabled={!formData.sendAmount}
+                  className="flex-1"
+                >
+                  Calculate Transfer
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!calculationResult || isSubmitting}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  {isSubmitting ? 'Processing...' : 'Send Money'}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
-              <div className="flex justify-between">
-                <span>Transfer Fee:</span>
-                <span>{formData.sendCurrency} {calculation.transferFee.toLocaleString()}</span>
+            </form>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Transfer Summary */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="space-y-6"
+      >
+        {calculationResult && (
+          <Card className="shadow-xl border-green-200">
+            <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-t-lg">
+              <CardTitle className="flex items-center">
+                <DollarSign className="mr-2 h-5 w-5" />
+                Transfer Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-gray-600">Send Amount:</span>
+                <span className="font-semibold">{calculationResult.sendAmount.toLocaleString()} {formData.sendCurrency}</span>
               </div>
-              <div className="flex justify-between border-t pt-2">
-                <span className="font-semibold">Total Amount:</span>
-                <span className="font-bold">{formData.sendCurrency} {calculation.totalAmount.toLocaleString()}</span>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-gray-600">Transfer Fee:</span>
+                <span className="font-semibold">{calculationResult.transferFee.toLocaleString()} {formData.sendCurrency}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="font-semibold">Recipient Gets:</span>
-                <span className="font-bold text-green-600">{formData.receiveCurrency} {calculation.receiveAmount.toFixed(2)}</span>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-gray-600">Total Amount:</span>
+                <span className="font-bold text-lg">{calculationResult.totalAmount.toLocaleString()} {formData.sendCurrency}</span>
               </div>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-gray-600">Exchange Rate:</span>
+                <span className="font-semibold">1 {formData.sendCurrency} = {calculationResult.exchangeRate} {formData.receiveCurrency}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b">
+                <span className="text-gray-600">Recipient Gets:</span>
+                <span className="font-bold text-lg text-green-600">{calculationResult.receiveAmount.toLocaleString()} {formData.receiveCurrency}</span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-gray-600 flex items-center">
+                  <Clock className="mr-1 h-4 w-4" />
+                  Delivery Time:
+                </span>
+                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                  {calculationResult.estimatedDelivery}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Security Features */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <Shield className="mr-2 h-5 w-5 text-green-600" />
+              Secure & Trusted
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center text-sm text-gray-600">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+              Bank-level encryption
+            </div>
+            <div className="flex items-center text-sm text-gray-600">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+              Licensed money transfer operator
+            </div>
+            <div className="flex items-center text-sm text-gray-600">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+              Real-time transaction tracking
+            </div>
+            <div className="flex items-center text-sm text-gray-600">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
+              24/7 customer support
             </div>
           </CardContent>
         </Card>
-      )}
-    </div>
-  );
 
-  const renderStep2 = () => (
-    <div className="space-y-6">
-      {recipients.length > 0 && (
-        <div>
-          <Label>Select Existing Recipient (Optional)</Label>
-          <Select onValueChange={handleRecipientSelect}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose from saved recipients" />
-            </SelectTrigger>
-            <SelectContent>
-              {recipients.map((recipient: any) => (
-                <SelectItem key={recipient.id} value={recipient.id}>
-                  {recipient.full_name} - {recipient.country}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="recipientName">Full Name *</Label>
-          <Input
-            id="recipientName"
-            value={formData.recipientName}
-            onChange={(e) => handleInputChange('recipientName', e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="recipientPhone">Phone Number</Label>
-          <Input
-            id="recipientPhone"
-            value={formData.recipientPhone}
-            onChange={(e) => handleInputChange('recipientPhone', e.target.value)}
-          />
-        </div>
-        <div>
-          <Label htmlFor="recipientEmail">Email Address</Label>
-          <Input
-            id="recipientEmail"
-            type="email"
-            value={formData.recipientEmail}
-            onChange={(e) => handleInputChange('recipientEmail', e.target.value)}
-          />
-        </div>
-        <div>
-          <Label htmlFor="recipientCountry">Country *</Label>
-          <Select value={formData.recipientCountry} onValueChange={(value) => handleInputChange('recipientCountry', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select country" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Uganda">Uganda</SelectItem>
-              <SelectItem value="Kenya">Kenya</SelectItem>
-              <SelectItem value="Tanzania">Tanzania</SelectItem>
-              <SelectItem value="Rwanda">Rwanda</SelectItem>
-              <SelectItem value="USA">United States</SelectItem>
-              <SelectItem value="UK">United Kingdom</SelectItem>
-              <SelectItem value="Canada">Canada</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="recipientCity">City</Label>
-          <Input
-            id="recipientCity"
-            value={formData.recipientCity}
-            onChange={(e) => handleInputChange('recipientCity', e.target.value)}
-          />
-        </div>
-        <div>
-          <Label htmlFor="recipientAddress">Address</Label>
-          <Input
-            id="recipientAddress"
-            value={formData.recipientAddress}
-            onChange={(e) => handleInputChange('recipientAddress', e.target.value)}
-          />
-        </div>
-      </div>
-
-      {formData.transferMethod === 'bank_transfer' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="bankName">Bank Name *</Label>
-            <Input
-              id="bankName"
-              value={formData.bankName}
-              onChange={(e) => handleInputChange('bankName', e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="accountNumber">Account Number *</Label>
-            <Input
-              id="accountNumber"
-              value={formData.accountNumber}
-              onChange={(e) => handleInputChange('accountNumber', e.target.value)}
-              required
-            />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderStep3 = () => (
-    <div className="space-y-6">
-      <Card className="bg-gray-50">
-        <CardHeader>
-          <CardTitle className="text-lg">Transfer Summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-semibold mb-2">Transfer Details</h4>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Send Amount:</span>
-                  <span>{formData.sendCurrency} {parseFloat(formData.sendAmount).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Transfer Fee:</span>
-                  <span>{formData.sendCurrency} {calculation.transferFee.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between font-semibold">
-                  <span>Total Amount:</span>
-                  <span>{formData.sendCurrency} {calculation.totalAmount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-green-600 font-semibold">
-                  <span>Recipient Gets:</span>
-                  <span>{formData.receiveCurrency} {calculation.receiveAmount.toFixed(2)}</span>
-                </div>
-              </div>
+        {/* Agent Location */}
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <MapPin className="mr-2 h-5 w-5 text-purple-600" />
+              Our Office Location
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p className="font-semibold">Gold Charp Nansana Heights</p>
+              <p className="text-sm text-gray-600">Nansana Heights, Wakiso District</p>
+              <p className="text-sm text-gray-600">Uganda</p>
+              <p className="text-sm text-gray-600">Hours: 8:00 AM - 6:00 PM</p>
+              <p className="text-sm text-gray-600">Phone: +256700000000</p>
             </div>
-            <div>
-              <h4 className="font-semibold mb-2">Recipient Information</h4>
-              <div className="space-y-1 text-sm">
-                <p><strong>Name:</strong> {formData.recipientName}</p>
-                <p><strong>Country:</strong> {formData.recipientCountry}</p>
-                <p><strong>Method:</strong> {formData.transferMethod.replace('_', ' ').toUpperCase()}</p>
-                {formData.transferMethod === 'bank_transfer' && (
-                  <>
-                    <p><strong>Bank:</strong> {formData.bankName}</p>
-                    <p><strong>Account:</strong> {formData.accountNumber}</p>
-                  </>
-                )}
-                <p><strong>Purpose:</strong> {formData.purpose.replace('_', ' ').toUpperCase()}</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="flex items-center gap-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <Shield className="h-6 w-6 text-yellow-600" />
-        <div className="text-sm">
-          <p className="font-semibold text-yellow-800">Security Notice</p>
-          <p className="text-yellow-700">Please verify all details are correct before confirming the transfer.</p>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
-  );
-
-  return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Send className="h-5 w-5" />
-          Send Money - Step {step} of 3
-        </CardTitle>
-        <div className="flex gap-2 mt-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className={`h-2 flex-1 rounded ${
-                i <= step ? 'bg-blue-600' : 'bg-gray-200'
-              }`}
-            />
-          ))}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {step === 1 && renderStep1()}
-        {step === 2 && renderStep2()}
-        {step === 3 && renderStep3()}
-
-        <div className="flex justify-between mt-8">
-          {step > 1 && (
-            <Button variant="outline" onClick={() => setStep(step - 1)}>
-              Back
-            </Button>
-          )}
-          <Button 
-            onClick={handleSubmit}
-            disabled={isLoading || !formData.sendAmount || !user}
-            className="ml-auto"
-          >
-            {isLoading ? 'Processing...' : step === 3 ? 'Confirm Transfer' : 'Next'}
-            {step < 3 && <ArrowRight className="ml-2 h-4 w-4" />}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
   );
 };
 
