@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
@@ -146,7 +147,7 @@ const Payments = () => {
   ) || [];
 
   const filteredExpenses = expensesData?.filter(expense => 
-    expense.loan_holder?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) ||
+    expense.Account?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) ||
     expense.particulars?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) || ''
   ) || [];
 
@@ -434,12 +435,12 @@ const Payments = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Loan Holder</TableHead>
+                          <TableHead>Account</TableHead>
                           <TableHead>Particulars</TableHead>
                           <TableHead>Amount</TableHead>
                           <TableHead>Expense Date</TableHead>
-                          <TableHead>Account</TableHead>
-                          <TableHead>Loan Amount</TableHead>
+                          <TableHead>Account Name</TableHead>
+                          <TableHead>Final Amount</TableHead>
                           <TableHead>Category</TableHead>
                           <TableHead>Status</TableHead>
                         </TableRow>
@@ -448,7 +449,7 @@ const Payments = () => {
                         {filteredExpenses.length > 0 ? (
                           filteredExpenses.map((expense) => (
                             <TableRow key={expense.id}>
-                              <TableCell className="font-medium">{expense.loan_holder}</TableCell>
+                              <TableCell className="font-medium">{expense.Account}</TableCell>
                               <TableCell>{expense.particulars}</TableCell>
                               <TableCell className="text-red-600 font-semibold">
                                 {formatCurrency(expense.amount)}
@@ -458,7 +459,7 @@ const Payments = () => {
                               </TableCell>
                               <TableCell>{expense.account_name || 'N/A'}</TableCell>
                               <TableCell className="text-blue-600">
-                                {formatCurrency(expense.loan_amount)}
+                                {formatCurrency(expense.Final_amount)}
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="capitalize">
