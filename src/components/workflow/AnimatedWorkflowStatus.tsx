@@ -30,6 +30,7 @@ const AnimatedWorkflowStatus: React.FC<AnimatedWorkflowStatusProps> = ({
   const [activeStage, setActiveStage] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
+  // CORRECTED WORKFLOW ORDER: Field Officer → Manager → Director → Chairperson → CEO
   const stages: WorkflowStage[] = [
     {
       id: 'field_officer',
@@ -152,6 +153,12 @@ const AnimatedWorkflowStatus: React.FC<AnimatedWorkflowStatusProps> = ({
                         >
                           In Progress
                         </motion.span>
+                      )}
+                      {/* CEO Final Decision Badge */}
+                      {stage.name === 'ceo' && (
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-medium">
+                          Final Decision
+                        </span>
                       )}
                     </div>
                     

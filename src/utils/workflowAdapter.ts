@@ -95,14 +95,15 @@ export const canUserApproveCurrentStage = (userRole: string | null, currentStage
 };
 
 /**
- * Get the next workflow stage based on current stage - UPDATED SEQUENCE
+ * Get the next workflow stage based on current stage - CORRECTED SEQUENCE
  */
 export const getNextWorkflowStage = (currentStage: string): string | null => {
+  // CORRECTED: Field Officer → Manager → Director → Chairperson → CEO
   const stages = ['field_officer', 'manager', 'director', 'chairperson', 'ceo'];
   const currentIndex = stages.indexOf(currentStage);
   
   if (currentIndex === -1 || currentIndex === stages.length - 1) {
-    return null; // Either invalid stage or already at final stage
+    return null; // Either invalid stage or already at final stage (CEO)
   }
   
   return stages[currentIndex + 1];

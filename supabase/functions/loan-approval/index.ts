@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Define workflow stages in order - Chairperson is before CEO in the approval flow
+// Define workflow stages in CORRECT order - Chairperson before CEO
 const WORKFLOW_STAGES = ['field_officer', 'manager', 'director', 'chairperson', 'ceo'];
 
 serve(async (req) => {
@@ -50,7 +50,7 @@ serve(async (req) => {
       .from('loan_applications')
       .select(`
         *,
-        loan_application_workflow (*)
+        loan_applications_workflow (*)
       `)
       .eq('id', loanId)
       .single();
@@ -66,7 +66,7 @@ serve(async (req) => {
     }
 
     // Get the current workflow and stage
-    const workflow = loanApplication.loan_application_workflow;
+    const workflow = loanApplication.loan_applications_workflow;
     const workflowId = workflow?.id;
     
     if (!workflowId) {
@@ -97,7 +97,7 @@ serve(async (req) => {
         );
       }
 
-      // Determine next stage
+      // Determine next stage and application status
       let nextStage = null;
       let applicationStatus = null;
       
@@ -107,17 +107,12 @@ serve(async (req) => {
           nextStage = WORKFLOW_STAGES[currentStageIndex + 1];
           applicationStatus = `pending_${nextStage}`;
         } else {
-          // Final approval
+          // Final approval by CEO
           applicationStatus = 'approved';
         }
       } else {
-        // If rejected, set status to rejected
+        // If rejected at any stage
         applicationStatus = 'rejected';
-        
-        // If CEO rejects, mark as final rejection
-        if (currentStage === 'ceo') {
-          applicationStatus = 'rejected_final';
-        }
       }
       
       // Fetch the approver's name for better notifications
@@ -132,7 +127,8 @@ serve(async (req) => {
       // Update the workflow record with approval/rejection
       const updateObject: Record<string, any> = {
         [`${currentStage}_approved`]: approved,
-        [`${currentStage}_notes`]: notes
+        [`${currentStage}_notes`]: notes || (approved ? 'Approved' : 'Rejected'),
+        updated_at: new Date().toISOString()
       };
       
       // Add approver name if available
@@ -147,7 +143,7 @@ serve(async (req) => {
       
       // Update workflow
       const { data: updatedWorkflow, error: workflowError } = await supabaseClient
-        .from('loan_application_workflow')
+        .from('loan_applications_workflow')
         .update(updateObject)
         .eq('id', workflowId)
         .select('*')
@@ -158,13 +154,20 @@ serve(async (req) => {
       }
 
       // Update application status
+      const appUpdateData: Record<string, any> = { 
+        status: applicationStatus,
+        last_updated: new Date().toISOString()
+      };
+
+      if (approved) {
+        appUpdateData.approval_notes = notes || 'Approved';
+      } else {
+        appUpdateData.rejection_reason = notes || 'Rejected';
+      }
+
       const { data: updatedApplication, error: applicationError } = await supabaseClient
         .from('loan_applications')
-        .update({ 
-          status: applicationStatus,
-          ...(approved ? {} : { rejection_reason: notes }),
-          last_updated: new Date().toISOString()
-        })
+        .update(appUpdateData)
         .eq('id', loanId)
         .select('*')
         .single();
@@ -180,13 +183,13 @@ serve(async (req) => {
         if (nextStage) {
           notificationMessage = `Loan application was approved by ${approverName} and moved to ${nextStage.replace('_', ' ')} stage.`;
         } else {
-          notificationMessage = `Loan application has been fully approved by ${approverName}!`;
+          notificationMessage = `🎉 FINAL APPROVAL: Loan application has been approved by CEO ${approverName}!`;
         }
       } else {
-        notificationMessage = `Loan application was rejected by ${approverName}.`;
-        
         if (currentStage === 'ceo') {
-          notificationMessage = `FINAL REJECTION: Loan application was rejected by ${approverName}.`;
+          notificationMessage = `❌ FINAL REJECTION: Loan application was rejected by CEO ${approverName}.`;
+        } else {
+          notificationMessage = `❌ Loan application was rejected by ${approverName} at ${currentStage.replace('_', ' ')} stage.`;
         }
       }
       
@@ -202,13 +205,14 @@ serve(async (req) => {
           });
       }
 
-      // Log workflow action
+      // Log workflow action with enhanced details
       await supabaseClient
         .from('loan_workflow_log')
         .insert({
           loan_application_id: loanId,
-          action: approved ? `Approved by ${currentStage}` : `Rejected by ${currentStage}`,
-          performed_by: approverId
+          action: approved ? `✅ Approved by ${currentStage}` : `❌ Rejected by ${currentStage}`,
+          performed_by: approverId,
+          status: applicationStatus
         });
 
       // Return success response
@@ -217,7 +221,9 @@ serve(async (req) => {
           success: true,
           workflow: updatedWorkflow,
           application: updatedApplication,
-          message: `Workflow ${approved ? 'approved' : 'rejected'} successfully`
+          message: `Workflow ${approved ? 'approved' : 'rejected'} successfully`,
+          isFinalDecision: currentStage === 'ceo',
+          finalResult: currentStage === 'ceo' ? (approved ? 'SUCCESSFUL' : 'FAILED') : null
         }),
         { 
           status: 200, 
