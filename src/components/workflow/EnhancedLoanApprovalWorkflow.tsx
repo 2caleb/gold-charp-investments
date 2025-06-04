@@ -45,9 +45,9 @@ interface WorkflowStage {
   chairperson_approved: boolean | null;
   field_officer_notes: string | null;
   manager_notes: string | null;
-  director_notes: string | null;
-  ceo_notes: string | null;
-  chairperson_notes: string | null;
+  director_notes: boolean | string | null; // Fixed: Handle both boolean and string types
+  ceo_notes: boolean | string | null; // Fixed: Handle both boolean and string types
+  chairperson_notes: boolean | string | null; // Fixed: Handle both boolean and string types
   created_at: string;
   updated_at: string;
 }
@@ -113,6 +113,14 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
       return data as WorkflowStage;
     },
   });
+
+  // Helper function to safely convert notes to string
+  const getNotesAsString = (notes: boolean | string | null): string => {
+    if (typeof notes === 'boolean') {
+      return notes ? 'Approved' : 'Rejected';
+    }
+    return notes || 'No notes';
+  };
 
   // Mutation for workflow actions
   const workflowMutation = useMutation({
@@ -318,7 +326,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
                   {getStageIcon('field_officer', workflow.field_officer_approved)}
                   <div>
                     <p className="font-medium">Field Officer Review</p>
-                    <p className="text-sm text-gray-600">{workflow.field_officer_notes || 'No notes'}</p>
+                    <p className="text-sm text-gray-600">{getNotesAsString(workflow.field_officer_notes)}</p>
                   </div>
                 </div>
                 <Badge variant="outline">
@@ -332,7 +340,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
                   {getStageIcon('manager', workflow.manager_approved)}
                   <div>
                     <p className="font-medium">Manager Review</p>
-                    <p className="text-sm text-gray-600">{workflow.manager_notes || 'No notes'}</p>
+                    <p className="text-sm text-gray-600">{getNotesAsString(workflow.manager_notes)}</p>
                   </div>
                 </div>
                 <Badge variant="outline">
@@ -346,7 +354,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
                   {getStageIcon('director', workflow.director_approved)}
                   <div>
                     <p className="font-medium">Director Risk Assessment</p>
-                    <p className="text-sm text-gray-600">{workflow.director_notes || 'No notes'}</p>
+                    <p className="text-sm text-gray-600">{getNotesAsString(workflow.director_notes)}</p>
                   </div>
                 </div>
                 <Badge variant="outline">
@@ -360,7 +368,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
                   {getStageIcon('ceo', workflow.ceo_approved)}
                   <div>
                     <p className="font-medium">CEO Approval</p>
-                    <p className="text-sm text-gray-600">{workflow.ceo_notes || 'No notes'}</p>
+                    <p className="text-sm text-gray-600">{getNotesAsString(workflow.ceo_notes)}</p>
                   </div>
                 </div>
                 <Badge variant="outline">
@@ -374,7 +382,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
                   {getStageIcon('chairperson', workflow.chairperson_approved)}
                   <div>
                     <p className="font-medium">Chairperson Final Approval</p>
-                    <p className="text-sm text-gray-600">{workflow.chairperson_notes || 'No notes'}</p>
+                    <p className="text-sm text-gray-600">{getNotesAsString(workflow.chairperson_notes)}</p>
                   </div>
                 </div>
                 <Badge variant="outline">
