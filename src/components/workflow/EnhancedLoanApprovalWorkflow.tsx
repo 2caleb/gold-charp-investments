@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
+import { useEnhancedWorkflow } from '@/hooks/use-enhanced-workflow';
 import { Card, CardContent } from '@/components/ui/card';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,11 +19,17 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
   const { toast } = useToast();
   const { user } = useAuth();
   const { userRole } = useRolePermissions();
-  const queryClient = useQueryClient();
   const [notes, setNotes] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const [showFinalResult, setShowFinalResult] = useState(false);
   const [finalResult, setFinalResult] = useState<'SUCCESSFUL' | 'FAILED' | null>(null);
+  
+  const { 
+    processWorkflowAction, 
+    isProcessing, 
+    ensureWorkflowExists, 
+    canTakeAction,
+    getStageDisplayName 
+  } = useEnhancedWorkflow();
 
   // Fetch loan application details
   const { data: application, isLoading: appLoading, error: appError } = useQuery({
@@ -43,7 +50,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
     },
   });
 
-  // Fetch workflow stages with improved error handling and auto-creation
+  // Fetch workflow with auto-creation if missing
   const { data: workflow, isLoading: workflowLoading, error: workflowLoadError, refetch: refetchWorkflow } = useQuery({
     queryKey: ['loan-workflow', applicationId],
     queryFn: async () => {
@@ -62,130 +69,51 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
       // If no workflow exists, create one
       if (!data) {
         console.log('No workflow found, creating new one');
-        const { data: newWorkflow, error: createError } = await supabase
-          .from('loan_applications_workflow')
-          .insert({
-            loan_application_id: applicationId,
-            current_stage: 'manager',
-            field_officer_approved: true,
-            manager_approved: null,
-            director_approved: null,
-            chairperson_approved: null,
-            ceo_approved: null,
-            field_officer_notes: 'Application submitted by field officer',
-            manager_notes: null,
-            director_notes: null,
-            chairperson_notes: null,
-            ceo_notes: null
-          })
-          .select()
-          .single();
-        
-        if (createError) {
-          console.error('Workflow creation error:', createError);
-          throw new Error(`Failed to create workflow: ${createError.message}`);
-        }
-        
-        console.log('Created new workflow:', newWorkflow);
-        return newWorkflow as WorkflowStage;
+        return await ensureWorkflowExists(applicationId);
       }
+      
       return data as WorkflowStage;
     },
     retry: 2,
     retryDelay: 1000,
   });
 
-  // Mutation for workflow actions using Supabase edge function
-  const workflowMutation = useMutation({
-    mutationFn: async ({ action, notes: actionNotes }: { action: 'approve' | 'reject', notes: string }) => {
-      if (!userRole || !workflow) {
-        throw new Error('Missing required data for workflow action');
-      }
-
-      setIsProcessing(true);
-      console.log('Processing workflow action:', { action, notes: actionNotes, userRole, applicationId });
-      
-      try {
-        const { data, error } = await supabase.functions.invoke('loan-approval', {
-          body: {
-            loan_id: applicationId,
-            action,
-            notes: actionNotes || notes,
-            approver_id: user?.id
-          }
-        });
-
-        if (error) {
-          console.error('Edge function error:', error);
-          throw new Error(error.message || 'Failed to process workflow action');
-        }
-
-        console.log('Workflow action result:', data);
-        return data;
-      } catch (error: any) {
-        console.error('Workflow mutation error:', error);
-        throw error;
-      }
-    },
-    onSuccess: (data) => {
-      setIsProcessing(false);
-      
-      // Show animated result for CEO decisions
-      if (data.isFinalDecision && data.finalResult) {
-        setFinalResult(data.finalResult);
-        setShowFinalResult(true);
-        
-        // Hide the result after 3 seconds
-        setTimeout(() => {
-          setShowFinalResult(false);
-          setFinalResult(null);
-        }, 3000);
-      }
-      
+  const handleApprove = () => {
+    if (!userRole || !workflow) {
       toast({
-        title: `Application ${data.action}d`,
-        description: data.isFinalDecision 
-          ? `Final decision: Application ${data.action}d by CEO`
-          : `The loan application has been ${data.action}d successfully.`,
-        variant: data.action === 'approve' ? 'default' : 'destructive'
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['loan-application', applicationId] });
-      queryClient.invalidateQueries({ queryKey: ['loan-workflow', applicationId] });
-      setNotes('');
-    },
-    onError: (error: any) => {
-      setIsProcessing(false);
-      console.error('Workflow action error:', error);
-      toast({
-        title: 'Action Failed',
-        description: error.message || 'Failed to process the application',
+        title: 'Error',
+        description: 'Missing required data for workflow action',
         variant: 'destructive'
       });
+      return;
     }
-  });
 
-  const canTakeAction = () => {
-    if (!workflow || !userRole) return false;
-    
-    const stageRoleMap = {
-      'manager': workflow.current_stage === 'manager',
-      'director': workflow.current_stage === 'director',
-      'chairperson': workflow.current_stage === 'chairperson',
-      'ceo': workflow.current_stage === 'ceo'
-    };
-
-    return stageRoleMap[userRole as keyof typeof stageRoleMap] || false;
-  };
-
-  const handleApprove = () => {
     console.log('Approving application with notes:', notes);
-    workflowMutation.mutate({ action: 'approve', notes });
+    processWorkflowAction({
+      applicationId,
+      action: 'approve',
+      notes,
+      userRole
+    });
   };
 
   const handleReject = () => {
+    if (!userRole || !workflow) {
+      toast({
+        title: 'Error',
+        description: 'Missing required data for workflow action',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     console.log('Rejecting application with notes:', notes);
-    workflowMutation.mutate({ action: 'reject', notes });
+    processWorkflowAction({
+      applicationId,
+      action: 'reject',
+      notes,
+      userRole
+    });
   };
 
   const handleRetryWorkflow = () => {
@@ -253,6 +181,8 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
     );
   }
 
+  const userCanTakeAction = canTakeAction(workflow, userRole);
+
   return (
     <div className="space-y-6">
       <FinalResultAnimation 
@@ -264,7 +194,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
 
       <WorkflowStagesCard workflow={workflow} application={application} />
 
-      {canTakeAction() && (
+      {userCanTakeAction && (
         <WorkflowActionCard
           userRole={userRole}
           notes={notes}
@@ -275,12 +205,12 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
         />
       )}
 
-      {!canTakeAction() && userRole && (
+      {!userCanTakeAction && userRole && (
         <Card>
           <CardContent className="p-6">
             <div className="text-center text-gray-600">
               <p>You don't have permission to take action on this application at its current stage.</p>
-              <p className="mt-2">Current stage: <span className="font-semibold capitalize">{workflow.current_stage}</span></p>
+              <p className="mt-2">Current stage: <span className="font-semibold">{getStageDisplayName(workflow.current_stage)}</span></p>
               <p>Your role: <span className="font-semibold capitalize">{userRole}</span></p>
             </div>
           </CardContent>

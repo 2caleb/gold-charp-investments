@@ -1,160 +1,45 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
-import { FilePlus, Eye, Loader2, AlertTriangle, InfoIcon, UserRound, Phone, Medal, Briefcase, DollarSign, Filter } from 'lucide-react';
+import { FilePlus, Eye, Loader2, AlertTriangle, InfoIcon, UserRound, Phone, Filter, RefreshCw } from 'lucide-react';
 import { DataCollectionButton } from '@/components/loans/DataCollectionButton';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useRolePermissions } from '@/hooks/use-role-permissions';
 import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
+import { useDashboardData } from '@/hooks/use-dashboard-data';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-interface LoanApplication {
-  id: string;
-  created_at: string;
-  client_name: string;
-  loan_type: string;
-  loan_amount: string;
-  status: string;
-  loan_id: string;
-  id_number?: string;
-  phone_number?: string;
-  employment_status?: string;
-  monthly_income?: number;
-  purpose_of_loan?: string;
-}
 
 interface FilterOption {
   label: string;
   value: string;
 }
 
-interface ClientData {
-  id: string;
-  full_name: string;
-  id_number: string;
-  phone_number: string;
-  email?: string;
-  employment_status: string;
-  monthly_income: number;
-  created_at: string;
-}
-
 const LoanApplicationsList = () => {
   useDesktopRedirect();
-  const [loans, setLoans] = useState<LoanApplication[]>([]);
-  const [clients, setClients] = useState<Record<string, ClientData>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const permissions = useRolePermissions();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('compact');
-  const [employmentFilter, setEmploymentFilter] = useState('');
+  
+  const { 
+    applications, 
+    isLoading, 
+    error, 
+    refreshData,
+    getWorkflowStatus 
+  } = useDashboardData();
 
-  const fetchClientsData = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('client_name')
-        .select('*');
-
-      if (error) {
-        throw error;
-      }
-
-      // Create a mapping of client data for easy access
-      const clientsMap: Record<string, ClientData> = {};
-      data?.forEach(client => {
-        clientsMap[client.id] = client as ClientData;
-        // Also map by name for easier lookup
-        clientsMap[client.full_name] = client as ClientData;
-      });
-
-      setClients(clientsMap);
-    } catch (err: any) {
-      console.error('Error fetching clients:', err);
-    }
-  };
-
-  const fetchLoans = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('loan_applications')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        throw error;
-      }
-
-      // Enrich loan data with client details
-      const enrichedLoans = data?.map((loan: any) => {
-        return {
-          ...loan,
-          // Ensure we have all required fields, even if they're not in the DB
-          id_number: loan.id_number || '',
-          phone_number: loan.phone_number || '',
-          employment_status: loan.employment_status || '',
-          monthly_income: loan.monthly_income || 0,
-          purpose_of_loan: loan.purpose_of_loan || ''
-        };
-      }) as LoanApplication[];
-
-      setLoans(enrichedLoans);
-      setLoading(false);
-    } catch (err: any) {
-      setError(err.message);
-      setLoading(false);
-      toast({
-        title: "Error fetching loans",
-        description: err.message || 'Could not load loan applications',
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    // First fetch clients, then fetch loans
-    fetchClientsData().then(() => fetchLoans());
-  }, []);
-
-  const filteredLoans = loans.filter(loan => {
+  const filteredApplications = applications.filter(application => {
     const searchRegex = new RegExp(searchTerm, 'i');
-    const statusMatch = statusFilter ? loan.status === statusFilter : true;
-    const employmentMatch = employmentFilter 
-      ? loan.employment_status === employmentFilter 
-      : true;
+    const statusMatch = statusFilter ? application.status === statusFilter : true;
 
-    return (searchRegex.test(loan.client_name) || 
-            searchRegex.test(loan.id_number || '') || 
-            searchRegex.test(loan.phone_number || '')) && 
-            statusMatch && employmentMatch;
+    return (searchRegex.test(application.client_name) || 
+            searchRegex.test(application.id_number || '') || 
+            searchRegex.test(application.phone_number || '')) && 
+            statusMatch;
   });
-
-  // Helper function to find client data for a loan
-  const findClientData = (loan: LoanApplication): ClientData | null => {
-    // Try to find client by ID first, then by name
-    return clients[loan.client_name] || null;
-  };
-
-  // Enrich loan with client data
-  const enrichLoan = (loan: LoanApplication): LoanApplication => {
-    const clientData = findClientData(loan);
-    if (!clientData) return loan;
-
-    return {
-      ...loan,
-      id_number: loan.id_number || clientData.id_number || '',
-      phone_number: loan.phone_number || clientData.phone_number || '',
-      employment_status: loan.employment_status || clientData.employment_status || '',
-      monthly_income: loan.monthly_income || clientData.monthly_income || 0
-    };
-  };
 
   const statusOptions: FilterOption[] = [
     { label: 'All Statuses', value: '' },
@@ -167,15 +52,6 @@ const LoanApplicationsList = () => {
     { label: 'Rejected', value: 'rejected' },
     { label: 'Disbursed', value: 'disbursed' },
     { label: 'Completed', value: 'completed' },
-  ];
-
-  const employmentOptions: FilterOption[] = [
-    { label: 'All Employment', value: '' },
-    { label: 'Employed', value: 'Employed' },
-    { label: 'Self-Employed', value: 'Self-Employed' },
-    { label: 'Unemployed', value: 'Unemployed' },
-    { label: 'Business Owner', value: 'Business Owner' },
-    { label: 'Retired', value: 'Retired' },
   ];
 
   const getStatusBadgeColor = (status: string): string => {
@@ -204,12 +80,21 @@ const LoanApplicationsList = () => {
           <div>
             <h1 className="text-3xl font-bold dark:text-white">Loan Applications</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              View and manage all loan applications
+              View and manage all loan applications ({applications.length} total)
             </p>
           </div>
           <div className="flex space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={refreshData}
+              className="flex items-center"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
             <DataCollectionButton onDataCollected={() => {
-              fetchLoans();
+              refreshData();
               toast({
                 title: "Application created",
                 description: "A new loan application has been created via client data collection"
@@ -224,7 +109,7 @@ const LoanApplicationsList = () => {
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="search" className="block text-sm font-medium mb-1">Search</label>
             <div className="relative">
@@ -258,25 +143,6 @@ const LoanApplicationsList = () => {
               <Filter className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             </div>
           </div>
-          
-          <div>
-            <label htmlFor="employment" className="block text-sm font-medium mb-1">Employment</label>
-            <div className="relative">
-              <select
-                id="employment"
-                className="border rounded px-4 py-2 w-full appearance-none pl-10"
-                value={employmentFilter}
-                onChange={e => setEmploymentFilter(e.target.value)}
-              >
-                {employmentOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <Briefcase className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-            </div>
-          </div>
         </div>
           
         <div className="flex justify-end mb-4">
@@ -298,7 +164,7 @@ const LoanApplicationsList = () => {
           </div>
         </div>
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center items-center py-12">
             <Loader2 className="mr-2 h-6 w-6 animate-spin" />
             <span>Loading applications...</span>
@@ -306,128 +172,103 @@ const LoanApplicationsList = () => {
         ) : error ? (
           <div className="text-red-500">
             <AlertTriangle className="mr-2 inline-block" />
-            Error: {error}
+            Error: {error.message}
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white dark:bg-gray-800 shadow-md rounded-md">
               <thead>
                 <tr className="border-b">
-                  <th className="py-3 px-4 text-left">Loan ID</th>
                   <th className="py-3 px-4 text-left">Date</th>
                   <th className="py-3 px-4 text-left">Client</th>
                   {viewMode === 'detailed' && (
-                    <>
-                      <th className="py-3 px-4 text-left">Contact</th>
-                      <th className="py-3 px-4 text-left">Employment</th>
-                    </>
+                    <th className="py-3 px-4 text-left">Contact</th>
                   )}
                   <th className="py-3 px-4 text-left">Loan Type</th>
                   <th className="py-3 px-4 text-left">Amount</th>
-                  {viewMode === 'detailed' && (
-                    <th className="py-3 px-4 text-left">Purpose</th>
-                  )}
                   <th className="py-3 px-4 text-left">Status</th>
+                  <th className="py-3 px-4 text-left">Workflow</th>
                   <th className="py-3 px-4 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredLoans.map(loan => {
-                  const enrichedLoan = enrichLoan(loan);
-                  return (
-                    <tr key={loan.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="py-3 px-4 font-mono text-sm">{loan.loan_id}</td>
-                      <td className="py-3 px-4">{new Date(loan.created_at).toLocaleDateString()}</td>
+                {filteredApplications.map(application => (
+                  <tr key={application.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="py-3 px-4">{new Date(application.created_at).toLocaleDateString()}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center">
+                        <UserRound className="h-4 w-4 text-gray-500 mr-2" />
+                        <span>{application.client_name}</span>
+                      </div>
+                      {application.id_number && viewMode === 'compact' && (
+                        <span className="text-xs text-gray-500 block">ID: {application.id_number}</span>
+                      )}
+                    </td>
+                    
+                    {viewMode === 'detailed' && (
                       <td className="py-3 px-4">
-                        <div className="flex items-center">
-                          <UserRound className="h-4 w-4 text-gray-500 mr-2" />
-                          <span>{enrichedLoan.client_name}</span>
-                        </div>
-                        {enrichedLoan.id_number && viewMode === 'compact' && (
-                          <span className="text-xs text-gray-500 block">ID: {enrichedLoan.id_number}</span>
+                        {application.phone_number && (
+                          <div className="flex items-center">
+                            <Phone className="h-4 w-4 text-gray-500 mr-1" />
+                            <span>{application.phone_number}</span>
+                          </div>
                         )}
+                        <span className="text-xs text-gray-500 block">ID: {application.id_number || 'N/A'}</span>
                       </td>
-                      
-                      {viewMode === 'detailed' && (
-                        <>
-                          <td className="py-3 px-4">
-                            {enrichedLoan.phone_number && (
-                              <div className="flex items-center">
-                                <Phone className="h-4 w-4 text-gray-500 mr-1" />
-                                <span>{enrichedLoan.phone_number}</span>
-                              </div>
-                            )}
-                            <span className="text-xs text-gray-500 block">ID: {enrichedLoan.id_number || 'N/A'}</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <Badge variant="outline" className={
-                              enrichedLoan.employment_status === 'Employed' ? 'bg-green-100 text-green-800' : 
-                              enrichedLoan.employment_status === 'Self-Employed' ? 'bg-blue-100 text-blue-800' :
-                              enrichedLoan.employment_status === 'Unemployed' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-800'
-                            }>
-                              {enrichedLoan.employment_status || 'Unknown'}
-                            </Badge>
-                            <div className="text-xs text-gray-500 mt-1">
-                              Income: {formatCurrency(enrichedLoan.monthly_income || 0)}
-                            </div>
-                          </td>
-                        </>
-                      )}
-                      
-                      <td className="py-3 px-4">
-                        <Badge variant="outline" className="bg-gray-100 text-gray-800">
-                          {enrichedLoan.loan_type}
-                        </Badge>
-                      </td>
-                      
-                      <td className="py-3 px-4 font-medium">{formatCurrency(enrichedLoan.loan_amount)}</td>
-                      
-                      {viewMode === 'detailed' && (
-                        <td className="py-3 px-4 max-w-xs truncate" title={enrichedLoan.purpose_of_loan || ''}>
-                          {enrichedLoan.purpose_of_loan || 'N/A'}
-                        </td>
-                      )}
-                      
-                      <td className="py-3 px-4">
-                        <Badge className={getStatusBadgeColor(enrichedLoan.status)}>
-                          {enrichedLoan.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </Badge>
-                      </td>
-                      
-                      <td className="py-3 px-4">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Link to={`/loan-applications/${loan.id}`}>
-                                <Button variant="outline" size="sm">
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  View
-                                </Button>
-                              </Link>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>View complete application details</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </td>
-                    </tr>
-                  );
-                })}
+                    )}
+                    
+                    <td className="py-3 px-4">
+                      <Badge variant="outline" className="bg-gray-100 text-gray-800">
+                        {application.loan_type}
+                      </Badge>
+                    </td>
+                    
+                    <td className="py-3 px-4 font-medium">{formatCurrency(application.loan_amount)}</td>
+                    
+                    <td className="py-3 px-4">
+                      <Badge className={getStatusBadgeColor(application.status)}>
+                        {application.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </Badge>
+                    </td>
+
+                    <td className="py-3 px-4">
+                      <span className="text-xs text-gray-600">
+                        {getWorkflowStatus(application)}
+                      </span>
+                    </td>
+                    
+                    <td className="py-3 px-4">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Link to={`/loan-applications/${application.id}`}>
+                              <Button variant="outline" size="sm">
+                                <Eye className="mr-2 h-4 w-4" />
+                                Review
+                              </Button>
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Review application and take workflow actions</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
         )}
         
-        {!loading && filteredLoans.length === 0 && (
+        {!isLoading && filteredApplications.length === 0 && (
           <div className="text-center py-10">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
               <InfoIcon className="h-8 w-8 text-gray-500" />
             </div>
             <h3 className="text-lg font-medium mb-2">No loan applications found</h3>
             <p className="text-gray-500 mb-4">
-              {searchTerm || statusFilter || employmentFilter
+              {searchTerm || statusFilter
                 ? 'Try adjusting your search filters' 
                 : 'Start by creating a new loan application'}
             </p>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -9,13 +8,22 @@ import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
 import { DataCollectionButton } from '@/components/loans/data-collection/DataCollectionButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { LoanApplicationValues } from '@/types/loan';
+import { useLoanApplicationForm } from '@/hooks/use-loan-application-form';
 
 const NewLoanApplication = () => {
   // Force desktop view for better UX
   useDesktopRedirect();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Use the real loan application form hook
+  const {
+    handleSubmit,
+    isSubmitting,
+    clients,
+    isLoadingClients,
+    submissionError
+  } = useLoanApplicationForm();
 
   const handleDataCollected = (data: any) => {
     toast({
@@ -26,18 +34,29 @@ const NewLoanApplication = () => {
     setTimeout(() => navigate('/loan-applications'), 1500);
   };
 
-  // Empty dummy clients array and loading state for the LoanApplicationForm
-  const dummyClients = [];
-  const dummyIsLoadingClients = false;
-
-  // Create dummy submission handler
-  const handleSubmit = async (data: LoanApplicationValues) => {
-    console.log("Form submitted:", data);
-    toast({
-      title: "Loan Application Submitted",
-      description: "Your loan application has been successfully submitted",
-    });
-    return data; // Return data to make it a Promise<any>
+  const onFormSubmit = async (data: any) => {
+    console.log("Submitting loan application:", data);
+    
+    try {
+      const result = await handleSubmit(data);
+      
+      if (result) {
+        toast({
+          title: "Application Submitted Successfully",
+          description: "Your loan application has been submitted and is now in the approval workflow.",
+        });
+        
+        // Navigate to the workflow page for this application
+        navigate(`/loan-applications/${result.id}`);
+      }
+    } catch (error: any) {
+      console.error("Application submission error:", error);
+      toast({
+        title: "Submission Failed",
+        description: error.message || "Failed to submit loan application. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -131,6 +150,12 @@ const NewLoanApplication = () => {
           </div>
 
           <div className="mx-auto max-w-4xl animate-fade-in">
+            {submissionError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 text-sm">{submissionError}</p>
+              </div>
+            )}
+            
             <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-xl">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-900/10 dark:to-transparent">
                 <h2 className="text-2xl font-serif font-bold flex items-center text-blue-900 dark:text-blue-400">
@@ -142,10 +167,10 @@ const NewLoanApplication = () => {
                 </p>
               </div>
               <LoanApplicationForm 
-                onSubmit={handleSubmit}
-                isSubmitting={false}
-                clients={dummyClients}
-                isLoadingClients={dummyIsLoadingClients}
+                onSubmit={onFormSubmit}
+                isSubmitting={isSubmitting}
+                clients={clients}
+                isLoadingClients={isLoadingClients}
               />
             </div>
             
