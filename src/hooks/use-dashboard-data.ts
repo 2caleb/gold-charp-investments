@@ -28,8 +28,21 @@ interface LoanApplicationWithWorkflow {
   loan_type: string;
   status: string;
   created_at: string;
-  current_stage?: string;
-  workflow_status?: string;
+  id_number: string;
+  phone_number: string;
+  monthly_income: number;
+  employment_status: string;
+  address: string;
+  purpose_of_loan: string;
+  current_approver: string;
+  loan_applications_workflow?: Array<{
+    current_stage: string;
+    field_officer_approved: boolean | null;
+    manager_approved: boolean | null;
+    director_approved: boolean | null;
+    chairperson_approved: boolean | null;
+    ceo_approved: boolean | null;
+  }>;
 }
 
 export const useDashboardData = () => {

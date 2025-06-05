@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { WorkflowStage } from '@/components/workflow/types';
 
 interface WorkflowActionParams {
   applicationId: string;
@@ -95,19 +96,19 @@ export const useEnhancedWorkflow = () => {
   });
 
   // Function to ensure workflow exists for an application
-  const ensureWorkflowExists = async (applicationId: string) => {
+  const ensureWorkflowExists = async (applicationId: string): Promise<WorkflowStage> => {
     try {
       console.log('Checking if workflow exists for application:', applicationId);
       
       const { data: existingWorkflow } = await supabase
         .from('loan_applications_workflow')
-        .select('id')
+        .select('*')
         .eq('loan_application_id', applicationId)
         .maybeSingle();
 
       if (existingWorkflow) {
         console.log('Workflow already exists:', existingWorkflow.id);
-        return existingWorkflow;
+        return existingWorkflow as WorkflowStage;
       }
 
       // Create new workflow
@@ -137,7 +138,7 @@ export const useEnhancedWorkflow = () => {
       }
 
       console.log('Successfully created workflow:', newWorkflow);
-      return newWorkflow;
+      return newWorkflow as WorkflowStage;
     } catch (error: any) {
       console.error('Error ensuring workflow exists:', error);
       throw error;
