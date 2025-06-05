@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,9 +47,9 @@ interface WorkflowStage {
   chairperson_approved: boolean | null;
   field_officer_notes: string | null;
   manager_notes: string | null;
-  director_notes: string | null;
-  ceo_notes: string | null;
-  chairperson_notes: string | null;
+  director_notes: boolean | null; // This matches the database schema
+  ceo_notes: boolean | null; // This matches the database schema
+  chairperson_notes: boolean | null; // This matches the database schema
   created_at: string;
   updated_at: string;
 }
@@ -99,7 +100,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
         throw new Error(`Failed to load workflow: ${error.message}`);
       }
       
-      // If no workflow exists, create one with proper string values
+      // If no workflow exists, create one with proper field types
       if (!data) {
         console.log('No workflow found, creating new one');
         const { data: newWorkflow, error: createError } = await supabase
@@ -133,9 +134,10 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
     retryDelay: 1000,
   });
 
-  // Helper function to safely convert notes to string
-  const getNotesAsString = (notes: string | null | undefined): string => {
+  // Helper function to safely convert notes to string - handles both string and boolean fields
+  const getNotesAsString = (notes: string | boolean | null | undefined): string => {
     if (!notes) return 'No notes';
+    if (typeof notes === 'boolean') return 'No notes';
     return notes;
   };
 
