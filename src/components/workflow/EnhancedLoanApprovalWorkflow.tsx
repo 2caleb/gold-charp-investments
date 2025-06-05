@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -84,7 +83,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
     },
   });
 
-  // Fetch workflow stages with improved error handling
+  // Fetch workflow stages with improved error handling and auto-creation
   const { data: workflow, isLoading: workflowLoading, error: workflowLoadError } = useQuery({
     queryKey: ['loan-workflow', applicationId],
     queryFn: async () => {
@@ -100,7 +99,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
         throw new Error(`Failed to load workflow: ${error.message}`);
       }
       
-      // If no workflow exists, create one
+      // If no workflow exists, create one with proper string values
       if (!data) {
         console.log('No workflow found, creating new one');
         const { data: newWorkflow, error: createError } = await supabase
@@ -109,7 +108,15 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
             loan_application_id: applicationId,
             current_stage: 'manager',
             field_officer_approved: true,
-            field_officer_notes: 'Application submitted by field officer'
+            manager_approved: null,
+            director_approved: null,
+            chairperson_approved: null,
+            ceo_approved: null,
+            field_officer_notes: 'Application submitted by field officer',
+            manager_notes: null,
+            director_notes: null,
+            chairperson_notes: null,
+            ceo_notes: null
           })
           .select()
           .single();
