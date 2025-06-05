@@ -23,7 +23,6 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
   const [isProcessing, setIsProcessing] = useState(false);
   const [showFinalResult, setShowFinalResult] = useState(false);
   const [finalResult, setFinalResult] = useState<'SUCCESSFUL' | 'FAILED' | null>(null);
-  const [workflowError, setWorkflowError] = useState<string | null>(null);
 
   // Fetch loan application details
   const { data: application, isLoading: appLoading, error: appError } = useQuery({
@@ -45,7 +44,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
   });
 
   // Fetch workflow stages with improved error handling and auto-creation
-  const { data: workflow, isLoading: workflowLoading, error: workflowLoadError } = useQuery({
+  const { data: workflow, isLoading: workflowLoading, error: workflowLoadError, refetch: refetchWorkflow } = useQuery({
     queryKey: ['loan-workflow', applicationId],
     queryFn: async () => {
       console.log('Fetching workflow for:', applicationId);
@@ -60,7 +59,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
         throw new Error(`Failed to load workflow: ${error.message}`);
       }
       
-      // If no workflow exists, create one with proper field types
+      // If no workflow exists, create one
       if (!data) {
         console.log('No workflow found, creating new one');
         const { data: newWorkflow, error: createError } = await supabase
@@ -86,6 +85,8 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
           console.error('Workflow creation error:', createError);
           throw new Error(`Failed to create workflow: ${createError.message}`);
         }
+        
+        console.log('Created new workflow:', newWorkflow);
         return newWorkflow as WorkflowStage;
       }
       return data as WorkflowStage;
@@ -94,7 +95,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
     retryDelay: 1000,
   });
 
-  // Mutation for workflow actions
+  // Mutation for workflow actions using Supabase edge function
   const workflowMutation = useMutation({
     mutationFn: async ({ action, notes: actionNotes }: { action: 'approve' | 'reject', notes: string }) => {
       if (!userRole || !workflow) {
@@ -102,28 +103,25 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
       }
 
       setIsProcessing(true);
+      console.log('Processing workflow action:', { action, notes: actionNotes, userRole, applicationId });
       
       try {
-        const response = await fetch('/api/loan-approval', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
+        const { data, error } = await supabase.functions.invoke('loan-approval', {
+          body: {
             loan_id: applicationId,
             action,
             notes: actionNotes || notes,
             approver_id: user?.id
-          }),
+          }
         });
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to process workflow action');
+        if (error) {
+          console.error('Edge function error:', error);
+          throw new Error(error.message || 'Failed to process workflow action');
         }
 
-        const result = await response.json();
-        return result;
+        console.log('Workflow action result:', data);
+        return data;
       } catch (error: any) {
         console.error('Workflow mutation error:', error);
         throw error;
@@ -159,7 +157,6 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
     onError: (error: any) => {
       setIsProcessing(false);
       console.error('Workflow action error:', error);
-      setWorkflowError(error.message);
       toast({
         title: 'Action Failed',
         description: error.message || 'Failed to process the application',
@@ -182,11 +179,18 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
   };
 
   const handleApprove = () => {
+    console.log('Approving application with notes:', notes);
     workflowMutation.mutate({ action: 'approve', notes });
   };
 
   const handleReject = () => {
+    console.log('Rejecting application with notes:', notes);
     workflowMutation.mutate({ action: 'reject', notes });
+  };
+
+  const handleRetryWorkflow = () => {
+    console.log('Retrying workflow creation for application:', applicationId);
+    refetchWorkflow();
   };
 
   if (appLoading || workflowLoading) {
@@ -211,19 +215,16 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
     );
   }
 
-  if (workflowLoadError || workflowError) {
+  if (workflowLoadError) {
     return (
       <Card className="border-red-200">
         <CardContent className="p-6">
           <div className="flex items-center text-red-600 mb-4">
             <AlertTriangle className="h-5 w-5 mr-2" />
-            <span>Workflow Error: {workflowLoadError?.message || workflowError}</span>
+            <span>Workflow Error: {workflowLoadError.message}</span>
           </div>
           <Button 
-            onClick={() => {
-              setWorkflowError(null);
-              queryClient.invalidateQueries({ queryKey: ['loan-workflow', applicationId] });
-            }}
+            onClick={handleRetryWorkflow}
             variant="outline"
           >
             Retry Loading Workflow
@@ -237,10 +238,16 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
     return (
       <Card className="border-yellow-200">
         <CardContent className="p-6">
-          <div className="flex items-center text-yellow-600">
+          <div className="flex items-center text-yellow-600 mb-4">
             <AlertTriangle className="h-5 w-5 mr-2" />
             <span>Creating workflow for this application...</span>
           </div>
+          <Button 
+            onClick={handleRetryWorkflow}
+            variant="outline"
+          >
+            Retry Creating Workflow
+          </Button>
         </CardContent>
       </Card>
     );
@@ -266,6 +273,18 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
           onApprove={handleApprove}
           onReject={handleReject}
         />
+      )}
+
+      {!canTakeAction() && userRole && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-gray-600">
+              <p>You don't have permission to take action on this application at its current stage.</p>
+              <p className="mt-2">Current stage: <span className="font-semibold capitalize">{workflow.current_stage}</span></p>
+              <p>Your role: <span className="font-semibold capitalize">{userRole}</span></p>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
