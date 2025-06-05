@@ -47,9 +47,9 @@ interface WorkflowStage {
   chairperson_approved: boolean | null;
   field_officer_notes: string | null;
   manager_notes: string | null;
-  director_notes: boolean | string | null;
-  ceo_notes: boolean | string | null;
-  chairperson_notes: boolean | string | null;
+  director_notes: string | null;
+  ceo_notes: string | null;
+  chairperson_notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -63,6 +63,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
   const [isProcessing, setIsProcessing] = useState(false);
   const [showFinalResult, setShowFinalResult] = useState(false);
   const [finalResult, setFinalResult] = useState<'SUCCESSFUL' | 'FAILED' | null>(null);
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
 
   // Fetch loan application details
   const { data: application, isLoading: appLoading, error: appError } = useQuery({
@@ -77,14 +78,14 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
       
       if (error) {
         console.error('Application fetch error:', error);
-        throw error;
+        throw new Error(`Failed to load application: ${error.message}`);
       }
       return data as LoanApplication;
     },
   });
 
-  // Fetch workflow stages
-  const { data: workflow, isLoading: workflowLoading } = useQuery({
+  // Fetch workflow stages with improved error handling
+  const { data: workflow, isLoading: workflowLoading, error: workflowLoadError } = useQuery({
     queryKey: ['loan-workflow', applicationId],
     queryFn: async () => {
       console.log('Fetching workflow for:', applicationId);
@@ -92,122 +93,79 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
         .from('loan_applications_workflow')
         .select('*')
         .eq('loan_application_id', applicationId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Workflow fetch error:', error);
-        // Create workflow if it doesn't exist
+        throw new Error(`Failed to load workflow: ${error.message}`);
+      }
+      
+      // If no workflow exists, create one
+      if (!data) {
+        console.log('No workflow found, creating new one');
         const { data: newWorkflow, error: createError } = await supabase
           .from('loan_applications_workflow')
           .insert({
             loan_application_id: applicationId,
             current_stage: 'manager',
             field_officer_approved: true,
-            field_officer_notes: 'Application submitted'
+            field_officer_notes: 'Application submitted by field officer'
           })
           .select()
           .single();
         
         if (createError) {
           console.error('Workflow creation error:', createError);
-          throw createError;
+          throw new Error(`Failed to create workflow: ${createError.message}`);
         }
         return newWorkflow as WorkflowStage;
       }
       return data as WorkflowStage;
     },
+    retry: 2,
+    retryDelay: 1000,
   });
 
   // Helper function to safely convert notes to string
-  const getNotesAsString = (notes: boolean | string | null): string => {
-    if (typeof notes === 'boolean') {
-      return notes ? 'Approved' : 'Rejected';
-    }
-    return notes || 'No notes';
+  const getNotesAsString = (notes: string | null | undefined): string => {
+    if (!notes) return 'No notes';
+    return notes;
   };
 
   // Mutation for workflow actions
   const workflowMutation = useMutation({
     mutationFn: async ({ action, notes: actionNotes }: { action: 'approve' | 'reject', notes: string }) => {
+      if (!userRole || !workflow) {
+        throw new Error('Missing required data for workflow action');
+      }
+
       setIsProcessing(true);
       
-      // CORRECTED roleMap with proper sequence: Field Officer → Manager → Director → Chairperson → CEO
-      const roleMap = {
-        'manager': { approved: 'manager_approved', notes: 'manager_notes', nextStage: 'director' },
-        'director': { approved: 'director_approved', notes: 'director_notes', nextStage: 'chairperson' },
-        'chairperson': { approved: 'chairperson_approved', notes: 'chairperson_notes', nextStage: 'ceo' },
-        'ceo': { approved: 'ceo_approved', notes: 'ceo_notes', nextStage: 'completed' }
-      };
-
-      const currentRole = userRole;
-      const roleConfig = roleMap[currentRole as keyof typeof roleMap];
-
-      if (!roleConfig) {
-        throw new Error('Invalid role for this action');
-      }
-
-      const updates: any = {
-        [roleConfig.approved]: action === 'approve',
-        [roleConfig.notes]: actionNotes || notes,
-        updated_at: new Date().toISOString()
-      };
-
-      if (action === 'approve') {
-        updates.current_stage = roleConfig.nextStage;
-      } else {
-        updates.current_stage = 'rejected';
-      }
-
-      // Update workflow
-      const { error: workflowError } = await supabase
-        .from('loan_applications_workflow')
-        .update(updates)
-        .eq('loan_application_id', applicationId);
-
-      if (workflowError) throw workflowError;
-
-      // Update main application status
-      const newStatus = action === 'approve' 
-        ? (roleConfig.nextStage === 'completed' ? 'approved' : `pending_${roleConfig.nextStage}`)
-        : 'rejected';
-
-      const appUpdates: any = {
-        status: newStatus,
-        last_updated: new Date().toISOString()
-      };
-
-      if (action === 'approve') {
-        appUpdates.approval_notes = actionNotes || notes;
-      } else {
-        appUpdates.rejection_reason = actionNotes || notes;
-      }
-
-      const { error: appError } = await supabase
-        .from('loan_applications')
-        .update(appUpdates)
-        .eq('id', applicationId);
-
-      if (appError) throw appError;
-
-      // Log workflow action
-      await supabase
-        .from('loan_workflow_log')
-        .insert({
-          loan_application_id: applicationId,
-          action: action === 'approve' ? `Approved by ${currentRole}` : `Rejected by ${currentRole}`,
-          performed_by: user?.id || '',
-          status: newStatus
+      try {
+        const response = await fetch('/api/loan-approval', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            loan_id: applicationId,
+            action,
+            notes: actionNotes || notes,
+            approver_id: user?.id
+          }),
         });
 
-      // Check if this is a final decision by CEO
-      const isFinalDecision = currentRole === 'ceo';
-      let finalResultValue = null;
-      
-      if (isFinalDecision) {
-        finalResultValue = action === 'approve' ? 'SUCCESSFUL' : 'FAILED';
-      }
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to process workflow action');
+        }
 
-      return { action, newStatus, isFinalDecision, finalResult: finalResultValue };
+        const result = await response.json();
+        return result;
+      } catch (error: any) {
+        console.error('Workflow mutation error:', error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
       setIsProcessing(false);
@@ -239,6 +197,7 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
     onError: (error: any) => {
       setIsProcessing(false);
       console.error('Workflow action error:', error);
+      setWorkflowError(error.message);
       toast({
         title: 'Action Failed',
         description: error.message || 'Failed to process the application',
@@ -287,7 +246,42 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
         <CardContent className="p-6">
           <div className="flex items-center text-red-600">
             <AlertTriangle className="h-5 w-5 mr-2" />
-            <span>Failed to load application details. Please try again.</span>
+            <span>Failed to load application details: {appError?.message || 'Unknown error'}</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (workflowLoadError || workflowError) {
+    return (
+      <Card className="border-red-200">
+        <CardContent className="p-6">
+          <div className="flex items-center text-red-600 mb-4">
+            <AlertTriangle className="h-5 w-5 mr-2" />
+            <span>Workflow Error: {workflowLoadError?.message || workflowError}</span>
+          </div>
+          <Button 
+            onClick={() => {
+              setWorkflowError(null);
+              queryClient.invalidateQueries({ queryKey: ['loan-workflow', applicationId] });
+            }}
+            variant="outline"
+          >
+            Retry Loading Workflow
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!workflow) {
+    return (
+      <Card className="border-yellow-200">
+        <CardContent className="p-6">
+          <div className="flex items-center text-yellow-600">
+            <Clock className="h-5 w-5 mr-2" />
+            <span>Creating workflow for this application...</span>
           </div>
         </CardContent>
       </Card>
@@ -389,118 +383,116 @@ const EnhancedLoanApprovalWorkflow: React.FC<WorkflowProps> = ({ applicationId }
       </Card>
 
       {/* Workflow Progress - CORRECTED ORDER */}
-      {workflow && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Approval Workflow</CardTitle>
-            <Badge className={`w-fit ${
-              application.status === 'approved' ? 'bg-green-500' :
-              application.status === 'rejected' ? 'bg-red-500' :
-              'bg-yellow-500'
-            }`}>
-              {application.status.replace('_', ' ').toUpperCase()}
-            </Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Field Officer */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  {getStageIcon('field_officer', workflow.field_officer_approved)}
-                  <div>
-                    <p className="font-medium">Field Officer Review</p>
-                    <p className="text-sm text-gray-600">{getNotesAsString(workflow.field_officer_notes)}</p>
-                  </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Approval Workflow</CardTitle>
+          <Badge className={`w-fit ${
+            application.status === 'approved' ? 'bg-green-500' :
+            application.status === 'rejected' ? 'bg-red-500' :
+            'bg-yellow-500'
+          }`}>
+            {application.status.replace('_', ' ').toUpperCase()}
+          </Badge>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Field Officer */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            >
+              <div className="flex items-center space-x-3">
+                {getStageIcon('field_officer', workflow.field_officer_approved)}
+                <div>
+                  <p className="font-medium">Field Officer Review</p>
+                  <p className="text-sm text-gray-600">{getNotesAsString(workflow.field_officer_notes)}</p>
                 </div>
-                <Badge variant="outline">
-                  {getStageStatus('field_officer', workflow.field_officer_approved)}
-                </Badge>
-              </motion.div>
+              </div>
+              <Badge variant="outline">
+                {getStageStatus('field_officer', workflow.field_officer_approved)}
+              </Badge>
+            </motion.div>
 
-              {/* Manager */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  {getStageIcon('manager', workflow.manager_approved)}
-                  <div>
-                    <p className="font-medium">Manager Review</p>
-                    <p className="text-sm text-gray-600">{getNotesAsString(workflow.manager_notes)}</p>
-                  </div>
+            {/* Manager */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            >
+              <div className="flex items-center space-x-3">
+                {getStageIcon('manager', workflow.manager_approved)}
+                <div>
+                  <p className="font-medium">Manager Review</p>
+                  <p className="text-sm text-gray-600">{getNotesAsString(workflow.manager_notes)}</p>
                 </div>
-                <Badge variant="outline">
-                  {getStageStatus('manager', workflow.manager_approved)}
-                </Badge>
-              </motion.div>
+              </div>
+              <Badge variant="outline">
+                {getStageStatus('manager', workflow.manager_approved)}
+              </Badge>
+            </motion.div>
 
-              {/* Director */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  {getStageIcon('director', workflow.director_approved)}
-                  <div>
-                    <p className="font-medium">Director Risk Assessment</p>
-                    <p className="text-sm text-gray-600">{getNotesAsString(workflow.director_notes)}</p>
-                  </div>
+            {/* Director */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            >
+              <div className="flex items-center space-x-3">
+                {getStageIcon('director', workflow.director_approved)}
+                <div>
+                  <p className="font-medium">Director Risk Assessment</p>
+                  <p className="text-sm text-gray-600">{getNotesAsString(workflow.director_notes)}</p>
                 </div>
-                <Badge variant="outline">
-                  {getStageStatus('director', workflow.director_approved)}
-                </Badge>
-              </motion.div>
+              </div>
+              <Badge variant="outline">
+                {getStageStatus('director', workflow.director_approved)}
+              </Badge>
+            </motion.div>
 
-              {/* Chairperson - NOW BEFORE CEO */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div className="flex items-center space-x-3">
-                  {getStageIcon('chairperson', workflow.chairperson_approved)}
-                  <div>
-                    <p className="font-medium">Chairperson Approval</p>
-                    <p className="text-sm text-gray-600">{getNotesAsString(workflow.chairperson_notes)}</p>
-                  </div>
+            {/* Chairperson - NOW BEFORE CEO */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            >
+              <div className="flex items-center space-x-3">
+                {getStageIcon('chairperson', workflow.chairperson_approved)}
+                <div>
+                  <p className="font-medium">Chairperson Approval</p>
+                  <p className="text-sm text-gray-600">{getNotesAsString(workflow.chairperson_notes)}</p>
                 </div>
-                <Badge variant="outline">
-                  {getStageStatus('chairperson', workflow.chairperson_approved)}
-                </Badge>
-              </motion.div>
+              </div>
+              <Badge variant="outline">
+                {getStageStatus('chairperson', workflow.chairperson_approved)}
+              </Badge>
+            </motion.div>
 
-              {/* CEO - FINAL APPROVAL */}
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 }}
-                className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200"
-              >
-                <div className="flex items-center space-x-3">
-                  {getStageIcon('ceo', workflow.ceo_approved)}
-                  <div>
-                    <p className="font-medium text-blue-700">CEO Final Decision</p>
-                    <p className="text-sm text-gray-600">{getNotesAsString(workflow.ceo_notes)}</p>
-                  </div>
+            {/* CEO - FINAL APPROVAL */}
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200"
+            >
+              <div className="flex items-center space-x-3">
+                {getStageIcon('ceo', workflow.ceo_approved)}
+                <div>
+                  <p className="font-medium text-blue-700">CEO Final Decision</p>
+                  <p className="text-sm text-gray-600">{getNotesAsString(workflow.ceo_notes)}</p>
                 </div>
-                <Badge variant="outline" className="border-blue-500 text-blue-700">
-                  {getStageStatus('ceo', workflow.ceo_approved)}
-                </Badge>
-              </motion.div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+              <Badge variant="outline" className="border-blue-500 text-blue-700">
+                {getStageStatus('ceo', workflow.ceo_approved)}
+              </Badge>
+            </motion.div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Action Section */}
       {canTakeAction() && (

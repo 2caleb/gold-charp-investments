@@ -3,7 +3,6 @@ import React from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
 import PremiumFinancialOverview from '@/components/dashboard/PremiumFinancialOverview';
-import { FieldOfficerActivity } from '@/components/dashboard/FieldOfficerActivity';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
@@ -192,15 +191,6 @@ const Dashboard = () => {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
-
-        {/* Field Officer Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <FieldOfficerActivity />
         </motion.div>
       </div>
     </DashboardLayout>
