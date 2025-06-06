@@ -14,6 +14,17 @@ import EditableTransactionRow from './EditableTransactionRow';
 import { useFinancialTransactionsRealtime } from '@/hooks/use-financial-transactions-realtime';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
 
+interface Transaction {
+  id: string;
+  description: string;
+  amount: string;
+  Amount: number;
+  transaction_type: 'income' | 'expense';
+  category: string;
+  date: string;
+  created_by: string;
+}
+
 const TransactionEditor: React.FC = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,12 +63,18 @@ const TransactionEditor: React.FC = () => {
     },
   });
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         transaction.category?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || transaction.transaction_type === filterType;
-    return matchesSearch && matchesFilter;
-  });
+  // Filter transactions and ensure proper typing
+  const filteredTransactions = transactions
+    .filter(transaction => {
+      const matchesSearch = transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           transaction.category?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter = filterType === 'all' || transaction.transaction_type === filterType;
+      return matchesSearch && matchesFilter;
+    })
+    .map(transaction => ({
+      ...transaction,
+      transaction_type: transaction.transaction_type as 'income' | 'expense'
+    })) as Transaction[];
 
   const handleAddTransaction = async () => {
     if (!newTransaction.description || !newTransaction.Amount) {
