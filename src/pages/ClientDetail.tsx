@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -7,11 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from '@/lib/utils';
+import LiveLoanPerformance from '@/components/clients/LiveLoanPerformance';
 import { 
   ArrowLeft, 
   Loader2, 
   FileCheck, 
-  PenLine, 
   FilePlus, 
   DollarSign,
   TrendingUp,
@@ -198,11 +199,6 @@ const ClientDetail = () => {
             </Button>
             
             <div className="space-x-3">
-              <Link to={`/clients/${id}/edit`}>
-                <Button variant="outline">
-                  <PenLine className="mr-2 h-4 w-4" /> Edit Details
-                </Button>
-              </Link>
               <Link to={`/loan-applications/new?client=${id}`}>
                 <Button className="bg-purple-700 hover:bg-purple-800">
                   <FilePlus className="mr-2 h-4 w-4" /> New Loan Application
@@ -397,6 +393,11 @@ const ClientDetail = () => {
                 </CardContent>
               </Card>
             </div>
+          </div>
+
+          {/* Live Loan Performance Section */}
+          <div className="mt-8">
+            <LiveLoanPerformance clientName={client.full_name} />
           </div>
         </div>
       </section>
