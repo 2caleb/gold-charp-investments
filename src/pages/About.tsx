@@ -40,7 +40,7 @@ const About = () => {
             </div>
             <div className="relative">
               <img 
-                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1600&q=80" 
+                src="/lovable-uploads/85878dcc-9f31-4f91-8a3a-261225e8679b.png" 
                 alt="Gold Charp Investments Team" 
                 className="rounded-lg shadow-lg" 
               />
