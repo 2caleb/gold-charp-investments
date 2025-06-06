@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,8 @@ import {
   DollarSign,
   ArrowRight,
   Shield,
-  Clock
+  Clock,
+  ArrowUpDown
 } from 'lucide-react';
 
 interface SendMoneyFormProps {
@@ -44,10 +44,30 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates = [] }) => 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [calculationResult, setCalculationResult] = useState(null);
 
+  const currencies = [
+    { code: 'UGX', name: 'Ugandan Shilling', flag: '🇺🇬', symbol: 'UGX' },
+    { code: 'USD', name: 'US Dollar', flag: '🇺🇸', symbol: '$' },
+    { code: 'EUR', name: 'Euro', flag: '🇪🇺', symbol: '€' },
+    { code: 'GBP', name: 'British Pound', flag: '🇬🇧', symbol: '£' },
+    { code: 'ZAR', name: 'South African Rand', flag: '🇿🇦', symbol: 'R' },
+    { code: 'KES', name: 'Kenyan Shilling', flag: '🇰🇪', symbol: 'KSh' },
+    { code: 'TZS', name: 'Tanzanian Shilling', flag: '🇹🇿', symbol: 'TSh' },
+    { code: 'CAD', name: 'Canadian Dollar', flag: '🇨🇦', symbol: 'C$' },
+    { code: 'AUD', name: 'Australian Dollar', flag: '🇦🇺', symbol: 'A$' },
+    { code: 'CHF', name: 'Swiss Franc', flag: '🇨🇭', symbol: 'CHF' }
+  ];
+
   const supportedCountries = [
     { code: 'UG', name: 'Uganda', currency: 'UGX' },
     { code: 'US', name: 'USA', currency: 'USD' },
-    { code: 'ZA', name: 'South Africa', currency: 'ZAR' }
+    { code: 'ZA', name: 'South Africa', currency: 'ZAR' },
+    { code: 'KE', name: 'Kenya', currency: 'KES' },
+    { code: 'TZ', name: 'Tanzania', currency: 'TZS' },
+    { code: 'GB', name: 'United Kingdom', currency: 'GBP' },
+    { code: 'EU', name: 'European Union', currency: 'EUR' },
+    { code: 'CA', name: 'Canada', currency: 'CAD' },
+    { code: 'AU', name: 'Australia', currency: 'AUD' },
+    { code: 'CH', name: 'Switzerland', currency: 'CHF' }
   ];
 
   const transferMethods = [
@@ -56,9 +76,29 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates = [] }) => 
     { value: 'cash_pickup', label: 'Cash Pickup', icon: MapPin }
   ];
 
+  const handleCurrencyFlip = () => {
+    setFormData(prev => ({
+      ...prev,
+      sendCurrency: prev.receiveCurrency,
+      receiveCurrency: prev.sendCurrency
+    }));
+    // Clear calculation when currencies are flipped
+    setCalculationResult(null);
+  };
+
   const calculateTransfer = () => {
     const sendAmount = parseFloat(formData.sendAmount);
     if (!sendAmount || sendAmount <= 0) return;
+
+    // Prevent same currency calculation
+    if (formData.sendCurrency === formData.receiveCurrency) {
+      toast({
+        title: "Invalid Currency Selection",
+        description: "Please select different currencies for send and receive",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Find exchange rate
     const rate = exchangeRates.find(r => 
@@ -274,48 +314,80 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates = [] }) => 
                 </div>
               </div>
 
-              {/* Transfer Amount */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="sendAmount" className="flex items-center">
-                    <DollarSign className="mr-2 h-4 w-4" />
-                    Send Amount
-                  </Label>
-                  <Input
-                    id="sendAmount"
-                    type="number"
-                    placeholder="0.00"
-                    value={formData.sendAmount}
-                    onChange={(e) => setFormData({...formData, sendAmount: e.target.value})}
-                    required
-                    className="mt-1"
-                  />
+              {/* Transfer Amount with Currency Flip */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <Label htmlFor="sendAmount" className="flex items-center">
+                      <DollarSign className="mr-2 h-4 w-4" />
+                      Send Amount
+                    </Label>
+                    <Input
+                      id="sendAmount"
+                      type="number"
+                      placeholder="0.00"
+                      value={formData.sendAmount}
+                      onChange={(e) => setFormData({...formData, sendAmount: e.target.value})}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="sendCurrency">From Currency</Label>
-                  <Select value={formData.sendCurrency} onValueChange={(value) => setFormData({...formData, sendCurrency: value})}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="UGX">UGX - Ugandan Shilling</SelectItem>
-                      <SelectItem value="USD">USD - US Dollar</SelectItem>
-                      <SelectItem value="ZAR">ZAR - South African Rand</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="receiveCurrency">To Currency</Label>
-                  <Select value={formData.receiveCurrency} onValueChange={(value) => setFormData({...formData, receiveCurrency: value})}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="UGX">UGX - Ugandan Shilling</SelectItem>
-                      <SelectItem value="USD">USD - US Dollar</SelectItem>
-                      <SelectItem value="ZAR">ZAR - South African Rand</SelectItem>
-                    </SelectContent>
-                  </Select>
+                
+                {/* Currency Selection with Flip Button */}
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <Label htmlFor="sendCurrency">From Currency</Label>
+                    <Select value={formData.sendCurrency} onValueChange={(value) => setFormData({...formData, sendCurrency: value})}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencies.map((currency) => (
+                          <SelectItem key={currency.code} value={currency.code}>
+                            <div className="flex items-center gap-2">
+                              <span>{currency.flag}</span>
+                              <span>{currency.code} - {currency.name}</span>
+                              <span className="text-gray-500">({currency.symbol})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-end pb-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={handleCurrencyFlip}
+                      className="h-10 w-10 rounded-full hover:bg-purple-50 border-purple-300"
+                      title="Swap currencies"
+                    >
+                      <ArrowUpDown className="h-4 w-4 text-purple-600" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <Label htmlFor="receiveCurrency">To Currency</Label>
+                    <Select value={formData.receiveCurrency} onValueChange={(value) => setFormData({...formData, receiveCurrency: value})}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencies.map((currency) => (
+                          <SelectItem key={currency.code} value={currency.code}>
+                            <div className="flex items-center gap-2">
+                              <span>{currency.flag}</span>
+                              <span>{currency.code} - {currency.name}</span>
+                              <span className="text-gray-500">({currency.symbol})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -386,7 +458,7 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates = [] }) => 
                   type="button"
                   variant="outline"
                   onClick={calculateTransfer}
-                  disabled={!formData.sendAmount}
+                  disabled={!formData.sendAmount || formData.sendCurrency === formData.receiveCurrency}
                   className="flex-1"
                 >
                   Calculate Transfer
@@ -481,21 +553,27 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates = [] }) => 
           </CardContent>
         </Card>
 
-        {/* Agent Location */}
+        {/* Updated Gold Charp Contact Information */}
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center text-lg">
               <MapPin className="mr-2 h-5 w-5 text-purple-600" />
-              Our Office Location
+              Gold Charp Office Location
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <p className="font-semibold">Gold Charp Nansana Heights</p>
+              <p className="font-semibold">Gold Charp Financial Services</p>
               <p className="text-sm text-gray-600">Nansana Heights, Wakiso District</p>
-              <p className="text-sm text-gray-600">Uganda</p>
-              <p className="text-sm text-gray-600">Hours: 8:00 AM - 6:00 PM</p>
-              <p className="text-sm text-gray-600">Phone: +256700000000</p>
+              <p className="text-sm text-gray-600">Central Region, Uganda</p>
+              <p className="text-sm text-gray-600">Business Hours: Monday - Friday: 8:00 AM - 6:00 PM</p>
+              <p className="text-sm text-gray-600">Saturday: 9:00 AM - 4:00 PM</p>
+              <p className="text-sm text-gray-600">Sunday: Closed</p>
+              <div className="pt-2 border-t">
+                <p className="text-sm text-gray-600">📞 Phone: +256 700 123 456</p>
+                <p className="text-sm text-gray-600">📧 Email: transfers@goldcharp.com</p>
+                <p className="text-sm text-gray-600">🌐 Website: www.goldcharp.com</p>
+              </div>
             </div>
           </CardContent>
         </Card>

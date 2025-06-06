@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Calculator, DollarSign, TrendingUp, Info } from 'lucide-react';
+import { Calculator, DollarSign, TrendingUp, Info, ArrowUpDown } from 'lucide-react';
 
 interface PremiumFeeCalculatorProps {
   exchangeRates: any[];
@@ -26,12 +27,16 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
   });
 
   const currencies = [
-    { code: 'USD', name: 'US Dollar', flag: '🇺🇸' },
-    { code: 'EUR', name: 'Euro', flag: '🇪🇺' },
-    { code: 'GBP', name: 'British Pound', flag: '🇬🇧' },
-    { code: 'ZAR', name: 'South African Rand', flag: '🇿🇦' },
-    { code: 'UGX', name: 'Ugandan Shilling', flag: '🇺🇬' },
-    { code: 'KES', name: 'Kenyan Shilling', flag: '🇰🇪' }
+    { code: 'UGX', name: 'Ugandan Shilling', flag: '🇺🇬', symbol: 'UGX' },
+    { code: 'USD', name: 'US Dollar', flag: '🇺🇸', symbol: '$' },
+    { code: 'EUR', name: 'Euro', flag: '🇪🇺', symbol: '€' },
+    { code: 'GBP', name: 'British Pound', flag: '🇬🇧', symbol: '£' },
+    { code: 'ZAR', name: 'South African Rand', flag: '🇿🇦', symbol: 'R' },
+    { code: 'KES', name: 'Kenyan Shilling', flag: '🇰🇪', symbol: 'KSh' },
+    { code: 'TZS', name: 'Tanzanian Shilling', flag: '🇹🇿', symbol: 'TSh' },
+    { code: 'CAD', name: 'Canadian Dollar', flag: '🇨🇦', symbol: 'C$' },
+    { code: 'AUD', name: 'Australian Dollar', flag: '🇦🇺', symbol: 'A$' },
+    { code: 'CHF', name: 'Swiss Franc', flag: '🇨🇭', symbol: 'CHF' }
   ];
 
   const transferMethods = [
@@ -39,6 +44,11 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
     { value: 'mobile_money', label: 'Mobile Money', fee: 0.18 },
     { value: 'cash_pickup', label: 'Cash Pickup', fee: 0.22 }
   ];
+
+  const handleCurrencyFlip = () => {
+    setFromCurrency(toCurrency);
+    setToCurrency(fromCurrency);
+  };
 
   useEffect(() => {
     if (sendAmount && exchangeRates.length > 0) {
@@ -48,7 +58,7 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
 
   const calculateFees = () => {
     const amount = parseFloat(sendAmount);
-    if (!amount) return;
+    if (!amount || fromCurrency === toCurrency) return;
 
     // Find exchange rate
     const rate = exchangeRates.find(r => 
@@ -94,7 +104,7 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
         
         <CardContent className="p-8 space-y-8">
           {/* Input Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 items-end">
             <div className="space-y-2">
               <Label htmlFor="sendAmount" className="text-sm font-semibold">Send Amount</Label>
               <Input
@@ -119,11 +129,25 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
                       <div className="flex items-center gap-2">
                         <span>{currency.flag}</span>
                         <span>{currency.code} - {currency.name}</span>
+                        <span className="text-gray-500">({currency.symbol})</span>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleCurrencyFlip}
+                className="h-12 w-12 rounded-full hover:bg-purple-50 border-purple-300"
+                title="Swap currencies"
+              >
+                <ArrowUpDown className="h-4 w-4 text-purple-600" />
+              </Button>
             </div>
 
             <div className="space-y-2">
@@ -138,6 +162,7 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
                       <div className="flex items-center gap-2">
                         <span>{currency.flag}</span>
                         <span>{currency.code} - {currency.name}</span>
+                        <span className="text-gray-500">({currency.symbol})</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -168,7 +193,7 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
           </div>
 
           {/* Results Section */}
-          {sendAmount && (
+          {sendAmount && fromCurrency !== toCurrency && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -188,7 +213,7 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
                       </div>
                     </div>
                     <p className="text-3xl font-bold text-green-700 dark:text-green-300">
-                      {toCurrency} {calculation.receiveAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      {currencies.find(c => c.code === toCurrency)?.symbol} {calculation.receiveAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </p>
                   </CardContent>
                 </Card>
@@ -227,18 +252,18 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Send Amount:</span>
-                        <span className="font-semibold">{fromCurrency} {parseFloat(sendAmount).toLocaleString()}</span>
+                        <span className="font-semibold">{currencies.find(c => c.code === fromCurrency)?.symbol} {parseFloat(sendAmount).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Gold Charp Fee (20%):</span>
                         <span className="font-semibold text-purple-600 dark:text-purple-400">
-                          {fromCurrency} {calculation.goldCharpFee.toLocaleString()}
+                          {currencies.find(c => c.code === fromCurrency)?.symbol} {calculation.goldCharpFee.toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Transfer Fee:</span>
                         <span className="font-semibold">
-                          {fromCurrency} {(calculation.serviceFee - calculation.goldCharpFee).toLocaleString()}
+                          {currencies.find(c => c.code === fromCurrency)?.symbol} {(calculation.serviceFee - calculation.goldCharpFee).toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -247,13 +272,13 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-gray-600 dark:text-gray-400">Total Fees:</span>
                         <span className="font-semibold text-red-600 dark:text-red-400">
-                          {fromCurrency} {calculation.serviceFee.toLocaleString()}
+                          {currencies.find(c => c.code === fromCurrency)?.symbol} {calculation.serviceFee.toLocaleString()}
                         </span>
                       </div>
                       <div className="flex justify-between items-center border-t pt-2">
                         <span className="font-semibold">Total Cost:</span>
                         <span className="font-bold text-lg">
-                          {fromCurrency} {calculation.totalCost.toLocaleString()}
+                          {currencies.find(c => c.code === fromCurrency)?.symbol} {calculation.totalCost.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -272,6 +297,13 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
                 </CardContent>
               </Card>
             </motion.div>
+          )}
+
+          {/* Same Currency Warning */}
+          {fromCurrency === toCurrency && (
+            <div className="text-center p-6 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-yellow-800">Please select different currencies to calculate transfer fees.</p>
+            </div>
           )}
         </CardContent>
       </Card>
