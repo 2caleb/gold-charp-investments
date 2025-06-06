@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
 import PremiumFinancialOverview from '@/components/dashboard/PremiumFinancialOverview';
-import LiveFinancialMetrics from '@/components/dashboard/LiveFinancialMetrics';
 import TransactionEditor from '@/components/transactions/TransactionEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,7 @@ import {
   XCircle,
   Loader2
 } from 'lucide-react';
-import { useEnhancedFinancialSync } from '@/hooks/use-enhanced-financial-sync';
+import { useFinancialSummaryQuery } from '@/hooks/use-financial-summary-query';
 import { useToast } from '@/hooks/use-toast';
 
 const Payments = () => {
@@ -41,10 +40,10 @@ const Payments = () => {
   const [syncLoading, setSyncLoading] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  // Use enhanced financial sync for real-time data
-  const { data: syncedFinancialData, isLoading: syncDataLoading, refetch: refetchSync } = useEnhancedFinancialSync();
+  // Use simplified financial summary query
+  const { data: financialSummary, isLoading: summaryLoading, refetch: refetchSummary } = useFinancialSummaryQuery();
 
-  // Fetch loan book live data with real-time updates
+  // Fetch loan book live data
   const { data: loanBookData, isLoading: loanBookLoading, refetch: refetchLoanBook } = useQuery({
     queryKey: ['loan-book-live'],
     queryFn: async () => {
@@ -61,7 +60,7 @@ const Payments = () => {
     },
   });
 
-  // Fetch expenses live data with real-time updates
+  // Fetch expenses live data
   const { data: expensesData, isLoading: expensesLoading, refetch: refetchExpenses } = useQuery({
     queryKey: ['expenses-live'],
     queryFn: async () => {
@@ -78,7 +77,7 @@ const Payments = () => {
     },
   });
 
-  // Set up real-time subscriptions
+  // Set up real-time subscriptions for loan book and expenses only
   useEffect(() => {
     const loanBookChannel = supabase
       .channel('loan_book_live_changes')
@@ -94,11 +93,19 @@ const Payments = () => {
       })
       .subscribe();
 
+    const summaryChannel = supabase
+      .channel('financial_summary_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'financial_summary' }, () => {
+        refetchSummary();
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(loanBookChannel);
       supabase.removeChannel(expensesChannel);
+      supabase.removeChannel(summaryChannel);
     };
-  }, [refetchLoanBook, refetchExpenses]);
+  }, [refetchLoanBook, refetchExpenses, refetchSummary]);
 
   const handleSyncData = async () => {
     setSyncLoading(true);
@@ -120,17 +127,13 @@ const Payments = () => {
       // Wait a moment for the update to propagate
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Refetch all data
-      await Promise.all([
-        refetchSync(),
-        refetchLoanBook(),
-        refetchExpenses()
-      ]);
+      // Refetch the summary data
+      await refetchSummary();
 
       setSyncStatus('success');
       toast({
         title: "Sync Successful",
-        description: "All financial data has been synchronized and updated successfully",
+        description: "Financial summary has been updated from the database",
         variant: "default"
       });
 
@@ -138,7 +141,6 @@ const Payments = () => {
       console.error('Detailed sync error:', error);
       setSyncStatus('error');
       
-      // Provide more specific error feedback
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
       toast({
@@ -181,7 +183,7 @@ const Payments = () => {
     expense.particulars?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) || ''
   ) || [];
 
-  const isLoading = syncDataLoading || loanBookLoading || expensesLoading;
+  const isLoading = summaryLoading || loanBookLoading || expensesLoading;
 
   if (isLoading) {
     return (
@@ -213,10 +215,10 @@ const Payments = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Premium Payment Center
+                Payment Center
               </h1>
               <p className="text-gray-600 mt-2">
-                Real-time financial management and payment tracking with synchronized data
+                Financial management with data from the financial_summary table
               </p>
             </div>
             <div className="flex gap-2">
@@ -244,15 +246,11 @@ const Payments = () => {
                 <Plus className="mr-2 h-4 w-4" />
                 New Transaction
               </Button>
-              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 h-10 px-4 shrink-0">
-                <Send className="mr-2 h-4 w-4" />
-                Money Transfer
-              </Button>
             </div>
           </div>
         </motion.div>
 
-        {/* Enhanced Financial Summary Cards with Real-time Data */}
+        {/* Financial Summary Cards from financial_summary table */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -266,19 +264,12 @@ const Payments = () => {
                     <DollarSign className="h-6 w-6 text-white" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-blue-700">Total Loan Portfolio</p>
+                    <p className="text-sm font-medium text-blue-700">Total Income</p>
                     <p className="text-2xl font-bold text-blue-900">
-                      {formatCurrency(syncedFinancialData?.real_time_total_portfolio || syncedFinancialData?.total_loan_portfolio || 0)}
+                      {formatCurrency(financialSummary?.total_income || 0)}
                     </p>
-                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                      {syncedFinancialData?.is_live_data ? (
-                        <>
-                          <CheckCircle className="h-3 w-3" />
-                          Live synchronized
-                        </>
-                      ) : (
-                        'From summary table'
-                      )}
+                    <p className="text-xs text-blue-600 mt-1">
+                      From financial_summary
                     </p>
                   </div>
                 </div>
@@ -292,12 +283,12 @@ const Payments = () => {
                     <PiggyBank className="h-6 w-6 text-white" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-green-700">Total Repaid</p>
+                    <p className="text-sm font-medium text-green-700">Total Expenses</p>
                     <p className="text-2xl font-bold text-green-900">
-                      {formatCurrency(syncedFinancialData?.real_time_total_repaid || syncedFinancialData?.total_repaid || 0)}
+                      {formatCurrency(financialSummary?.total_expenses || 0)}
                     </p>
                     <p className="text-xs text-green-600 mt-1">
-                      {syncedFinancialData?.real_time_collection_rate?.toFixed(1) || syncedFinancialData?.collection_rate?.toFixed(1) || 0}% collection rate
+                      From financial_summary
                     </p>
                   </div>
                 </div>
@@ -311,11 +302,13 @@ const Payments = () => {
                     <TrendingUp className="h-6 w-6 text-white" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-purple-700">Active Loan Holders</p>
+                    <p className="text-sm font-medium text-purple-700">Loan Portfolio</p>
                     <p className="text-2xl font-bold text-purple-900">
-                      {syncedFinancialData?.real_time_active_loan_holders || syncedFinancialData?.active_loan_holders || 0}
+                      {formatCurrency(financialSummary?.total_loan_portfolio || 0)}
                     </p>
-                    <p className="text-xs text-purple-600 mt-1">Live count</p>
+                    <p className="text-xs text-purple-600 mt-1">
+                      {financialSummary?.collection_rate?.toFixed(1) || 0}% collection rate
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -330,27 +323,20 @@ const Payments = () => {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-orange-700">Net Income</p>
                     <p className={`text-2xl font-bold ${
-                      (syncedFinancialData?.real_time_net_income || syncedFinancialData?.net_income || 0) >= 0 
+                      (financialSummary?.net_income || 0) >= 0 
                         ? 'text-green-900' 
                         : 'text-red-900'
                     }`}>
-                      {formatCurrency(syncedFinancialData?.real_time_net_income || syncedFinancialData?.net_income || 0)}
+                      {formatCurrency(financialSummary?.net_income || 0)}
                     </p>
-                    <p className="text-xs text-orange-600 mt-1">Real-time calculated</p>
+                    <p className="text-xs text-orange-600 mt-1">
+                      {financialSummary?.active_loan_holders || 0} active loans
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-        </motion.div>
-
-        {/* Live Financial Metrics */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <LiveFinancialMetrics />
         </motion.div>
 
         <motion.div
@@ -380,9 +366,9 @@ const Payments = () => {
                 <TrendingDown className="mr-2 h-4 w-4" />
                 Live Expenses
               </TabsTrigger>
-              <TabsTrigger value="reports" className="text-sm">
+              <TabsTrigger value="summary" className="text-sm">
                 <BarChart3 className="mr-2 h-4 w-4" />
-                Reports
+                Summary
               </TabsTrigger>
             </TabsList>
 
@@ -588,48 +574,62 @@ const Payments = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="reports" className="space-y-6 mt-6">
+            <TabsContent value="summary" className="space-y-6 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card className="shadow-lg">
                   <CardHeader>
-                    <CardTitle>Enhanced Financial Summary</CardTitle>
+                    <CardTitle>Financial Summary (from financial_summary table)</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex justify-between">
-                        <span>Active Loans:</span>
-                        <span className="font-semibold">{syncedFinancialData?.real_time_active_loan_holders || 0}</span>
+                        <span>Total Income:</span>
+                        <span className="font-semibold text-green-600">
+                          {formatCurrency(financialSummary?.total_income || 0)}
+                        </span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Total Portfolio Value:</span>
+                        <span>Total Expenses:</span>
+                        <span className="font-semibold text-red-600">
+                          {formatCurrency(financialSummary?.total_expenses || 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Loan Portfolio:</span>
                         <span className="font-semibold text-blue-600">
-                          {formatCurrency(syncedFinancialData?.real_time_total_portfolio || 0)}
+                          {formatCurrency(financialSummary?.total_loan_portfolio || 0)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Total Repaid:</span>
                         <span className="font-semibold text-green-600">
-                          {formatCurrency(syncedFinancialData?.real_time_total_repaid || 0)}
+                          {formatCurrency(financialSummary?.total_repaid || 0)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Outstanding Balance:</span>
                         <span className="font-semibold text-red-600">
-                          {formatCurrency(syncedFinancialData?.outstanding_balance || 0)}
+                          {formatCurrency(financialSummary?.outstanding_balance || 0)}
                         </span>
                       </div>
                       <div className="flex justify-between border-t pt-3">
                         <span>Collection Rate:</span>
                         <span className="font-semibold text-purple-600">
-                          {syncedFinancialData?.real_time_collection_rate?.toFixed(1) || 0}%
+                          {financialSummary?.collection_rate?.toFixed(1) || 0}%
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Net Income:</span>
                         <span className={`font-semibold ${
-                          (syncedFinancialData?.real_time_net_income || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                          (financialSummary?.net_income || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {formatCurrency(syncedFinancialData?.real_time_net_income || 0)}
+                          {formatCurrency(financialSummary?.net_income || 0)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Active Loan Holders:</span>
+                        <span className="font-semibold">
+                          {financialSummary?.active_loan_holders || 0}
                         </span>
                       </div>
                     </div>
@@ -638,40 +638,39 @@ const Payments = () => {
 
                 <Card className="shadow-lg">
                   <CardHeader>
-                    <CardTitle>Data Synchronization Status</CardTitle>
+                    <CardTitle>Data Source Information</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
-                        <span>Sync Status:</span>
-                        <Badge variant="default" className="bg-green-100 text-green-800">
-                          {syncedFinancialData?.sync_status || 'Active'}
+                        <span>Data Source:</span>
+                        <Badge variant="default" className="bg-blue-100 text-blue-800">
+                          financial_summary table
                         </Badge>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span>Last Updated:</span>
+                        <span>Last Calculated:</span>
                         <span className="text-sm text-gray-600">
-                          {syncedFinancialData?.last_calculated 
-                            ? new Date(syncedFinancialData.last_calculated).toLocaleString()
+                          {financialSummary?.calculated_at 
+                            ? new Date(financialSummary.calculated_at).toLocaleString()
                             : 'Never'
                           }
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span>Real-time Data:</span>
-                        <Badge variant={syncedFinancialData?.is_live_data ? "default" : "secondary"}>
-                          {syncedFinancialData?.is_live_data ? 'Active' : 'Cached'}
+                        <span>Auto-sync:</span>
+                        <Badge variant="outline">
+                          Available via Sync button
                         </Badge>
                       </div>
                       <div className="space-y-3 pt-4">
                         <Button className="w-full" onClick={handleSyncData}>
                           <RefreshCw className="mr-2 h-4 w-4" />
-                          Force Sync Now
+                          Update Summary from Database
                         </Button>
-                        <Button className="w-full" variant="outline">
-                          <Download className="mr-2 h-4 w-4" />
-                          Export All Data
-                        </Button>
+                        <p className="text-xs text-gray-500">
+                          Edit the financial_summary table directly in Supabase to change these values
+                        </p>
                       </div>
                     </div>
                   </CardContent>
