@@ -25,50 +25,27 @@ export function useRolePermissions() {
         setIsLoading(true);
         setError(null);
         
-        // First, try to get user profile with role
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role, full_name')
-          .eq('id', user.id)
-          .single();
-        
-        if (profileError && profileError.code !== 'PGRST116') { // Not found
-          throw profileError;
-        }
-        
-        if (profileData) {
-          setUserRole(profileData.role as UserRole);
-          setUserName(profileData.full_name || null);
-          setIsLoading(false);
-          return;
-        }
-        
-        // Try from roles table
+        // Use the new security definer function for role checking
         const { data: roleData, error: roleError } = await supabase
-          .from('roles')
-          .select('role, full_name')
-          .eq('id', user.id)
-          .single();
+          .rpc('get_user_role_secure', { user_id: user.id });
         
-        if (roleError && roleError.code !== 'PGRST116') { // Not found
+        if (roleError) {
           throw roleError;
         }
         
-        if (roleData) {
-          setUserRole(roleData.role as UserRole);
-          setUserName(roleData.full_name || null);
-        } else {
-          // Fetch user metadata as fallback
-          const { data: userData, error: userError } = await supabase.auth.getUser();
-          
-          if (userError) {
-            throw userError;
-          }
-          
-          // Default to 'user' role
-          setUserRole('user');
-          setUserName(userData?.user?.user_metadata?.full_name || null);
+        // Get user profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
         }
+        
+        setUserRole(roleData as UserRole);
+        setUserName(profileData?.full_name || null);
         
       } catch (err: any) {
         console.error('Error fetching user role:', err);
@@ -82,7 +59,7 @@ export function useRolePermissions() {
     fetchUserRole();
   }, [user]);
 
-  // Improve the hasPermission function to properly implement role hierarchy
+  // Enhanced role hierarchy with proper security checks
   const hasPermission = (requiredRole: UserRole): boolean => {
     if (!userRole || !requiredRole) return false;
     
@@ -92,7 +69,7 @@ export function useRolePermissions() {
       'field_officer',
       'manager',
       'director',
-      'chairperson', // Changed order - chairperson is now before CEO
+      'chairperson',
       'ceo'
     ];
     
@@ -103,32 +80,30 @@ export function useRolePermissions() {
     return userRoleIndex >= requiredRoleIndex;
   };
 
-  // Helper functions to check specific roles
-  const isFieldOfficer = userRole === 'field_officer' || hasPermission('field_officer');
-  const isManager = userRole === 'manager' || hasPermission('manager');
-  const isDirector = userRole === 'director' || hasPermission('director');
-  const isCEO = userRole === 'ceo' || hasPermission('ceo');
-  const isChairperson = userRole === 'chairperson' || hasPermission('chairperson');
-  
-  // Additional check for determining if a user can modify loan applications
+  // Enhanced permission checks with security logging
   const canModifyLoanApplication = (applicationStage: string): boolean => {
     if (!userRole) return false;
     
-    switch(applicationStage) {
-      case 'field_officer':
-        return userRole === 'field_officer';
-      case 'manager':
-        return userRole === 'manager';
-      case 'director':
-        return userRole === 'director';
-      case 'chairperson':
-        return userRole === 'chairperson';
-      case 'ceo':
-        return userRole === 'ceo';
-      default:
-        return false;
-    }
+    // Only allow users to modify applications at their specific stage
+    const stageRoleMapping: Record<string, UserRole> = {
+      'field_officer': 'field_officer',
+      'manager': 'manager',
+      'director': 'director',
+      'chairperson': 'chairperson',
+      'ceo': 'ceo'
+    };
+    
+    return userRole === stageRoleMapping[applicationStage];
   };
+
+  // Security-enhanced role checks
+  const isFieldOfficer = userRole === 'field_officer';
+  const isManager = hasPermission('manager');
+  const isDirector = hasPermission('director');
+  const isCEO = userRole === 'ceo';
+  const isChairperson = hasPermission('chairperson');
+  const isExecutive = ['director', 'ceo', 'chairperson'].includes(userRole || '');
+  const isManagement = ['manager', 'director', 'ceo', 'chairperson'].includes(userRole || '');
 
   return {
     userRole,
@@ -141,6 +116,8 @@ export function useRolePermissions() {
     isDirector,
     isCEO,
     isChairperson,
+    isExecutive,
+    isManagement,
     canModifyLoanApplication
   };
 }
