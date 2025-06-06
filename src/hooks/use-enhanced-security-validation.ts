@@ -17,7 +17,7 @@ interface SecurityValidationContext {
 
 export const useEnhancedSecurityValidation = () => {
   const { user } = useAuth();
-  const { userRole, hasPermission } = useRolePermissions();
+  const { userRole, hasPermission, logSecurityEvent } = useRolePermissions();
   const { isDirectorCaleb } = useDirectorCaleb();
   const [securityContext, setSecurityContext] = useState<SecurityValidationContext>({
     canUploadExcel: false,
@@ -29,22 +29,20 @@ export const useEnhancedSecurityValidation = () => {
     canViewAuditLogs: false,
   });
 
-  // Enhanced audit logging function
-  const logSecurityEvent = async (
+  // Enhanced audit logging function using direct database insert
+  const logSecurityEventLocal = async (
     eventType: string,
     details: Record<string, any> = {}
   ) => {
     try {
-      const { error } = await supabase.rpc('log_security_event', {
-        event_type: eventType,
-        table_name: 'security_events',
-        record_id: crypto.randomUUID(),
-        details: details
-      });
-      
-      if (error) {
-        console.error('Failed to log security event:', error);
-      }
+      await supabase
+        .from('transaction_audit_log')
+        .insert({
+          action: eventType,
+          user_id: user?.id,
+          details: details,
+          timestamp: new Date().toISOString()
+        });
     } catch (err) {
       console.error('Security logging error:', err);
     }
@@ -69,7 +67,7 @@ export const useEnhancedSecurityValidation = () => {
     const isStaff = ['field_officer', 'manager', 'director', 'ceo', 'chairperson'].includes(userRole);
     const isCEOOrChairperson = ['ceo', 'chairperson'].includes(userRole);
 
-    setSecurityContext({
+    const newSecurityContext = {
       canUploadExcel: isDirectorCaleb,
       canViewFinancials: isExecutive,
       canModifyExpenses: isManagement,
@@ -77,13 +75,15 @@ export const useEnhancedSecurityValidation = () => {
       canModifyLoanApplications: isStaff,
       canModifyRoles: isCEOOrChairperson,
       canViewAuditLogs: isExecutive,
-    });
+    };
+
+    setSecurityContext(newSecurityContext);
 
     // Log security context changes
-    logSecurityEvent('security_context_updated', {
+    logSecurityEventLocal('security_context_updated', {
       user_id: user.id,
       role: userRole,
-      permissions: securityContext
+      permissions: newSecurityContext
     });
   }, [user, userRole, isDirectorCaleb]);
 
@@ -92,7 +92,7 @@ export const useEnhancedSecurityValidation = () => {
     
     // Log permission checks for sensitive actions
     if (['canModifyRoles', 'canViewFinancials', 'canUploadExcel'].includes(action)) {
-      logSecurityEvent('permission_check', {
+      logSecurityEventLocal('permission_check', {
         action,
         user_id: user?.id,
         role: userRole,
@@ -120,7 +120,7 @@ export const useEnhancedSecurityValidation = () => {
     securityContext,
     validateAction,
     getSecurityMessage,
-    logSecurityEvent,
+    logSecurityEvent: logSecurityEventLocal,
     isAuthenticated: !!user,
     userRole,
   };

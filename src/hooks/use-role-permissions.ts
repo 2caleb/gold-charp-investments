@@ -25,9 +25,9 @@ export function useRolePermissions() {
         setIsLoading(true);
         setError(null);
         
-        // Use the new security definer function for role checking
+        // Use the existing get_user_role function instead of get_user_role_secure
         const { data: roleData, error: roleError } = await supabase
-          .rpc('get_user_role_secure', { user_id: user.id });
+          .rpc('get_user_role', { user_id: user.id });
         
         if (roleError) {
           throw roleError;
@@ -96,6 +96,22 @@ export function useRolePermissions() {
     return userRole === stageRoleMapping[applicationStage];
   };
 
+  // Log security events to audit log
+  const logSecurityEvent = async (eventType: string, details: Record<string, any> = {}) => {
+    try {
+      await supabase
+        .from('transaction_audit_log')
+        .insert({
+          action: eventType,
+          user_id: user?.id,
+          details: details,
+          timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+      console.error('Failed to log security event:', err);
+    }
+  };
+
   // Security-enhanced role checks
   const isFieldOfficer = userRole === 'field_officer';
   const isManager = hasPermission('manager');
@@ -118,6 +134,7 @@ export function useRolePermissions() {
     isChairperson,
     isExecutive,
     isManagement,
-    canModifyLoanApplication
+    canModifyLoanApplication,
+    logSecurityEvent
   };
 }
