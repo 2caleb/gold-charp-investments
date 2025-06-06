@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
@@ -24,21 +25,13 @@ import {
   PiggyBank,
   BarChart3,
   AlertCircle,
-  Send,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  Loader2
+  Send
 } from 'lucide-react';
 import { useFinancialSummaryQuery } from '@/hooks/use-financial-summary-query';
-import { useToast } from '@/hooks/use-toast';
 
 const Payments = () => {
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
-  const [syncLoading, setSyncLoading] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   // Use simplified financial summary query
   const { data: financialSummary, isLoading: summaryLoading, refetch: refetchSummary } = useFinancialSummaryQuery();
@@ -107,54 +100,6 @@ const Payments = () => {
     };
   }, [refetchLoanBook, refetchExpenses, refetchSummary]);
 
-  const handleSyncData = async () => {
-    setSyncLoading(true);
-    setSyncStatus('idle');
-    
-    try {
-      console.log('Starting manual financial summary update...');
-      
-      // Call the database function to update financial summary
-      const { error: rpcError } = await supabase.rpc('update_financial_summary');
-      
-      if (rpcError) {
-        console.error('RPC Error:', rpcError);
-        throw new Error(`Database sync failed: ${rpcError.message}`);
-      }
-
-      console.log('Financial summary updated successfully');
-
-      // Wait a moment for the update to propagate
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Refetch the summary data
-      await refetchSummary();
-
-      setSyncStatus('success');
-      toast({
-        title: "Sync Successful",
-        description: "Financial summary has been updated from the database",
-        variant: "default"
-      });
-
-    } catch (error) {
-      console.error('Detailed sync error:', error);
-      setSyncStatus('error');
-      
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      
-      toast({
-        title: "Sync Error",
-        description: `Failed to synchronize data: ${errorMessage}`,
-        variant: "destructive",
-      });
-    } finally {
-      setSyncLoading(false);
-      // Reset status after 3 seconds
-      setTimeout(() => setSyncStatus('idle'), 3000);
-    }
-  };
-
   const formatCurrency = (amount: string | number | null | undefined) => {
     if (!amount) return 'UGX 0';
     
@@ -222,26 +167,6 @@ const Payments = () => {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button 
-                onClick={handleSyncData}
-                disabled={syncLoading}
-                variant="outline"
-                className={`flex items-center gap-2 ${
-                  syncStatus === 'success' ? 'border-green-500 text-green-600' :
-                  syncStatus === 'error' ? 'border-red-500 text-red-600' : ''
-                }`}
-              >
-                {syncLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : syncStatus === 'success' ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : syncStatus === 'error' ? (
-                  <XCircle className="h-4 w-4" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                {syncLoading ? 'Syncing...' : 'Sync Data'}
-              </Button>
               <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-10 px-4 shrink-0">
                 <Plus className="mr-2 h-4 w-4" />
                 New Transaction
@@ -660,14 +585,10 @@ const Payments = () => {
                       <div className="flex justify-between items-center">
                         <span>Auto-sync:</span>
                         <Badge variant="outline">
-                          Available via Sync button
+                          Real-time updates enabled
                         </Badge>
                       </div>
                       <div className="space-y-3 pt-4">
-                        <Button className="w-full" onClick={handleSyncData}>
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Update Summary from Database
-                        </Button>
                         <p className="text-xs text-gray-500">
                           Edit the financial_summary table directly in Supabase to change these values
                         </p>
