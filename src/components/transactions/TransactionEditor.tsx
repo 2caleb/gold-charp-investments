@@ -54,6 +54,8 @@ const TransactionEditor: React.FC = () => {
   const { data: transactions = [], isLoading, refetch } = useQuery({
     queryKey: ['financial-transactions'],
     queryFn: async () => {
+      console.log('Fetching financial transactions...');
+      
       const { data, error } = await supabase
         .from('financial_transactions')
         .select('*')
@@ -63,11 +65,14 @@ const TransactionEditor: React.FC = () => {
         console.error('Error fetching transactions:', error);
         throw error;
       }
+      
       return (data || []).map(transaction => ({
         ...transaction,
-        transaction_type: transaction.transaction_type as 'income' | 'expense'
+        transaction_type: transaction.transaction_type as 'income' | 'expense',
+        Amount: transaction.Amount || parseFloat(transaction.amount?.replace(/[^0-9.-]/g, '') || '0')
       })) as Transaction[];
     },
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   const filteredTransactions = transactions.filter(transaction => {
@@ -92,7 +97,7 @@ const TransactionEditor: React.FC = () => {
         .from('financial_transactions')
         .insert({
           description: newTransaction.description,
-          amount: newTransaction.amount || newTransaction.Amount.toString(),
+          amount: newTransaction.Amount.toString(),
           Amount: newTransaction.Amount,
           transaction_type: newTransaction.transaction_type,
           category: newTransaction.category,
@@ -139,11 +144,11 @@ const TransactionEditor: React.FC = () => {
   // Calculate totals
   const totalIncome = filteredTransactions
     .filter(t => t.transaction_type === 'income')
-    .reduce((sum, t) => sum + (t.Amount || parseFloat(t.amount?.replace(/[^0-9.-]/g, '') || '0')), 0);
+    .reduce((sum, t) => sum + (t.Amount || 0), 0);
   
   const totalExpenses = filteredTransactions
     .filter(t => t.transaction_type === 'expense')
-    .reduce((sum, t) => sum + (t.Amount || parseFloat(t.amount?.replace(/[^0-9.-]/g, '') || '0')), 0);
+    .reduce((sum, t) => sum + (t.Amount || 0), 0);
 
   return (
     <Card className="shadow-lg">

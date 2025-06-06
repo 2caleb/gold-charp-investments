@@ -24,7 +24,10 @@ export const useFinancialTransactionsRealtime = () => {
           queryClient.invalidateQueries({ queryKey: ['financial-transactions'] });
           queryClient.invalidateQueries({ queryKey: ['financial-summary'] });
           queryClient.invalidateQueries({ queryKey: ['enhanced-financial-summary'] });
+          queryClient.invalidateQueries({ queryKey: ['enhanced-financial-sync'] });
           queryClient.invalidateQueries({ queryKey: ['premium-financial-overview'] });
+          queryClient.invalidateQueries({ queryKey: ['loan-book-live'] });
+          queryClient.invalidateQueries({ queryKey: ['expenses-live'] });
           
           // Show notification for changes
           if (payload.eventType === 'INSERT') {
@@ -50,10 +53,29 @@ export const useFinancialTransactionsRealtime = () => {
       )
       .subscribe();
 
+    // Also subscribe to financial_summary changes
+    const summaryChannel = supabase
+      .channel('financial_summary_changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'financial_summary' },
+        (payload) => {
+          console.log('Financial summary updated:', payload);
+          
+          // Invalidate financial summary queries
+          queryClient.invalidateQueries({ queryKey: ['financial-summary'] });
+          queryClient.invalidateQueries({ queryKey: ['enhanced-financial-summary'] });
+          queryClient.invalidateQueries({ queryKey: ['enhanced-financial-sync'] });
+          queryClient.invalidateQueries({ queryKey: ['premium-financial-overview'] });
+        }
+      )
+      .subscribe();
+
     // Cleanup subscriptions on unmount
     return () => {
       console.log('Cleaning up financial transactions real-time subscriptions');
       supabase.removeChannel(transactionsChannel);
+      supabase.removeChannel(summaryChannel);
     };
   }, [queryClient, toast]);
 };

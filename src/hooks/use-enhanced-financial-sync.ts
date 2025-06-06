@@ -37,7 +37,7 @@ export const useEnhancedFinancialSync = () => {
         console.error('Error fetching loan book live data:', loanBookError);
       }
 
-      // Get financial transactions
+      // Get financial transactions with proper Amount handling
       const { data: transactionsData, error: transactionsError } = await supabase
         .from('financial_transactions')
         .select('*')
@@ -55,7 +55,7 @@ export const useEnhancedFinancialSync = () => {
       
       const realTimeCollectionRate = totalPortfolio > 0 ? (totalRepaid / totalPortfolio) * 100 : 0;
 
-      // Calculate transaction totals
+      // Calculate transaction totals with proper amount handling
       const totalIncome = transactionsData?.reduce((sum, transaction) => {
         if (transaction.transaction_type === 'income') {
           return sum + (transaction.Amount || parseFloat(transaction.amount?.replace(/[^0-9.-]/g, '') || '0'));
@@ -82,6 +82,11 @@ export const useEnhancedFinancialSync = () => {
         real_time_total_income: totalIncome,
         real_time_total_expenses: totalExpenses,
         real_time_net_income: totalIncome - totalExpenses,
+        
+        // Use real-time data over summary data when available
+        total_income: totalIncome > 0 ? totalIncome : (summaryData?.total_income || 0),
+        total_expenses: totalExpenses > 0 ? totalExpenses : (summaryData?.total_expenses || 0),
+        net_income: (totalIncome - totalExpenses) !== 0 ? (totalIncome - totalExpenses) : (summaryData?.net_income || 0),
         
         // Metadata
         last_calculated: summaryData?.calculated_at || new Date().toISOString(),
