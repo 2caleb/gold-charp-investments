@@ -26,6 +26,12 @@ import Contact from '@/pages/Contact';
 import Properties from '@/pages/Properties';
 import Calculator from '@/pages/Calculator';
 import Loans from '@/pages/Loans';
+import MoneyTransfer from '@/pages/MoneyTransfer';
+import PropertyEvaluation from '@/pages/PropertyEvaluation';
+import ServicesPage from '@/pages/services/index';
+import Insurance from '@/pages/services/Insurance';
+import FastTrack from '@/pages/services/FastTrack';
+import BusinessSupport from '@/pages/services/BusinessSupport';
 
 // Create a query client instance
 const queryClient = new QueryClient({
@@ -57,6 +63,15 @@ function App() {
                 <Route path="/properties" element={<Properties />} />
                 <Route path="/calculator" element={<Calculator />} />
                 <Route path="/loans" element={<Loans />} />
+                <Route path="/money-transfer" element={<MoneyTransfer />} />
+                <Route path="/property-evaluation" element={<PropertyEvaluation />} />
+                
+                {/* Services Routes */}
+                <Route path="/services" element={<ServicesPage />} />
+                <Route path="/services/insurance" element={<Insurance />} />
+                <Route path="/services/fast-track" element={<FastTrack />} />
+                <Route path="/services/business-support" element={<BusinessSupport />} />
+                <Route path="/services/mortgage" element={<Loans />} />
 
                 {/* Protected Routes */}
                 <Route 
