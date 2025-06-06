@@ -26,7 +26,10 @@ import {
   BarChart3,
   AlertCircle,
   Send,
-  RefreshCw
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Loader2
 } from 'lucide-react';
 import { useEnhancedFinancialSync } from '@/hooks/use-enhanced-financial-sync';
 import { useToast } from '@/hooks/use-toast';
@@ -35,9 +38,11 @@ const Payments = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   // Use enhanced financial sync for real-time data
-  const { data: syncedFinancialData, isLoading: syncLoading, refetch: refetchSync } = useEnhancedFinancialSync();
+  const { data: syncedFinancialData, isLoading: syncDataLoading, refetch: refetchSync } = useEnhancedFinancialSync();
 
   // Fetch loan book live data with real-time updates
   const { data: loanBookData, isLoading: loanBookLoading, refetch: refetchLoanBook } = useQuery({
@@ -96,27 +101,55 @@ const Payments = () => {
   }, [refetchLoanBook, refetchExpenses]);
 
   const handleSyncData = async () => {
+    setSyncLoading(true);
+    setSyncStatus('idle');
+    
     try {
-      // Trigger manual financial summary update
-      const { error } = await supabase.rpc('update_financial_summary');
-      if (error) throw error;
+      console.log('Starting manual financial summary update...');
+      
+      // Call the database function to update financial summary
+      const { error: rpcError } = await supabase.rpc('update_financial_summary');
+      
+      if (rpcError) {
+        console.error('RPC Error:', rpcError);
+        throw new Error(`Database sync failed: ${rpcError.message}`);
+      }
+
+      console.log('Financial summary updated successfully');
+
+      // Wait a moment for the update to propagate
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Refetch all data
-      refetchSync();
-      refetchLoanBook();
-      refetchExpenses();
+      await Promise.all([
+        refetchSync(),
+        refetchLoanBook(),
+        refetchExpenses()
+      ]);
 
+      setSyncStatus('success');
       toast({
-        title: "Data Synchronized",
-        description: "All financial data has been synchronized successfully",
+        title: "Sync Successful",
+        description: "All financial data has been synchronized and updated successfully",
+        variant: "default"
       });
+
     } catch (error) {
-      console.error('Error synchronizing data:', error);
+      console.error('Detailed sync error:', error);
+      setSyncStatus('error');
+      
+      // Provide more specific error feedback
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
       toast({
         title: "Sync Error",
-        description: "Failed to synchronize data. Please try again.",
+        description: `Failed to synchronize data: ${errorMessage}`,
         variant: "destructive",
       });
+    } finally {
+      setSyncLoading(false);
+      // Reset status after 3 seconds
+      setTimeout(() => setSyncStatus('idle'), 3000);
     }
   };
 
@@ -148,7 +181,7 @@ const Payments = () => {
     expense.particulars?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) || ''
   ) || [];
 
-  const isLoading = syncLoading || loanBookLoading || expensesLoading;
+  const isLoading = syncDataLoading || loanBookLoading || expensesLoading;
 
   if (isLoading) {
     return (
@@ -189,11 +222,23 @@ const Payments = () => {
             <div className="flex gap-2">
               <Button 
                 onClick={handleSyncData}
+                disabled={syncLoading}
                 variant="outline"
-                className="flex items-center gap-2"
+                className={`flex items-center gap-2 ${
+                  syncStatus === 'success' ? 'border-green-500 text-green-600' :
+                  syncStatus === 'error' ? 'border-red-500 text-red-600' : ''
+                }`}
               >
-                <RefreshCw className="h-4 w-4" />
-                Sync Data
+                {syncLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : syncStatus === 'success' ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : syncStatus === 'error' ? (
+                  <XCircle className="h-4 w-4" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                {syncLoading ? 'Syncing...' : 'Sync Data'}
               </Button>
               <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-10 px-4 shrink-0">
                 <Plus className="mr-2 h-4 w-4" />
@@ -225,8 +270,15 @@ const Payments = () => {
                     <p className="text-2xl font-bold text-blue-900">
                       {formatCurrency(syncedFinancialData?.real_time_total_portfolio || syncedFinancialData?.total_loan_portfolio || 0)}
                     </p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      {syncedFinancialData?.is_live_data ? 'Live synchronized' : 'From summary table'}
+                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                      {syncedFinancialData?.is_live_data ? (
+                        <>
+                          <CheckCircle className="h-3 w-3" />
+                          Live synchronized
+                        </>
+                      ) : (
+                        'From summary table'
+                      )}
                     </p>
                   </div>
                 </div>
