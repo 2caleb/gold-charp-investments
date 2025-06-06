@@ -4,18 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useExcelUpload } from '@/hooks/use-excel-upload';
-import { Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
+import { useDirectorCaleb } from '@/hooks/use-director-caleb';
+import { Upload, FileSpreadsheet, AlertCircle, Lock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const ExcelUploadCard: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadExcelFile, uploadProgress } = useExcelUpload();
+  const { isDirectorCaleb, isLoading } = useDirectorCaleb();
 
   const handleFileSelect = () => {
+    if (!isDirectorCaleb) return;
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isDirectorCaleb) return;
+    
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -46,12 +51,51 @@ const ExcelUploadCard: React.FC = () => {
 
   const isUploading = uploadProgress.uploading || uploadProgress.processing;
 
+  if (isLoading) {
+    return (
+      <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="ml-2">Loading...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!isDirectorCaleb) {
+    return (
+      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200">
+        <CardHeader>
+          <CardTitle className="flex items-center text-gray-600">
+            <Lock className="mr-2 h-5 w-5" />
+            Excel File Upload (Restricted)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Excel file uploads are restricted to Director Caleb only. You can view and download existing shared Excel data.
+            </AlertDescription>
+          </Alert>
+          <div className="text-center py-8">
+            <FileSpreadsheet className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-500">Upload access restricted</p>
+            <p className="text-gray-400 text-sm">Contact Director Caleb for file uploads</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200">
       <CardHeader>
         <CardTitle className="flex items-center text-blue-800">
           <FileSpreadsheet className="mr-2 h-5 w-5" />
-          Excel File Upload
+          Excel File Upload (Director Access)
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

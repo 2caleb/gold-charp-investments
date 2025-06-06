@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
+import { useDirectorCaleb } from '@/hooks/use-director-caleb';
 import { useSharedExcelData } from '@/hooks/use-shared-excel-data';
 import ExcelUploadCard from '@/components/excel/ExcelUploadCard';
 import SharedExcelViewer from '@/components/excel/SharedExcelViewer';
@@ -15,11 +16,13 @@ import {
   Shield,
   BarChart3,
   Users,
-  DollarSign
+  DollarSign,
+  Lock
 } from 'lucide-react';
 
 const PremiumManagementDashboard: React.FC = () => {
   const { userRole, isDirector, isCEO, isChairperson } = useRolePermissions();
+  const { isDirectorCaleb } = useDirectorCaleb();
   const { uploadHistory } = useSharedExcelData();
 
   const isExecutive = isDirector || isCEO || isChairperson;
@@ -46,6 +49,7 @@ const PremiumManagementDashboard: React.FC = () => {
               <Shield className="h-5 w-5 mr-2 text-green-300" />
               <span className="text-sm font-medium capitalize">
                 Role: {userRole} {isExecutive && '(Executive Access)'}
+                {isDirectorCaleb && ' - Excel Upload Authorized'}
               </span>
             </div>
           </div>
@@ -58,67 +62,73 @@ const PremiumManagementDashboard: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Executive Upload Section */}
-      {isExecutive && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <ExcelUploadCard />
-            </div>
-            <div className="lg:col-span-2">
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-green-800">
-                    <BarChart3 className="mr-2 h-5 w-5" />
-                    Recent Upload Activity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {recentUploads.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No recent uploads. Upload your first Excel file to get started.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {recentUploads.map((upload) => (
-                        <div
-                          key={upload.id}
-                          className="flex items-center justify-between p-3 bg-white rounded-lg border"
-                        >
-                          <div className="flex items-center">
-                            <FileSpreadsheet className="h-4 w-4 mr-3 text-green-600" />
-                            <div>
-                              <div className="font-medium text-sm">{upload.original_file_name}</div>
-                              <div className="text-xs text-gray-500">
-                                {upload.total_rows} rows • {upload.sheet_count} sheets
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right">
+      {/* Excel Management Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <ExcelUploadCard />
+          </div>
+          <div className="lg:col-span-2">
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-100 border-green-200">
+              <CardHeader>
+                <CardTitle className="flex items-center text-green-800">
+                  <BarChart3 className="mr-2 h-5 w-5" />
+                  Recent Upload Activity
+                  {!isDirectorCaleb && (
+                    <Lock className="ml-2 h-4 w-4 text-gray-500" title="Upload restricted to Director Caleb" />
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {recentUploads.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                    <p>
+                      {isDirectorCaleb 
+                        ? "No recent uploads. Upload your first Excel file to get started."
+                        : "No recent uploads. Only Director Caleb can upload Excel files."
+                      }
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentUploads.map((upload) => (
+                      <div
+                        key={upload.id}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg border"
+                      >
+                        <div className="flex items-center">
+                          <FileSpreadsheet className="h-4 w-4 mr-3 text-green-600" />
+                          <div>
+                            <div className="font-medium text-sm">{upload.original_file_name}</div>
                             <div className="text-xs text-gray-500">
-                              {new Date(upload.created_at).toLocaleDateString()}
-                            </div>
-                            <div className={`text-xs font-medium ${
-                              upload.status === 'completed' ? 'text-green-600' : 'text-yellow-600'
-                            }`}>
-                              {upload.status}
+                              {upload.total_rows} rows • {upload.sheet_count} sheets
                             </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500">
+                            {new Date(upload.created_at).toLocaleDateString()}
+                          </div>
+                          <div className={`text-xs font-medium ${
+                            upload.status === 'completed' ? 'text-green-600' : 'text-yellow-600'
+                          }`}>
+                            {upload.status}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </motion.div>
-      )}
+        </div>
+      </motion.div>
 
       {/* Financial Overview */}
       <motion.div
