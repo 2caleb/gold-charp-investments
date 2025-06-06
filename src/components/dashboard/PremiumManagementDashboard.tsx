@@ -7,6 +7,7 @@ import ExcelUploadCard from '@/components/excel/ExcelUploadCard';
 import SharedExcelViewer from '@/components/excel/SharedExcelViewer';
 import PremiumFinancialOverview from './PremiumFinancialOverview';
 import EnhancedSmartDashboardMonitor from './EnhancedSmartDashboardMonitor';
+import FinancialManagementDashboard from '@/components/financial/FinancialManagementDashboard';
 import SecurityGuard from '@/components/security/SecurityGuard';
 import { motion } from 'framer-motion';
 import { 
@@ -16,7 +17,8 @@ import {
   Shield,
   BarChart3,
   Users,
-  DollarSign
+  DollarSign,
+  Settings
 } from 'lucide-react';
 
 const PremiumManagementDashboard: React.FC = () => {
@@ -59,11 +61,32 @@ const PremiumManagementDashboard: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Excel Management Section */}
+      {/* Financial Management Section - Protected */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
+      >
+        <SecurityGuard action="canModifyExpenses">
+          <Card className="bg-gradient-to-br from-purple-50 to-indigo-100 border-purple-200">
+            <CardHeader>
+              <CardTitle className="flex items-center text-purple-800">
+                <Settings className="mr-2 h-5 w-5" />
+                Financial Management Dashboard
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FinancialManagementDashboard />
+            </CardContent>
+          </Card>
+        </SecurityGuard>
+      </motion.div>
+
+      {/* Excel Management Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
       >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
@@ -123,7 +146,7 @@ const PremiumManagementDashboard: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
+        transition={{ delay: 0.3 }}
       >
         <SecurityGuard action="canViewFinancials">
           <PremiumFinancialOverview />
@@ -134,7 +157,7 @@ const PremiumManagementDashboard: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.4 }}
       >
         <SharedExcelViewer />
       </motion.div>
@@ -143,7 +166,7 @@ const PremiumManagementDashboard: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
+        transition={{ delay: 0.5 }}
       >
         <EnhancedSmartDashboardMonitor />
       </motion.div>
@@ -152,7 +175,7 @@ const PremiumManagementDashboard: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
+        transition={{ delay: 0.6 }}
         className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl p-6 text-white"
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

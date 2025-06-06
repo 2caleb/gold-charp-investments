@@ -50,6 +50,29 @@ export const useEnhancedFinancialSync = () => {
           // Don't throw here, just log and continue with empty data
         }
 
+        // Get manual financial management entries
+        const { data: financialManagementData, error: financialManagementError } = await supabase
+          .from('financial_management')
+          .select('*')
+          .eq('approval_status', 'approved')
+          .eq('status', 'active');
+
+        if (financialManagementError) {
+          console.error('Error fetching financial management data:', financialManagementError);
+        }
+
+        // Get active financial adjustments
+        const { data: adjustmentsData, error: adjustmentsError } = await supabase
+          .from('financial_adjustments')
+          .select('*')
+          .eq('status', 'active')
+          .lte('effective_date', new Date().toISOString().split('T')[0])
+          .or('expires_at.is.null,expires_at.gte.' + new Date().toISOString().split('T')[0]);
+
+        if (adjustmentsError) {
+          console.error('Error fetching adjustments data:', adjustmentsError);
+        }
+
         // Calculate real-time metrics
         const realTimeActiveLoanHolders = loanBookData?.length || 0;
         const totalPortfolio = loanBookData?.reduce((sum, loan) => sum + (loan.amount_returnable || 0), 0) || 0;
@@ -59,19 +82,60 @@ export const useEnhancedFinancialSync = () => {
         const realTimeCollectionRate = totalPortfolio > 0 ? (totalRepaid / totalPortfolio) * 100 : 0;
 
         // Calculate transaction totals with the new table structure
-        const totalIncome = transactionsData?.reduce((sum, transaction) => {
+        const transactionIncome = transactionsData?.reduce((sum, transaction) => {
           if (transaction.transaction_type === 'income' && transaction.status === 'completed') {
             return sum + (transaction.amount || 0);
           }
           return sum;
         }, 0) || 0;
 
-        const totalExpenses = transactionsData?.reduce((sum, transaction) => {
+        const transactionExpenses = transactionsData?.reduce((sum, transaction) => {
           if (transaction.transaction_type === 'expense' && transaction.status === 'completed') {
             return sum + (transaction.amount || 0);
           }
           return sum;
         }, 0) || 0;
+
+        // Calculate manual financial management totals
+        const manualIncome = financialManagementData?.reduce((sum, entry) => {
+          if (entry.entry_type === 'manual_income') {
+            return sum + (entry.amount || 0);
+          }
+          return sum;
+        }, 0) || 0;
+
+        const manualExpenses = financialManagementData?.reduce((sum, entry) => {
+          if (entry.entry_type === 'manual_expense') {
+            return sum + (entry.amount || 0);
+          }
+          return sum;
+        }, 0) || 0;
+
+        // Apply financial adjustments
+        let adjustedIncome = transactionIncome + manualIncome;
+        let adjustedExpenses = transactionExpenses + manualExpenses;
+        let adjustedPortfolio = totalPortfolio;
+        let adjustedCollectionRate = realTimeCollectionRate;
+
+        adjustmentsData?.forEach(adjustment => {
+          switch (adjustment.adjustment_type) {
+            case 'income_adjustment':
+              adjustedIncome = adjustment.adjusted_value;
+              break;
+            case 'expense_adjustment':
+              adjustedExpenses = adjustment.adjusted_value;
+              break;
+            case 'portfolio_adjustment':
+              adjustedPortfolio = adjustment.adjusted_value;
+              break;
+            case 'collection_rate_override':
+              adjustedCollectionRate = adjustment.adjusted_value;
+              break;
+          }
+        });
+
+        const totalIncome = adjustedIncome;
+        const totalExpenses = adjustedExpenses;
 
         const synchronizedData = {
           // From financial_summary table
@@ -79,17 +143,27 @@ export const useEnhancedFinancialSync = () => {
           
           // Real-time calculated metrics
           real_time_active_loan_holders: realTimeActiveLoanHolders,
-          real_time_collection_rate: Math.min(realTimeCollectionRate, 100),
-          real_time_total_portfolio: totalPortfolio,
+          real_time_collection_rate: Math.min(adjustedCollectionRate, 100),
+          real_time_total_portfolio: adjustedPortfolio,
           real_time_total_repaid: totalRepaid,
           real_time_total_income: totalIncome,
           real_time_total_expenses: totalExpenses,
           real_time_net_income: totalIncome - totalExpenses,
           
-          // Use real-time data over summary data when available
+          // Manual financial entries
+          manual_income: manualIncome,
+          manual_expenses: manualExpenses,
+          
+          // Use enhanced data over summary data when available
           total_income: totalIncome > 0 ? totalIncome : (summaryData?.total_income || 0),
           total_expenses: totalExpenses > 0 ? totalExpenses : (summaryData?.total_expenses || 0),
           net_income: (totalIncome - totalExpenses) !== 0 ? (totalIncome - totalExpenses) : (summaryData?.net_income || 0),
+          total_loan_portfolio: adjustedPortfolio > 0 ? adjustedPortfolio : (summaryData?.total_loan_portfolio || 0),
+          collection_rate: adjustedCollectionRate > 0 ? adjustedCollectionRate : (summaryData?.collection_rate || 0),
+          
+          // Adjustment indicators
+          has_active_adjustments: (adjustmentsData?.length || 0) > 0,
+          adjustments_count: adjustmentsData?.length || 0,
           
           // Metadata
           last_calculated: summaryData?.calculated_at || new Date().toISOString(),
@@ -97,7 +171,7 @@ export const useEnhancedFinancialSync = () => {
           sync_status: 'synchronized'
         };
 
-        console.log('Synchronized financial data:', synchronizedData);
+        console.log('Enhanced synchronized financial data:', synchronizedData);
         return synchronizedData;
         
       } catch (error) {
@@ -119,6 +193,10 @@ export const useEnhancedFinancialSync = () => {
           real_time_total_income: 0,
           real_time_total_expenses: 0,
           real_time_net_income: 0,
+          manual_income: 0,
+          manual_expenses: 0,
+          has_active_adjustments: false,
+          adjustments_count: 0,
           last_calculated: new Date().toISOString(),
           is_live_data: false,
           sync_status: 'error'

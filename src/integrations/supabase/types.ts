@@ -234,6 +234,155 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_adjustments: {
+        Row: {
+          adjusted_value: number
+          adjustment_type: string
+          approved_by: string | null
+          created_at: string
+          created_by: string
+          effective_date: string
+          expires_at: string | null
+          id: string
+          original_value: number
+          reason: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          adjusted_value: number
+          adjustment_type: string
+          approved_by?: string | null
+          created_at?: string
+          created_by: string
+          effective_date?: string
+          expires_at?: string | null
+          id?: string
+          original_value: number
+          reason: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adjusted_value?: number
+          adjustment_type?: string
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string
+          effective_date?: string
+          expires_at?: string | null
+          id?: string
+          original_value?: number
+          reason?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      financial_management: {
+        Row: {
+          amount: number
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          category: string
+          created_at: string
+          created_by: string
+          description: string
+          entry_type: string
+          id: string
+          metadata: Json | null
+          period_end: string | null
+          period_start: string | null
+          rejection_reason: string | null
+          status: string | null
+          target_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          category: string
+          created_at?: string
+          created_by: string
+          description: string
+          entry_type: string
+          id?: string
+          metadata?: Json | null
+          period_end?: string | null
+          period_start?: string | null
+          rejection_reason?: string | null
+          status?: string | null
+          target_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          entry_type?: string
+          id?: string
+          metadata?: Json | null
+          period_end?: string | null
+          period_start?: string | null
+          rejection_reason?: string | null
+          status?: string | null
+          target_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      financial_management_audit_log: {
+        Row: {
+          action: string
+          details: Json | null
+          financial_management_id: string | null
+          id: string
+          ip_address: string | null
+          new_status: string | null
+          old_status: string | null
+          timestamp: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          details?: Json | null
+          financial_management_id?: string | null
+          id?: string
+          ip_address?: string | null
+          new_status?: string | null
+          old_status?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          details?: Json | null
+          financial_management_id?: string | null
+          id?: string
+          ip_address?: string | null
+          new_status?: string | null
+          old_status?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_management_audit_log_financial_management_id_fkey"
+            columns: ["financial_management_id"]
+            isOneToOne: false
+            referencedRelation: "financial_management"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_summary: {
         Row: {
           active_loan_holders: number
