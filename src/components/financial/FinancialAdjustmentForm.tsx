@@ -58,7 +58,17 @@ const FinancialAdjustmentForm: React.FC<FinancialAdjustmentFormProps> = ({ onClo
   });
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    createAdjustment(values);
+    // Type assertion after validation to ensure required fields are present
+    const adjustmentData = {
+      adjustment_type: values.adjustment_type,
+      original_value: values.original_value,
+      adjusted_value: values.adjusted_value,
+      reason: values.reason,
+      effective_date: values.effective_date,
+      expires_at: values.expires_at,
+    };
+    
+    createAdjustment(adjustmentData);
     onSuccess();
   };
 

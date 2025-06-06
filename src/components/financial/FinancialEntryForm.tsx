@@ -58,7 +58,18 @@ const FinancialEntryForm: React.FC<FinancialEntryFormProps> = ({ onClose, onSucc
   });
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    createEntry(values);
+    // Type assertion after validation to ensure required fields are present
+    const entryData = {
+      entry_type: values.entry_type,
+      category: values.category,
+      description: values.description,
+      amount: values.amount,
+      target_amount: values.target_amount,
+      period_start: values.period_start,
+      period_end: values.period_end,
+    };
+    
+    createEntry(entryData);
     onSuccess();
   };
 
