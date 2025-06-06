@@ -11,7 +11,7 @@ const MoneyTransferHero = () => {
     {
       icon: <Globe className="h-5 w-5" />,
       title: "Global Reach",
-      description: "50+ Countries"
+      description: "3+ Countries"
     },
     {
       icon: <Shield className="h-5 w-5" />,
@@ -119,10 +119,10 @@ const MoneyTransferHero = () => {
                 <div className="text-sm text-gray-600 dark:text-gray-400">Success Rate</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">50+</div>
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">3+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Countries</div>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
 
           {/* Right Visual */}
