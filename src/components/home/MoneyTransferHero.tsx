@@ -122,7 +122,7 @@ const MoneyTransferHero = () => {
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">3+</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">Countries</div>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* Right Visual */}
