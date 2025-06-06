@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -30,12 +29,6 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   {
-    title: 'Dashboard',
-    href: '/dashboard',
-    icon: Home,
-    description: 'Overview & Analytics'
-  },
-  {
     title: 'Loan Applications',
     href: '/loan-applications',
     icon: FileText,
@@ -66,13 +59,6 @@ const mainNavItems: NavItem[] = [
     href: '/reports',
     icon: BarChart3,
     description: 'Financial Reports'
-  },
-  {
-    title: 'Premium Dashboard',
-    href: '/premium-dashboard',
-    icon: Crown,
-    description: 'Advanced Management',
-    roles: ['manager', 'director', 'ceo', 'chairperson']
   }
 ];
 
