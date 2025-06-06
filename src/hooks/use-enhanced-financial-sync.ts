@@ -65,7 +65,13 @@ export const useEnhancedFinancialSync = () => {
             if (transaction.Amount && transaction.Amount > 0) {
               return sum + transaction.Amount;
             } else if (transaction.amount) {
-              const parsedAmount = parseFloat(transaction.amount.replace(/[^0-9.-]/g, '') || '0');
+              // Safely handle the amount field - check if it's already a number or string
+              let parsedAmount = 0;
+              if (typeof transaction.amount === 'number') {
+                parsedAmount = transaction.amount;
+              } else if (typeof transaction.amount === 'string') {
+                parsedAmount = parseFloat(transaction.amount.replace(/[^0-9.-]/g, '') || '0');
+              }
               return sum + (isNaN(parsedAmount) ? 0 : parsedAmount);
             }
           }
@@ -78,7 +84,13 @@ export const useEnhancedFinancialSync = () => {
             if (transaction.Amount && transaction.Amount > 0) {
               return sum + transaction.Amount;
             } else if (transaction.amount) {
-              const parsedAmount = parseFloat(transaction.amount.replace(/[^0-9.-]/g, '') || '0');
+              // Safely handle the amount field - check if it's already a number or string
+              let parsedAmount = 0;
+              if (typeof transaction.amount === 'number') {
+                parsedAmount = transaction.amount;
+              } else if (typeof transaction.amount === 'string') {
+                parsedAmount = parseFloat(transaction.amount.replace(/[^0-9.-]/g, '') || '0');
+              }
               return sum + (isNaN(parsedAmount) ? 0 : parsedAmount);
             }
           }
