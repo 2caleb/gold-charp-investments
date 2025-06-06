@@ -32,9 +32,9 @@ export interface WorkflowStage {
   chairperson_approved: boolean | null;
   field_officer_notes: string | null;
   manager_notes: string | null;
-  director_notes: boolean | null;
-  ceo_notes: boolean | null;
-  chairperson_notes: boolean | null;
+  director_notes: string | null;
+  ceo_notes: string | null;
+  chairperson_notes: string | null;
   created_at: string;
   updated_at: string;
 }
