@@ -1,5 +1,8 @@
 
-// Utility functions for sophisticated client data matching and normalization
+// Main client data matching orchestrator
+
+import { normalizeName, calculateSimilarity } from './nameMatching';
+import { normalizePhoneNumber } from './phoneMatching';
 
 export interface ClientMatchScore {
   client: any;
@@ -7,65 +10,6 @@ export interface ClientMatchScore {
   score: number;
   matchType: 'exact' | 'fuzzy' | 'phone' | 'id' | 'partial';
 }
-
-// Normalize phone numbers for consistent matching
-export const normalizePhoneNumber = (phone: string): string => {
-  if (!phone) return '';
-  
-  // Remove all non-digit characters
-  const digitsOnly = phone.replace(/\D/g, '');
-  
-  // Handle Uganda phone numbers
-  if (digitsOnly.startsWith('256')) {
-    return digitsOnly; // Already in international format
-  } else if (digitsOnly.startsWith('0') && digitsOnly.length === 10) {
-    return '256' + digitsOnly.substring(1); // Convert 0xxx to 256xxx
-  } else if (digitsOnly.length === 9) {
-    return '256' + digitsOnly; // Add country code
-  }
-  
-  return digitsOnly;
-};
-
-// Normalize names for consistent matching
-export const normalizeName = (name: string): string => {
-  if (!name) return '';
-  
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-    .replace(/[^\w\s]/g, '') // Remove special characters
-    .replace(/\b(mr|mrs|ms|dr|prof)\b/g, '') // Remove titles
-    .trim();
-};
-
-// Calculate string similarity using Levenshtein distance
-export const calculateSimilarity = (str1: string, str2: string): number => {
-  const matrix = Array(str2.length + 1).fill(null).map(() => Array(str1.length + 1).fill(null));
-  
-  for (let i = 0; i <= str1.length; i++) {
-    matrix[0][i] = i;
-  }
-  
-  for (let j = 0; j <= str2.length; j++) {
-    matrix[j][0] = j;
-  }
-  
-  for (let j = 1; j <= str2.length; j++) {
-    for (let i = 1; i <= str1.length; i++) {
-      const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
-      matrix[j][i] = Math.min(
-        matrix[j][i - 1] + 1, // deletion
-        matrix[j - 1][i] + 1, // insertion
-        matrix[j - 1][i - 1] + indicator // substitution
-      );
-    }
-  }
-  
-  const maxLength = Math.max(str1.length, str2.length);
-  return maxLength === 0 ? 1 : (maxLength - matrix[str2.length][str1.length]) / maxLength;
-};
 
 // Match clients to applications using multiple strategies
 export const matchClientToApplications = (client: any, applications: any[]): any[] => {
@@ -129,64 +73,7 @@ export const matchClientToApplications = (client: any, applications: any[]): any
     .map(match => match.application);
 };
 
-// Define application status categories
-export const getApplicationStatusCategory = (status: string): 'active' | 'approved' | 'rejected' | 'completed' => {
-  const normalizedStatus = status.toLowerCase().replace('_', ' ').trim();
-  
-  switch (normalizedStatus) {
-    case 'submitted':
-    case 'pending manager':
-    case 'pending director':
-    case 'pending ceo':
-    case 'pending chairperson':
-    case 'under review':
-    case 'in review':
-    case 'processing':
-      return 'active';
-    
-    case 'approved':
-    case 'disbursed':
-    case 'completed':
-      return 'approved';
-    
-    case 'rejected':
-    case 'declined':
-    case 'cancelled':
-      return 'rejected';
-    
-    default:
-      // If status is unclear, consider it active if it's not explicitly negative
-      return normalizedStatus.includes('reject') || normalizedStatus.includes('decline') || normalizedStatus.includes('cancel') 
-        ? 'rejected' 
-        : 'active';
-  }
-};
-
-// Calculate enhanced client statistics
-export const calculateClientStatistics = (applications: any[]) => {
-  const activeApplications = applications.filter(app => 
-    getApplicationStatusCategory(app.status) === 'active'
-  ).length;
-  
-  const approvedLoans = applications.filter(app => 
-    getApplicationStatusCategory(app.status) === 'approved'
-  ).length;
-  
-  const totalLoanAmount = applications.reduce((sum, app) => {
-    // Handle different loan amount formats
-    let amount = 0;
-    if (typeof app.loan_amount === 'string') {
-      amount = parseFloat(app.loan_amount.replace(/[^0-9.]/g, '')) || 0;
-    } else if (typeof app.loan_amount === 'number') {
-      amount = app.loan_amount;
-    }
-    return sum + amount;
-  }, 0);
-  
-  return {
-    totalApplications: applications.length,
-    activeApplications,
-    approvedLoans,
-    totalLoanAmount
-  };
-};
+// Re-export utilities for backward compatibility
+export { normalizeName, calculateSimilarity } from './nameMatching';
+export { normalizePhoneNumber } from './phoneMatching';
+export { getApplicationStatusCategory, calculateClientStatistics } from './clientStatistics';

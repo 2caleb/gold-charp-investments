@@ -4,8 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { EnhancedClient, LoanApplicationSummary } from '@/types/client';
 import { 
   matchClientToApplications, 
-  calculateClientStatistics,
-  getApplicationStatusCategory 
+  calculateClientStatistics
 } from '@/utils/clientDataMatching';
 
 export const useEnhancedClientData = () => {
