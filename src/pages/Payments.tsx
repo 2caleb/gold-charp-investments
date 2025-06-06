@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
 import PremiumFinancialOverview from '@/components/dashboard/PremiumFinancialOverview';
 import LiveFinancialMetrics from '@/components/dashboard/LiveFinancialMetrics';
+import TransactionEditor from '@/components/transactions/TransactionEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,31 +25,19 @@ import {
   PiggyBank,
   BarChart3,
   AlertCircle,
-  Send
+  Send,
+  Sync
 } from 'lucide-react';
+import { useEnhancedFinancialSync } from '@/hooks/use-enhanced-financial-sync';
+import { useToast } from '@/hooks/use-toast';
 
 const Payments = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
 
-  // Fetch financial summary data
-  const { data: summaryData, isLoading: summaryLoading } = useQuery({
-    queryKey: ['financial-summary'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('financial_summary')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error fetching financial summary:', error);
-        return null;
-      }
-      return data;
-    },
-  });
+  // Use enhanced financial sync for real-time data
+  const { data: syncedFinancialData, isLoading: syncLoading, refetch: refetchSync } = useEnhancedFinancialSync();
 
   // Fetch loan book live data with real-time updates
   const { data: loanBookData, isLoading: loanBookLoading, refetch: refetchLoanBook } = useQuery({
@@ -85,23 +73,6 @@ const Payments = () => {
     },
   });
 
-  // Fetch transactions data
-  const { data: transactionsData, isLoading: transactionsLoading } = useQuery({
-    queryKey: ['financial-transactions'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('financial_transactions')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching transactions:', error);
-        return [];
-      }
-      return data || [];
-    },
-  });
-
   // Set up real-time subscriptions
   useEffect(() => {
     const loanBookChannel = supabase
@@ -123,6 +94,31 @@ const Payments = () => {
       supabase.removeChannel(expensesChannel);
     };
   }, [refetchLoanBook, refetchExpenses]);
+
+  const handleSyncData = async () => {
+    try {
+      // Trigger manual financial summary update
+      const { error } = await supabase.rpc('update_financial_summary');
+      if (error) throw error;
+
+      // Refetch all data
+      refetchSync();
+      refetchLoanBook();
+      refetchExpenses();
+
+      toast({
+        title: "Data Synchronized",
+        description: "All financial data has been synchronized successfully",
+      });
+    } catch (error) {
+      console.error('Error synchronizing data:', error);
+      toast({
+        title: "Sync Error",
+        description: "Failed to synchronize data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const formatCurrency = (amount: string | number | null | undefined) => {
     if (!amount) return 'UGX 0';
@@ -152,7 +148,7 @@ const Payments = () => {
     expense.particulars?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) || ''
   ) || [];
 
-  const isLoading = summaryLoading || loanBookLoading || expensesLoading || transactionsLoading;
+  const isLoading = syncLoading || loanBookLoading || expensesLoading;
 
   if (isLoading) {
     return (
@@ -187,10 +183,18 @@ const Payments = () => {
                 Premium Payment Center
               </h1>
               <p className="text-gray-600 mt-2">
-                Real-time financial management and payment tracking with live data updates
+                Real-time financial management and payment tracking with synchronized data
               </p>
             </div>
             <div className="flex gap-2">
+              <Button 
+                onClick={handleSyncData}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Sync className="h-4 w-4" />
+                Sync Data
+              </Button>
               <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-10 px-4 shrink-0">
                 <Plus className="mr-2 h-4 w-4" />
                 New Transaction
@@ -203,22 +207,13 @@ const Payments = () => {
           </div>
         </motion.div>
 
-        {/* Live Financial Metrics */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <LiveFinancialMetrics />
-        </motion.div>
-
-        {/* Financial Summary Cards */}
+        {/* Enhanced Financial Summary Cards with Real-time Data */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200 hover:shadow-xl transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center">
@@ -228,9 +223,11 @@ const Payments = () => {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-blue-700">Total Loan Portfolio</p>
                     <p className="text-2xl font-bold text-blue-900">
-                      {formatCurrency(summaryData?.total_loan_portfolio || 0)}
+                      {formatCurrency(syncedFinancialData?.real_time_total_portfolio || syncedFinancialData?.total_loan_portfolio || 0)}
                     </p>
-                    <p className="text-xs text-blue-600 mt-1">From live loan book</p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      {syncedFinancialData?.is_live_data ? 'Live synchronized' : 'From summary table'}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -245,33 +242,63 @@ const Payments = () => {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-green-700">Total Repaid</p>
                     <p className="text-2xl font-bold text-green-900">
-                      {formatCurrency(summaryData?.total_repaid || 0)}
+                      {formatCurrency(syncedFinancialData?.real_time_total_repaid || syncedFinancialData?.total_repaid || 0)}
                     </p>
                     <p className="text-xs text-green-600 mt-1">
-                      {summaryData?.collection_rate?.toFixed(1) || 0}% collection rate
+                      {syncedFinancialData?.real_time_collection_rate?.toFixed(1) || syncedFinancialData?.collection_rate?.toFixed(1) || 0}% collection rate
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-red-50 to-rose-100 border-red-200 hover:shadow-xl transition-all duration-300">
+            <Card className="bg-gradient-to-br from-purple-50 to-violet-100 border-purple-200 hover:shadow-xl transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center shadow-lg">
-                    <TrendingDown className="h-6 w-6 text-white" />
+                  <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <TrendingUp className="h-6 w-6 text-white" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-red-700">Outstanding Balance</p>
-                    <p className="text-2xl font-bold text-red-900">
-                      {formatCurrency(summaryData?.outstanding_balance || 0)}
+                    <p className="text-sm font-medium text-purple-700">Active Loan Holders</p>
+                    <p className="text-2xl font-bold text-purple-900">
+                      {syncedFinancialData?.real_time_active_loan_holders || syncedFinancialData?.active_loan_holders || 0}
                     </p>
-                    <p className="text-xs text-red-600 mt-1">Remaining to collect</p>
+                    <p className="text-xs text-purple-600 mt-1">Live count</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-orange-50 to-amber-100 border-orange-200 hover:shadow-xl transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-orange-700">Net Income</p>
+                    <p className={`text-2xl font-bold ${
+                      (syncedFinancialData?.real_time_net_income || syncedFinancialData?.net_income || 0) >= 0 
+                        ? 'text-green-900' 
+                        : 'text-red-900'
+                    }`}>
+                      {formatCurrency(syncedFinancialData?.real_time_net_income || syncedFinancialData?.net_income || 0)}
+                    </p>
+                    <p className="text-xs text-orange-600 mt-1">Real-time calculated</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+        </motion.div>
+
+        {/* Live Financial Metrics */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <LiveFinancialMetrics />
         </motion.div>
 
         <motion.div
@@ -287,15 +314,15 @@ const Payments = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Tabs defaultValue="loan-book" className="w-full">
+          <Tabs defaultValue="transactions" className="w-full">
             <TabsList className="grid w-full grid-cols-4 h-12">
+              <TabsTrigger value="transactions" className="text-sm">
+                <CreditCard className="mr-2 h-4 w-4" />
+                Transaction Editor
+              </TabsTrigger>
               <TabsTrigger value="loan-book" className="text-sm">
                 <DollarSign className="mr-2 h-4 w-4" />
                 Live Loan Book
-              </TabsTrigger>
-              <TabsTrigger value="transactions" className="text-sm">
-                <CreditCard className="mr-2 h-4 w-4" />
-                Transactions
               </TabsTrigger>
               <TabsTrigger value="expenses" className="text-sm">
                 <TrendingDown className="mr-2 h-4 w-4" />
@@ -306,6 +333,10 @@ const Payments = () => {
                 Reports
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="transactions" className="space-y-6 mt-6">
+              <TransactionEditor />
+            </TabsContent>
 
             <TabsContent value="loan-book" className="space-y-6 mt-6">
               <Card className="shadow-lg">
@@ -505,109 +536,48 @@ const Payments = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="transactions" className="space-y-4 mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="flex items-center">
-                      <CreditCard className="mr-2 h-5 w-5" />
-                      Financial Transactions ({transactionsData?.length || 0} records)
-                    </span>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Filter className="mr-2 h-4 w-4" />
-                        Filter
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Download className="mr-2 h-4 w-4" />
-                        Export
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {transactionsData && transactionsData.length > 0 ? (
-                      transactionsData.slice(0, 10).map((transaction, index) => (
-                        <motion.div
-                          key={transaction.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg border hover:shadow-md transition-all duration-200"
-                        >
-                          <div className="flex items-center space-x-4">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              transaction.transaction_type === 'income' 
-                                ? 'bg-green-100 text-green-600' 
-                                : 'bg-red-100 text-red-600'
-                            }`}>
-                              {transaction.transaction_type === 'income' ? 
-                                <TrendingUp className="h-5 w-5" /> : 
-                                <TrendingDown className="h-5 w-5" />
-                              }
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-900">{transaction.description}</p>
-                              <p className="text-sm text-gray-500 capitalize">{transaction.category}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className={`font-bold ${
-                              transaction.transaction_type === 'income' 
-                                ? 'text-green-600' 
-                                : 'text-red-600'
-                            }`}>
-                              {transaction.transaction_type === 'income' ? '+' : '-'}
-                              {formatCurrency(transaction.amount)}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {new Date(transaction.date).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <div className="flex flex-col items-center gap-2">
-                          <AlertCircle className="h-8 w-8 text-gray-400" />
-                          <p className="text-gray-500">No transaction records available</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
             <TabsContent value="reports" className="space-y-6 mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card className="shadow-lg">
                   <CardHeader>
-                    <CardTitle>Financial Summary</CardTitle>
+                    <CardTitle>Enhanced Financial Summary</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex justify-between">
                         <span>Active Loans:</span>
-                        <span className="font-semibold">{loanBookData?.length || 0}</span>
+                        <span className="font-semibold">{syncedFinancialData?.real_time_active_loan_holders || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Total Portfolio Value:</span>
-                        <span className="font-semibold text-blue-600">{formatCurrency(summaryData?.total_loan_portfolio || 0)}</span>
+                        <span className="font-semibold text-blue-600">
+                          {formatCurrency(syncedFinancialData?.real_time_total_portfolio || 0)}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Total Repaid:</span>
-                        <span className="font-semibold text-green-600">{formatCurrency(summaryData?.total_repaid || 0)}</span>
+                        <span className="font-semibold text-green-600">
+                          {formatCurrency(syncedFinancialData?.real_time_total_repaid || 0)}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Outstanding Balance:</span>
-                        <span className="font-semibold text-red-600">{formatCurrency(summaryData?.outstanding_balance || 0)}</span>
+                        <span className="font-semibold text-red-600">
+                          {formatCurrency(syncedFinancialData?.outstanding_balance || 0)}
+                        </span>
                       </div>
                       <div className="flex justify-between border-t pt-3">
                         <span>Collection Rate:</span>
                         <span className="font-semibold text-purple-600">
-                          {summaryData?.collection_rate?.toFixed(1) || 0}%
+                          {syncedFinancialData?.real_time_collection_rate?.toFixed(1) || 0}%
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Net Income:</span>
+                        <span className={`font-semibold ${
+                          (syncedFinancialData?.real_time_net_income || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {formatCurrency(syncedFinancialData?.real_time_net_income || 0)}
                         </span>
                       </div>
                     </div>
@@ -616,14 +586,41 @@ const Payments = () => {
 
                 <Card className="shadow-lg">
                   <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
+                    <CardTitle>Data Synchronization Status</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
-                      <Button className="w-full h-10" variant="outline">Generate Live Loan Report</Button>
-                      <Button className="w-full h-10" variant="outline">Export Live Payment Data</Button>
-                      <Button className="w-full h-10" variant="outline">Real-time Collection Reports</Button>
-                      <Button className="w-full h-10" variant="outline">Generate Live Summary</Button>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span>Sync Status:</span>
+                        <Badge variant="default" className="bg-green-100 text-green-800">
+                          {syncedFinancialData?.sync_status || 'Active'}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Last Updated:</span>
+                        <span className="text-sm text-gray-600">
+                          {syncedFinancialData?.last_calculated 
+                            ? new Date(syncedFinancialData.last_calculated).toLocaleString()
+                            : 'Never'
+                          }
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span>Real-time Data:</span>
+                        <Badge variant={syncedFinancialData?.is_live_data ? "default" : "secondary"}>
+                          {syncedFinancialData?.is_live_data ? 'Active' : 'Cached'}
+                        </Badge>
+                      </div>
+                      <div className="space-y-3 pt-4">
+                        <Button className="w-full" onClick={handleSyncData}>
+                          <Sync className="mr-2 h-4 w-4" />
+                          Force Sync Now
+                        </Button>
+                        <Button className="w-full" variant="outline">
+                          <Download className="mr-2 h-4 w-4" />
+                          Export All Data
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
