@@ -24,9 +24,8 @@ const WorkflowStagesCard: React.FC<WorkflowStagesCardProps> = ({ workflow, appli
     return 'Pending';
   };
 
-  const getNotesAsString = (notes: string | boolean | null | undefined): string => {
-    if (!notes) return 'No notes';
-    if (typeof notes === 'boolean') return 'No notes';
+  const getNotesText = (notes: string | null | undefined): string => {
+    if (!notes || notes === 'null') return 'No notes';
     return notes;
   };
 
@@ -55,7 +54,7 @@ const WorkflowStagesCard: React.FC<WorkflowStagesCardProps> = ({ workflow, appli
               {getStageIcon('field_officer', workflow.field_officer_approved)}
               <div>
                 <p className="font-medium">Field Officer Review</p>
-                <p className="text-sm text-gray-600">{getNotesAsString(workflow.field_officer_notes)}</p>
+                <p className="text-sm text-gray-600">{getNotesText(workflow.field_officer_notes)}</p>
               </div>
             </div>
             <Badge variant="outline">
@@ -74,7 +73,7 @@ const WorkflowStagesCard: React.FC<WorkflowStagesCardProps> = ({ workflow, appli
               {getStageIcon('manager', workflow.manager_approved)}
               <div>
                 <p className="font-medium">Manager Review</p>
-                <p className="text-sm text-gray-600">{getNotesAsString(workflow.manager_notes)}</p>
+                <p className="text-sm text-gray-600">{getNotesText(workflow.manager_notes)}</p>
               </div>
             </div>
             <Badge variant="outline">
@@ -93,7 +92,7 @@ const WorkflowStagesCard: React.FC<WorkflowStagesCardProps> = ({ workflow, appli
               {getStageIcon('director', workflow.director_approved)}
               <div>
                 <p className="font-medium">Director Risk Assessment</p>
-                <p className="text-sm text-gray-600">{getNotesAsString(workflow.director_notes)}</p>
+                <p className="text-sm text-gray-600">{getNotesText(workflow.director_notes)}</p>
               </div>
             </div>
             <Badge variant="outline">
@@ -112,7 +111,7 @@ const WorkflowStagesCard: React.FC<WorkflowStagesCardProps> = ({ workflow, appli
               {getStageIcon('chairperson', workflow.chairperson_approved)}
               <div>
                 <p className="font-medium">Chairperson Approval</p>
-                <p className="text-sm text-gray-600">{getNotesAsString(workflow.chairperson_notes)}</p>
+                <p className="text-sm text-gray-600">{getNotesText(workflow.chairperson_notes)}</p>
               </div>
             </div>
             <Badge variant="outline">
@@ -131,7 +130,7 @@ const WorkflowStagesCard: React.FC<WorkflowStagesCardProps> = ({ workflow, appli
               {getStageIcon('ceo', workflow.ceo_approved)}
               <div>
                 <p className="font-medium text-blue-700">CEO Final Decision</p>
-                <p className="text-sm text-gray-600">{getNotesAsString(workflow.ceo_notes)}</p>
+                <p className="text-sm text-gray-600">{getNotesText(workflow.ceo_notes)}</p>
               </div>
             </div>
             <Badge variant="outline" className="border-blue-500 text-blue-700">

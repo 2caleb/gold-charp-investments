@@ -24,16 +24,22 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    console.log("=== Loan Approval Function Called ===");
+    
     // Parse request body
+    const requestBody = await req.json();
+    console.log("Request body received:", requestBody);
+
     const { 
       loan_id: loanId, 
       action,
       notes, 
       approver_id: approverId,
       downsized_amount
-    } = await req.json();
+    } = requestBody;
 
     if (!loanId || !action) {
+      console.error("Missing required parameters:", { loanId, action });
       return new Response(
         JSON.stringify({ 
           error: "Missing required parameters. Required: loan_id, action" 
@@ -45,17 +51,17 @@ serve(async (req) => {
       );
     }
 
-    // Get the loan application and workflow data
+    console.log("Processing loan action:", { loanId, action, approverId });
+
+    // Get the loan application
     const { data: loanApplication, error: loanError } = await supabaseClient
       .from('loan_applications')
-      .select(`
-        *,
-        loan_applications_workflow (*)
-      `)
+      .select('*')
       .eq('id', loanId)
       .single();
 
     if (loanError || !loanApplication) {
+      console.error("Loan application fetch error:", loanError);
       return new Response(
         JSON.stringify({ error: loanError?.message || "Loan application not found" }),
         { 
@@ -65,29 +71,77 @@ serve(async (req) => {
       );
     }
 
-    // Get the current workflow and stage
-    const workflow = loanApplication.loan_applications_workflow;
-    const workflowId = workflow?.id;
-    
-    if (!workflowId) {
+    console.log("Loan application found:", loanApplication.id);
+
+    // Get or create workflow
+    let { data: workflow, error: workflowError } = await supabaseClient
+      .from('loan_applications_workflow')
+      .select('*')
+      .eq('loan_application_id', loanId)
+      .maybeSingle();
+
+    if (workflowError) {
+      console.error("Workflow fetch error:", workflowError);
       return new Response(
-        JSON.stringify({ error: "Workflow data not found for this application" }),
+        JSON.stringify({ error: `Failed to fetch workflow: ${workflowError.message}` }),
         { 
-          status: 404, 
+          status: 500, 
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         }
       );
     }
+
+    // Create workflow if it doesn't exist
+    if (!workflow) {
+      console.log("No workflow found, creating new workflow for application:", loanId);
+      
+      const { data: newWorkflow, error: createError } = await supabaseClient
+        .from('loan_applications_workflow')
+        .insert({
+          loan_application_id: loanId,
+          current_stage: 'manager',
+          field_officer_approved: true,
+          manager_approved: null,
+          director_approved: null,
+          chairperson_approved: null,
+          ceo_approved: null,
+          field_officer_notes: 'Application submitted by field officer',
+          manager_notes: null,
+          director_notes: null,
+          chairperson_notes: null,
+          ceo_notes: null
+        })
+        .select('*')
+        .single();
+
+      if (createError) {
+        console.error("Failed to create workflow:", createError);
+        return new Response(
+          JSON.stringify({ error: `Failed to create workflow: ${createError.message}` }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+
+      workflow = newWorkflow;
+      console.log("Created new workflow:", workflow.id);
+    }
+
+    console.log("Using workflow:", { id: workflow.id, current_stage: workflow.current_stage });
     
-    const currentStage = workflow.current_stage || 'field_officer';
+    const currentStage = workflow.current_stage || 'manager';
     
     // Execute the action (approve or reject)
     if (action === 'approve' || action === 'reject') {
       const approved = action === 'approve';
+      console.log(`Processing ${approved ? 'approval' : 'rejection'} at stage: ${currentStage}`);
       
       // Get current workflow stage index
       const currentStageIndex = WORKFLOW_STAGES.indexOf(currentStage);
       if (currentStageIndex === -1) {
+        console.error("Invalid stage:", currentStage);
         return new Response(
           JSON.stringify({ error: `Invalid stage: ${currentStage}` }),
           { 
@@ -106,13 +160,16 @@ serve(async (req) => {
         if (currentStageIndex < WORKFLOW_STAGES.length - 1) {
           nextStage = WORKFLOW_STAGES[currentStageIndex + 1];
           applicationStatus = `pending_${nextStage}`;
+          console.log(`Moving to next stage: ${nextStage}`);
         } else {
           // Final approval by CEO
           applicationStatus = 'approved';
+          console.log("Final approval by CEO");
         }
       } else {
         // If rejected at any stage
         applicationStatus = 'rejected';
+        console.log(`Application rejected at ${currentStage} stage`);
       }
       
       // Fetch the approver's name for better notifications
@@ -123,6 +180,7 @@ serve(async (req) => {
         .single();
         
       const approverName = approverData?.full_name || currentStage;
+      console.log("Approver name:", approverName);
 
       // Update the workflow record with approval/rejection
       const updateObject: Record<string, any> = {
@@ -131,27 +189,30 @@ serve(async (req) => {
         updated_at: new Date().toISOString()
       };
       
-      // Add approver name if available
-      if (approverName) {
-        updateObject[`${currentStage}_name`] = approverName;
-      }
-      
       // Only update next stage if moving forward
       if (nextStage) {
         updateObject.current_stage = nextStage;
+      } else if (!approved) {
+        // If rejected, mark as completed
+        updateObject.current_stage = 'rejected';
       }
       
+      console.log("Updating workflow with:", updateObject);
+      
       // Update workflow
-      const { data: updatedWorkflow, error: workflowError } = await supabaseClient
+      const { data: updatedWorkflow, error: workflowUpdateError } = await supabaseClient
         .from('loan_applications_workflow')
         .update(updateObject)
-        .eq('id', workflowId)
+        .eq('id', workflow.id)
         .select('*')
         .single();
 
-      if (workflowError) {
-        throw workflowError;
+      if (workflowUpdateError) {
+        console.error("Workflow update error:", workflowUpdateError);
+        throw workflowUpdateError;
       }
+
+      console.log("Workflow updated successfully:", updatedWorkflow.id);
 
       // Update application status
       const appUpdateData: Record<string, any> = { 
@@ -165,16 +226,21 @@ serve(async (req) => {
         appUpdateData.rejection_reason = notes || 'Rejected';
       }
 
-      const { data: updatedApplication, error: applicationError } = await supabaseClient
+      console.log("Updating application with:", appUpdateData);
+
+      const { data: updatedApplication, error: applicationUpdateError } = await supabaseClient
         .from('loan_applications')
         .update(appUpdateData)
         .eq('id', loanId)
         .select('*')
         .single();
 
-      if (applicationError) {
-        throw applicationError;
+      if (applicationUpdateError) {
+        console.error("Application update error:", applicationUpdateError);
+        throw applicationUpdateError;
       }
+
+      console.log("Application updated successfully");
 
       // Create notification for application status change
       let notificationMessage = '';
@@ -195,7 +261,7 @@ serve(async (req) => {
       
       // Only create notification if we have a user ID to send it to
       if (loanApplication.created_by) {
-        await supabaseClient
+        const { error: notificationError } = await supabaseClient
           .from('notifications')
           .insert({
             user_id: loanApplication.created_by,
@@ -203,10 +269,16 @@ serve(async (req) => {
             related_to: 'loan_application',
             entity_id: loanId
           });
+
+        if (notificationError) {
+          console.error("Notification creation failed:", notificationError);
+        } else {
+          console.log("Notification created successfully");
+        }
       }
 
       // Log workflow action with enhanced details
-      await supabaseClient
+      const { error: logError } = await supabaseClient
         .from('loan_workflow_log')
         .insert({
           loan_application_id: loanId,
@@ -214,6 +286,14 @@ serve(async (req) => {
           performed_by: approverId,
           status: applicationStatus
         });
+
+      if (logError) {
+        console.error("Workflow log creation failed:", logError);
+      } else {
+        console.log("Workflow log created successfully");
+      }
+
+      console.log("=== Loan Approval Function Completed Successfully ===");
 
       // Return success response
       return new Response(
@@ -292,10 +372,16 @@ serve(async (req) => {
       );
     }
   } catch (error) {
-    console.error("Error processing approval action:", error);
+    console.error("=== CRITICAL ERROR in loan-approval function ===");
+    console.error("Error details:", error);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
     
     return new Response(
-      JSON.stringify({ error: error.message || "An unknown error occurred" }),
+      JSON.stringify({ 
+        error: error.message || "An unknown error occurred",
+        details: "Check function logs for more information"
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 

@@ -42,7 +42,24 @@ export const useEnhancedWorkflow = () => {
 
         if (error) {
           console.error('Edge function error:', error);
-          throw new Error(error.message || 'Failed to process workflow action');
+          // Provide more specific error messages
+          if (error.message.includes('404')) {
+            throw new Error('Application not found. Please refresh and try again.');
+          } else if (error.message.includes('500')) {
+            throw new Error('Server error occurred. Please try again in a moment.');
+          } else if (error.message.includes('Invalid stage')) {
+            throw new Error('Cannot process action at current workflow stage.');
+          } else {
+            throw new Error(error.message || 'Failed to process workflow action');
+          }
+        }
+
+        if (!data) {
+          throw new Error('No response data received from server');
+        }
+
+        if (!data.success) {
+          throw new Error(data.error || 'Workflow action failed');
         }
 
         console.log('Workflow action successful:', data);
@@ -64,7 +81,7 @@ export const useEnhancedWorkflow = () => {
       
       // Show success notification
       toast({
-        title: `Application ${action}d`,
+        title: `Application ${action}d Successfully`,
         description: data.isFinalDecision 
           ? `Final decision: Application ${action}d by CEO`
           : `Application has been ${action}d and moved to the next stage`,
@@ -87,9 +104,30 @@ export const useEnhancedWorkflow = () => {
     onError: (error: any) => {
       setIsProcessing(false);
       console.error('Workflow action error:', error);
+      
+      // Show more specific error messages
+      let errorMessage = 'Failed to process the application action';
+      let errorTitle = 'Action Failed';
+      
+      if (error.message.includes('not authenticated')) {
+        errorTitle = 'Authentication Required';
+        errorMessage = 'Please log in to perform this action';
+      } else if (error.message.includes('not found')) {
+        errorTitle = 'Application Not Found';
+        errorMessage = 'The application could not be found. Please refresh the page.';
+      } else if (error.message.includes('Server error')) {
+        errorTitle = 'Server Error';
+        errorMessage = 'A server error occurred. Please try again in a moment.';
+      } else if (error.message.includes('workflow stage')) {
+        errorTitle = 'Invalid Action';
+        errorMessage = 'This action cannot be performed at the current workflow stage.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: 'Action Failed',
-        description: error.message || 'Failed to process the application action',
+        title: errorTitle,
+        description: errorMessage,
         variant: 'destructive'
       });
     }
