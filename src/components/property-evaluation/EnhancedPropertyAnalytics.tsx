@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,7 +24,8 @@ import {
   Scatter
 } from 'recharts';
 import { TrendingUp, TrendingDown, BarChart3, PieChart as PieChartIcon, Map, Calculator, ArrowUpRight, ArrowDownRight } from 'lucide-react';
-import { BASE_PRICES_2022, getInflatedPrice, CURRENT_YEAR, UGANDA_DISTRICTS } from '@/utils/propertyEvaluation';
+import { BASE_PRICES_2022, getInflatedPrice, CURRENT_YEAR } from '@/utils/propertyEvaluation';
+import { UGANDA_DISTRICTS } from '@/utils/geoUtils';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 const EnhancedPropertyAnalytics = () => {
@@ -398,7 +398,6 @@ const EnhancedPropertyAnalytics = () => {
                     <Scatter 
                       dataKey="roi_potential" 
                       fill="#8b5cf6"
-                      size={100}
                     />
                   </ScatterChart>
                 </ResponsiveContainer>
