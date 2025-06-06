@@ -26,7 +26,7 @@ import {
   BarChart3,
   AlertCircle,
   Send,
-  Sync
+  RefreshCw
 } from 'lucide-react';
 import { useEnhancedFinancialSync } from '@/hooks/use-enhanced-financial-sync';
 import { useToast } from '@/hooks/use-toast';
@@ -192,7 +192,7 @@ const Payments = () => {
                 variant="outline"
                 className="flex items-center gap-2"
               >
-                <Sync className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4" />
                 Sync Data
               </Button>
               <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 h-10 px-4 shrink-0">
@@ -613,7 +613,7 @@ const Payments = () => {
                       </div>
                       <div className="space-y-3 pt-4">
                         <Button className="w-full" onClick={handleSyncData}>
-                          <Sync className="mr-2 h-4 w-4" />
+                          <RefreshCw className="mr-2 h-4 w-4" />
                           Force Sync Now
                         </Button>
                         <Button className="w-full" variant="outline">

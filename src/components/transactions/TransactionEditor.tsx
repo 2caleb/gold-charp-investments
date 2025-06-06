@@ -6,13 +6,28 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Filter, Download, Upload } from 'lucide-react';
+import { Plus, Search, Filter, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import EditableTransactionRow from './EditableTransactionRow';
 import { useFinancialTransactionsRealtime } from '@/hooks/use-financial-transactions-realtime';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
+
+// Define the Transaction interface
+interface Transaction {
+  id: string;
+  description: string;
+  amount: string;
+  Amount: number;
+  transaction_type: 'income' | 'expense';
+  category: string;
+  date: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+  loan_application_id?: string;
+}
 
 const TransactionEditor: React.FC = () => {
   const { toast } = useToast();
@@ -48,7 +63,10 @@ const TransactionEditor: React.FC = () => {
         console.error('Error fetching transactions:', error);
         throw error;
       }
-      return data || [];
+      return (data || []).map(transaction => ({
+        ...transaction,
+        transaction_type: transaction.transaction_type as 'income' | 'expense'
+      })) as Transaction[];
     },
   });
 
