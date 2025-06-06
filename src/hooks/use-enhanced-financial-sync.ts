@@ -70,7 +70,8 @@ export const useEnhancedFinancialSync = () => {
               if (typeof transaction.amount === 'number') {
                 parsedAmount = transaction.amount;
               } else if (typeof transaction.amount === 'string') {
-                parsedAmount = parseFloat(transaction.amount.replace(/[^0-9.-]/g, '') || '0');
+                const cleanAmount = transaction.amount.replace(/[^0-9.-]/g, '') || '0';
+                parsedAmount = parseFloat(cleanAmount);
               }
               return sum + (isNaN(parsedAmount) ? 0 : parsedAmount);
             }
@@ -89,7 +90,8 @@ export const useEnhancedFinancialSync = () => {
               if (typeof transaction.amount === 'number') {
                 parsedAmount = transaction.amount;
               } else if (typeof transaction.amount === 'string') {
-                parsedAmount = parseFloat(transaction.amount.replace(/[^0-9.-]/g, '') || '0');
+                const cleanAmount = transaction.amount.replace(/[^0-9.-]/g, '') || '0';
+                parsedAmount = parseFloat(cleanAmount);
               }
               return sum + (isNaN(parsedAmount) ? 0 : parsedAmount);
             }
