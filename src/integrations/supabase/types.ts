@@ -797,6 +797,39 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_excel_data: {
+        Row: {
+          created_at: string
+          id: string
+          row_data: Json
+          row_index: number
+          sheet_name: string
+          updated_at: string
+          upload_id: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          row_data: Json
+          row_index: number
+          sheet_name: string
+          updated_at?: string
+          upload_id: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          row_data?: Json
+          row_index?: number
+          sheet_name?: string
+          updated_at?: string
+          upload_id?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
       transaction_audit_log: {
         Row: {
           action: string
@@ -958,6 +991,51 @@ export type Database = {
           phone_number?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      upload_history: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number
+          id: string
+          original_file_name: string
+          processing_notes: string | null
+          sheet_count: number
+          status: string
+          storage_path: string
+          total_rows: number
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size: number
+          id?: string
+          original_file_name: string
+          processing_notes?: string | null
+          sheet_count?: number
+          status?: string
+          storage_path: string
+          total_rows?: number
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number
+          id?: string
+          original_file_name?: string
+          processing_notes?: string | null
+          sheet_count?: number
+          status?: string
+          storage_path?: string
+          total_rows?: number
+          updated_at?: string
+          uploaded_by?: string
         }
         Relationships: []
       }

@@ -1,151 +1,142 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
-import { ThemeProvider } from "@/components/theme/ThemeProvider";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { NotificationsProvider } from "@/contexts/NotificationsContext";
-import PrivateRoute from "@/components/auth/PrivateRoute";
-import PublicRoute from "@/components/auth/PublicRoute";
-import StaffRoute from "@/components/auth/StaffRoute";
-import RoleBasedRoute from "@/components/auth/RoleBasedRoute";
-
-// Public pages
-import Index from "./pages/Index";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Loans from "./pages/Loans";
-import Properties from "./pages/Properties";
-import Calculator from "./pages/Calculator";
-import PropertyEvaluation from "./pages/PropertyEvaluation";
-import Services from "./pages/services";
-import ServiceDetail from "./pages/services/ServiceDetail";
-import BusinessSupport from "./pages/services/BusinessSupport";
-import FastTrack from "./pages/services/FastTrack";
-import Insurance from "./pages/services/Insurance";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import NotFound from "./pages/NotFound";
-import MoneyTransfer from "./pages/MoneyTransfer";
-
-// Protected pages
-import Dashboard from "./pages/Dashboard";
-import ClientsList from "./pages/ClientsList";
-import ClientDetail from "./pages/ClientDetail";
-import NewClient from "./pages/NewClient";
-import LoanApplicationsList from "./pages/LoanApplicationsList";
-import NewLoanApplication from "./pages/NewLoanApplication";
-import LoanApprovalPage from "./pages/LoanApprovalPage";
-import Documents from "./pages/Documents";
-import Notifications from "./pages/Notifications";
-import ReportsPage from "./pages/ReportsPage";
-import Payments from "./pages/Payments";
-
-// Staff pages
-import DataCollection from "./pages/staff/DataCollection";
-import DataCollectionDashboard from "./pages/staff/DataCollectionDashboard";
-import ManagerReviewDashboard from "./pages/staff/ManagerReviewDashboard";
-import DirectorRiskDashboard from "./pages/staff/DirectorRiskDashboard";
-import CEOApprovalDashboard from "./pages/staff/CEOApprovalDashboard";
-import ChairpersonFinalDashboard from "./pages/staff/ChairpersonFinalDashboard";
-
-// Admin pages
-import MoneyTransferDashboard from "./pages/admin/MoneyTransferDashboard";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@/components/theme-provider';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { NotificationsProvider } from '@/contexts/NotificationsContext';
+import { QueryClient } from '@/components/query-client';
+import PrivateRoute from '@/components/auth/PrivateRoute';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import Dashboard from '@/pages/Dashboard';
+import LoanApplication from '@/pages/LoanApplication';
+import LoanApproval from '@/pages/LoanApproval';
+import ClientManagement from '@/pages/ClientManagement';
+import ClientDetails from '@/pages/ClientDetails';
+import NewClient from '@/pages/NewClient';
+import Payments from '@/pages/Payments';
+import Reports from '@/pages/Reports';
+import Settings from '@/pages/Settings';
+import NotFound from '@/pages/NotFound';
+import DataCollectionDashboard from '@/pages/staff/DataCollectionDashboard';
+import StaffRoute from '@/components/auth/StaffRoute';
+import PremiumDashboard from '@/pages/PremiumDashboard';
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <QueryClient>
       <AuthProvider>
         <NotificationsProvider>
           <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/loans" element={<Loans />} />
-                  <Route path="/properties" element={<Properties />} />
-                  <Route path="/calculator" element={<Calculator />} />
-                  <Route path="/property-evaluation" element={<PropertyEvaluation />} />
-                  <Route path="/services" element={<Services />} />
-                  <Route path="/services/:serviceId" element={<ServiceDetail />} />
-                  <Route path="/services/business-support" element={<BusinessSupport />} />
-                  <Route path="/services/fast-track" element={<FastTrack />} />
-                  <Route path="/services/insurance" element={<Insurance />} />
-                  <Route path="/money-transfer" element={<MoneyTransfer />} />
-                  
-                  {/* Auth routes - only accessible when not logged in */}
-                  <Route element={<PublicRoute><Outlet /></PublicRoute>}>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                  </Route>
+            <Toaster />
+            <BrowserRouter>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
 
-                  {/* Protected routes - require authentication */}
-                  <Route element={<PrivateRoute><Outlet /></PrivateRoute>}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/clients" element={<ClientsList />} />
-                    <Route path="/clients/:id" element={<ClientDetail />} />
-                    <Route path="/new-client" element={<NewClient />} />
-                    <Route path="/loan-applications" element={<LoanApplicationsList />} />
-                    <Route path="/new-loan-application" element={<NewLoanApplication />} />
-                    <Route path="/loan-approval/:id" element={<LoanApprovalPage />} />
-                    <Route path="/documents" element={<Documents />} />
-                    <Route path="/notifications" element={<Notifications />} />
-                    <Route path="/reports" element={<ReportsPage />} />
-                    <Route path="/payments" element={<Payments />} />
-                  </Route>
+                {/* Protected Routes */}
+                <Route 
+                  path="/" 
+                  element={
+                    <PrivateRoute>
+                      <Dashboard />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/new-loan-application" 
+                  element={
+                    <PrivateRoute>
+                      <LoanApplication />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/loan-approval/:id" 
+                  element={
+                    <PrivateRoute>
+                      <LoanApproval />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/clients" 
+                  element={
+                    <PrivateRoute>
+                      <ClientManagement />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/client/:id" 
+                  element={
+                    <PrivateRoute>
+                      <ClientDetails />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/new-client" 
+                  element={
+                    <PrivateRoute>
+                      <NewClient />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/payments" 
+                  element={
+                    <PrivateRoute>
+                      <Payments />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/reports" 
+                  element={
+                    <PrivateRoute>
+                      <Reports />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/settings" 
+                  element={
+                    <PrivateRoute>
+                      <Settings />
+                    </PrivateRoute>
+                  } 
+                />
+                
+                <Route 
+                  path="/premium-dashboard" 
+                  element={
+                    <PrivateRoute>
+                      <PremiumDashboard />
+                    </PrivateRoute>
+                  } 
+                />
 
-                  {/* Staff-only routes */}
-                  <Route element={<StaffRoute><Outlet /></StaffRoute>}>
-                    <Route path="/staff/data-collection" element={<DataCollection />} />
-                    <Route path="/staff/data-collection-dashboard" element={<DataCollectionDashboard />} />
-                  </Route>
+                {/* Staff Routes */}
+                <Route 
+                  path="/staff/data-collection" 
+                  element={
+                    <StaffRoute>
+                      <DataCollectionDashboard />
+                    </StaffRoute>
+                  } 
+                />
 
-                  {/* Role-based routes */}
-                  <Route element={<RoleBasedRoute allowedRoles={['manager', 'director', 'ceo', 'chairperson']}><Outlet /></RoleBasedRoute>}>
-                    <Route path="/staff/manager-review" element={<ManagerReviewDashboard />} />
-                  </Route>
-
-                  <Route element={<RoleBasedRoute allowedRoles={['director', 'ceo', 'chairperson']}><Outlet /></RoleBasedRoute>}>
-                    <Route path="/staff/director-risk" element={<DirectorRiskDashboard />} />
-                  </Route>
-
-                  <Route element={<RoleBasedRoute allowedRoles={['ceo', 'chairperson']}><Outlet /></RoleBasedRoute>}>
-                    <Route path="/staff/ceo-approval" element={<CEOApprovalDashboard />} />
-                  </Route>
-
-                  <Route element={<RoleBasedRoute allowedRoles={['chairperson']}><Outlet /></RoleBasedRoute>}>
-                    <Route path="/staff/chairperson-final" element={<ChairpersonFinalDashboard />} />
-                  </Route>
-
-                  {/* Admin Money Transfer Dashboard */}
-                  <Route element={<RoleBasedRoute allowedRoles={['manager', 'director', 'ceo', 'chairperson']}><Outlet /></RoleBasedRoute>}>
-                    <Route path="/admin/money-transfer" element={<MoneyTransferDashboard />} />
-                  </Route>
-
-                  {/* 404 route */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
+                {/* Catch all route */}
+                <Route path="/404" element={<NotFound />} />
+                <Route path="*" element={<Navigate to="/404" replace />} />
+              </Routes>
+            </BrowserRouter>
           </ThemeProvider>
         </NotificationsProvider>
       </AuthProvider>
-    </QueryClientProvider>
+    </QueryClient>
   );
 }
 

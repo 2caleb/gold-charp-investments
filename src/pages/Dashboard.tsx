@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Users, FileText, TrendingUp, Shield, Plus, BarChart3, CreditCard } from 'lucide-react';
+import { Users, FileText, TrendingUp, Shield, Plus, BarChart3, CreditCard, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -62,6 +62,40 @@ const Dashboard = () => {
       <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
         {/* Premium Welcome Section */}
         <PremiumWelcomeSection />
+
+        {/* Premium Access Card for Directors and above */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <Card className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white shadow-xl">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold mb-2 flex items-center">
+                    <Shield className="mr-2 h-6 w-6 text-yellow-300" />
+                    Premium Management System
+                  </h3>
+                  <p className="text-blue-100 mb-4">
+                    Access advanced analytics, Excel data sharing, and real-time insights
+                  </p>
+                  <Link to="/premium-dashboard">
+                    <Button className="bg-white text-purple-600 hover:bg-gray-100 font-semibold">
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      Enter Premium Dashboard
+                    </Button>
+                  </Link>
+                </div>
+                <div className="hidden lg:block">
+                  <div className="text-6xl font-bold opacity-20">
+                    <Crown className="h-16 w-16" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Premium Financial Overview */}
         <motion.div
