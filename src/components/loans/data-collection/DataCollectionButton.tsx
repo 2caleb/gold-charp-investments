@@ -28,13 +28,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { useNavigate } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 export interface DataCollectionButtonProps {
   onDataCollected?: (data: any) => void;
+  children?: React.ReactNode;
+  className?: string;
+  size?: 'sm' | 'lg' | 'default';
 }
 
 export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
-  onDataCollected = () => {}
+  onDataCollected = () => {},
+  children,
+  className,
+  size = 'default'
 }) => {
   // Force desktop view for better UX
   useDesktopRedirect();
@@ -126,9 +133,19 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="bg-blue-700 hover:bg-blue-800 text-white transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-          <UserPlus className="mr-2 h-4 w-4" />
-          Client Onboarding
+        <Button 
+          className={cn(
+            "bg-blue-700 hover:bg-blue-800 text-white transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl",
+            className
+          )}
+          size={size}
+        >
+          {children || (
+            <>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Client Onboarding
+            </>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 shadow-2xl border-0 rounded-lg transition-all duration-300 ease-in-out">
