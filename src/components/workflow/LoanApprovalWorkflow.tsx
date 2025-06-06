@@ -80,7 +80,7 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
     }
   };
 
-  // Get role-specific descriptions
+  // Get role-specific descriptions - Updated for new workflow
   const getRoleDescription = () => {
     switch (currentStage) {
       case 'field_officer':
@@ -90,7 +90,7 @@ const LoanApprovalWorkflow: React.FC<LoanApprovalWorkflowProps> = ({ loanData, o
       case 'director':
         return "As a Director, conduct a thorough risk assessment of this loan application.";
       case 'chairperson':
-        return "As the Chairperson, your approval is required before the CEO's final review.";
+        return "As the Chairperson, review the board-level risk assessment and provide strategic oversight.";
       case 'ceo':
         return "As the CEO, provide the final approval for this loan application.";
       default:

@@ -851,6 +851,45 @@ export type Database = {
           },
         ]
       }
+      mortgage_calculations: {
+        Row: {
+          created_at: string
+          id: string
+          insurance: number | null
+          interest_rate: number
+          monthly_payment: number
+          principal: number
+          tax: number | null
+          term_years: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          insurance?: number | null
+          interest_rate: number
+          monthly_payment: number
+          principal: number
+          tax?: number | null
+          term_years: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          insurance?: number | null
+          interest_rate?: number
+          monthly_payment?: number
+          principal?: number
+          tax?: number | null
+          term_years?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string

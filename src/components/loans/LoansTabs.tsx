@@ -42,7 +42,7 @@ const LoansTabs = () => {
           </p>
           
           <div className="relative">
-            {/* Process flow visualization */}
+            {/* Process flow visualization - Updated sequence */}
             <div className="hidden md:block absolute top-1/2 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 -translate-y-1/2 z-0"></div>
             
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center relative z-10">
@@ -72,6 +72,16 @@ const LoansTabs = () => {
                 </div>
                 <h4 className="font-medium">Director</h4>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Risk Assessment</p>
+              </div>
+              
+              <ArrowRight className="hidden md:block text-gray-400 dark:text-gray-600" />
+              
+              <div className="flex flex-col items-center text-center mb-6 md:mb-0">
+                <div className="bg-orange-100 dark:bg-orange-900 p-3 rounded-full w-16 h-16 flex items-center justify-center mb-3">
+                  <Users className="h-8 w-8 text-orange-700 dark:text-orange-300" />
+                </div>
+                <h4 className="font-medium">Chairperson</h4>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Board Review</p>
               </div>
               
               <ArrowRight className="hidden md:block text-gray-400 dark:text-gray-600" />
