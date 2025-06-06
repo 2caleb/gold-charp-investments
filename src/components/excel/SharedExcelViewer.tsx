@@ -101,7 +101,7 @@ const SharedExcelViewer: React.FC = () => {
             <FileSpreadsheet className="mr-2 h-5 w-5" />
             Shared Excel Data
             {!isDirectorCaleb && (
-              <Lock className="ml-2 h-4 w-4 text-gray-500" title="View-only access" />
+              <Lock className="ml-2 h-4 w-4 text-gray-500" />
             )}
           </CardTitle>
           {filteredData.length > 0 && (

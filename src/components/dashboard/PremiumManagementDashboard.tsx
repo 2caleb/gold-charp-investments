@@ -79,7 +79,7 @@ const PremiumManagementDashboard: React.FC = () => {
                   <BarChart3 className="mr-2 h-5 w-5" />
                   Recent Upload Activity
                   {!isDirectorCaleb && (
-                    <Lock className="ml-2 h-4 w-4 text-gray-500" title="Upload restricted to Director Caleb" />
+                    <Lock className="ml-2 h-4 w-4 text-gray-500" />
                   )}
                 </CardTitle>
               </CardHeader>
