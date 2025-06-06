@@ -11,12 +11,11 @@ import { supabase } from '@/integrations/supabase/client';
 import ReadOnlyTransactionRow from './ReadOnlyTransactionRow';
 import { useFinancialTransactionsRealtime } from '@/hooks/use-financial-transactions-realtime';
 
-// Define the Transaction interface to match the database schema
+// Updated Transaction interface to match the new database schema
 interface Transaction {
   id: string;
   description: string;
-  amount: string; // Changed to string to match database
-  Amount: number;
+  amount: number; // Now properly typed as number
   transaction_type: 'income' | 'expense';
   category: string;
   date: string;
@@ -24,6 +23,9 @@ interface Transaction {
   updated_at: string;
   created_by: string;
   loan_application_id?: string;
+  status?: 'pending' | 'completed' | 'cancelled';
+  payment_method?: string;
+  reference_number?: string;
 }
 
 const TransactionEditor: React.FC = () => {
@@ -49,11 +51,7 @@ const TransactionEditor: React.FC = () => {
         throw error;
       }
       
-      return (data || []).map(transaction => ({
-        ...transaction,
-        transaction_type: transaction.transaction_type as 'income' | 'expense',
-        Amount: transaction.Amount || (typeof transaction.amount === 'number' ? transaction.amount : parseFloat(String(transaction.amount || '0').replace(/[^0-9.-]/g, '')) || 0)
-      })) as Transaction[];
+      return (data || []) as Transaction[];
     },
     refetchInterval: 30000, // Refetch every 30 seconds
   });
@@ -65,23 +63,22 @@ const TransactionEditor: React.FC = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const formatCurrency = (amount: string | number) => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.-]/g, '')) : amount;
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-UG', {
       style: 'currency',
       currency: 'UGX',
       minimumFractionDigits: 0,
-    }).format(numAmount || 0);
+    }).format(amount || 0);
   };
 
   // Calculate totals
   const totalIncome = filteredTransactions
     .filter(t => t.transaction_type === 'income')
-    .reduce((sum, t) => sum + (t.Amount || 0), 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
   
   const totalExpenses = filteredTransactions
     .filter(t => t.transaction_type === 'expense')
-    .reduce((sum, t) => sum + (t.Amount || 0), 0);
+    .reduce((sum, t) => sum + (t.amount || 0), 0);
 
   return (
     <Card className="shadow-lg">

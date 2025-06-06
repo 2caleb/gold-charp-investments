@@ -6,12 +6,14 @@ import { Badge } from '@/components/ui/badge';
 interface Transaction {
   id: string;
   description: string;
-  amount: string; // Changed to string to match database
-  Amount: number;
+  amount: number; // Updated to match the new database structure
   transaction_type: 'income' | 'expense';
   category: string;
   date: string;
   created_by: string;
+  status?: 'pending' | 'completed' | 'cancelled';
+  payment_method?: string;
+  reference_number?: string;
 }
 
 interface ReadOnlyTransactionRowProps {
@@ -19,13 +21,12 @@ interface ReadOnlyTransactionRowProps {
 }
 
 const ReadOnlyTransactionRow: React.FC<ReadOnlyTransactionRowProps> = ({ transaction }) => {
-  const formatCurrency = (amount: string | number) => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.-]/g, '')) : amount;
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-UG', {
       style: 'currency',
       currency: 'UGX',
       minimumFractionDigits: 0,
-    }).format(numAmount || 0);
+    }).format(amount || 0);
   };
 
   return (
@@ -41,7 +42,7 @@ const ReadOnlyTransactionRow: React.FC<ReadOnlyTransactionRowProps> = ({ transac
         transaction.transaction_type === 'income' ? 'text-green-600' : 'text-red-600'
       }`}>
         {transaction.transaction_type === 'income' ? '+' : '-'}
-        {formatCurrency(transaction.Amount || transaction.amount)}
+        {formatCurrency(transaction.amount)}
       </TableCell>
       <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
     </TableRow>

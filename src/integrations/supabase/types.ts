@@ -283,48 +283,49 @@ export type Database = {
         Row: {
           amount: number
           category: string
-          created_at: string | null
+          created_at: string
           created_by: string
           date: string
           description: string
           id: string
           loan_application_id: string | null
-          transaction_type: string
-          updated_at: string | null
+          payment_method: string | null
+          reference_number: string | null
+          status: Database["public"]["Enums"]["transaction_status"]
+          transaction_type: Database["public"]["Enums"]["transaction_type"]
+          updated_at: string
         }
         Insert: {
           amount: number
-          category: string
-          created_at?: string | null
+          category?: string
+          created_at?: string
           created_by: string
           date?: string
           description: string
           id?: string
           loan_application_id?: string | null
-          transaction_type: string
-          updated_at?: string | null
+          payment_method?: string | null
+          reference_number?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          transaction_type: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
         }
         Update: {
           amount?: number
           category?: string
-          created_at?: string | null
+          created_at?: string
           created_by?: string
           date?: string
           description?: string
           id?: string
           loan_application_id?: string | null
-          transaction_type?: string
-          updated_at?: string | null
+          payment_method?: string | null
+          reference_number?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          transaction_type?: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "financial_transactions_loan_application_id_fkey"
-            columns: ["loan_application_id"]
-            isOneToOne: false
-            referencedRelation: "loan_applications"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       loan_applications: {
         Row: {
@@ -1054,6 +1055,21 @@ export type Database = {
         }
         Relationships: []
       }
+      users: {
+        Row: {
+          id: string
+          name: string
+        }
+        Insert: {
+          id: string
+          name: string
+        }
+        Update: {
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       view_data: {
         Row: {
           created_at: string
@@ -1128,7 +1144,8 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      transaction_status: "pending" | "completed" | "cancelled"
+      transaction_type: "income" | "expense"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1243,6 +1260,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      transaction_status: ["pending", "completed", "cancelled"],
+      transaction_type: ["income", "expense"],
+    },
   },
 } as const

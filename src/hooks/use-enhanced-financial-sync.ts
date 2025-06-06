@@ -39,7 +39,7 @@ export const useEnhancedFinancialSync = () => {
           // Don't throw here, just log and continue with empty data
         }
 
-        // Get financial transactions with proper Amount handling
+        // Get financial transactions with the new structure
         const { data: transactionsData, error: transactionsError } = await supabase
           .from('financial_transactions')
           .select('*')
@@ -58,43 +58,17 @@ export const useEnhancedFinancialSync = () => {
         
         const realTimeCollectionRate = totalPortfolio > 0 ? (totalRepaid / totalPortfolio) * 100 : 0;
 
-        // Calculate transaction totals with proper amount handling
+        // Calculate transaction totals with the new table structure
         const totalIncome = transactionsData?.reduce((sum, transaction) => {
-          if (transaction.transaction_type === 'income') {
-            // Use Amount column first (numeric), fallback to parsing amount column
-            if (transaction.Amount && transaction.Amount > 0) {
-              return sum + transaction.Amount;
-            } else if (transaction.amount !== null && transaction.amount !== undefined) {
-              // Safely handle the amount field - check if it's already a number or string
-              let parsedAmount = 0;
-              if (typeof transaction.amount === 'number') {
-                parsedAmount = transaction.amount;
-              } else if (typeof transaction.amount === 'string') {
-                const cleanAmount = transaction.amount.replace(/[^0-9.-]/g, '') || '0';
-                parsedAmount = parseFloat(cleanAmount);
-              }
-              return sum + (isNaN(parsedAmount) ? 0 : parsedAmount);
-            }
+          if (transaction.transaction_type === 'income' && transaction.status === 'completed') {
+            return sum + (transaction.amount || 0);
           }
           return sum;
         }, 0) || 0;
 
         const totalExpenses = transactionsData?.reduce((sum, transaction) => {
-          if (transaction.transaction_type === 'expense') {
-            // Use Amount column first (numeric), fallback to parsing amount column
-            if (transaction.Amount && transaction.Amount > 0) {
-              return sum + transaction.Amount;
-            } else if (transaction.amount !== null && transaction.amount !== undefined) {
-              // Safely handle the amount field - check if it's already a number or string
-              let parsedAmount = 0;
-              if (typeof transaction.amount === 'number') {
-                parsedAmount = transaction.amount;
-              } else if (typeof transaction.amount === 'string') {
-                const cleanAmount = transaction.amount.replace(/[^0-9.-]/g, '') || '0';
-                parsedAmount = parseFloat(cleanAmount);
-              }
-              return sum + (isNaN(parsedAmount) ? 0 : parsedAmount);
-            }
+          if (transaction.transaction_type === 'expense' && transaction.status === 'completed') {
+            return sum + (transaction.amount || 0);
           }
           return sum;
         }, 0) || 0;
