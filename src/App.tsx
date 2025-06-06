@@ -1,30 +1,40 @@
+
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
-import { QueryClient } from '@/components/query-client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
-import LoanApplication from '@/pages/LoanApplication';
-import LoanApproval from '@/pages/LoanApproval';
-import ClientManagement from '@/pages/ClientManagement';
-import ClientDetails from '@/pages/ClientDetails';
+import NewLoanApplication from '@/pages/NewLoanApplication';
+import LoanApprovalPage from '@/pages/LoanApprovalPage';
+import ClientsList from '@/pages/ClientsList';
+import ClientDetail from '@/pages/ClientDetail';
 import NewClient from '@/pages/NewClient';
 import Payments from '@/pages/Payments';
-import Reports from '@/pages/Reports';
-import Settings from '@/pages/Settings';
+import ReportsPage from '@/pages/ReportsPage';
 import NotFound from '@/pages/NotFound';
 import DataCollectionDashboard from '@/pages/staff/DataCollectionDashboard';
 import StaffRoute from '@/components/auth/StaffRoute';
 import PremiumDashboard from '@/pages/PremiumDashboard';
 
+// Create a query client instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 function App() {
   return (
-    <QueryClient>
+    <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <NotificationsProvider>
           <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
@@ -48,7 +58,7 @@ function App() {
                   path="/new-loan-application" 
                   element={
                     <PrivateRoute>
-                      <LoanApplication />
+                      <NewLoanApplication />
                     </PrivateRoute>
                   } 
                 />
@@ -56,7 +66,7 @@ function App() {
                   path="/loan-approval/:id" 
                   element={
                     <PrivateRoute>
-                      <LoanApproval />
+                      <LoanApprovalPage />
                     </PrivateRoute>
                   } 
                 />
@@ -64,7 +74,7 @@ function App() {
                   path="/clients" 
                   element={
                     <PrivateRoute>
-                      <ClientManagement />
+                      <ClientsList />
                     </PrivateRoute>
                   } 
                 />
@@ -72,7 +82,7 @@ function App() {
                   path="/client/:id" 
                   element={
                     <PrivateRoute>
-                      <ClientDetails />
+                      <ClientDetail />
                     </PrivateRoute>
                   } 
                 />
@@ -96,15 +106,7 @@ function App() {
                   path="/reports" 
                   element={
                     <PrivateRoute>
-                      <Reports />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/settings" 
-                  element={
-                    <PrivateRoute>
-                      <Settings />
+                      <ReportsPage />
                     </PrivateRoute>
                   } 
                 />
@@ -136,7 +138,7 @@ function App() {
           </ThemeProvider>
         </NotificationsProvider>
       </AuthProvider>
-    </QueryClient>
+    </QueryClientProvider>
   );
 }
 
