@@ -1,18 +1,15 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Filter, Download } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Search, Download } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import EditableTransactionRow from './EditableTransactionRow';
+import { supabase } from '@/integrations/supabase/client';
+import ReadOnlyTransactionRow from './ReadOnlyTransactionRow';
 import { useFinancialTransactionsRealtime } from '@/hooks/use-financial-transactions-realtime';
-import { useRolePermissions } from '@/hooks/use-role-permissions';
 
 // Define the Transaction interface
 interface Transaction {
@@ -30,28 +27,14 @@ interface Transaction {
 }
 
 const TransactionEditor: React.FC = () => {
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const { userRole, isDirector, isCEO, isChairperson, isManager } = useRolePermissions();
   
   // Set up real-time subscriptions
   useFinancialTransactionsRealtime();
 
-  const canEdit = isDirector || isCEO || isChairperson || isManager || userRole === 'field_officer';
-
-  const [newTransaction, setNewTransaction] = useState({
-    description: '',
-    amount: '',
-    Amount: 0,
-    transaction_type: 'expense' as 'income' | 'expense',
-    category: '',
-    date: new Date().toISOString().split('T')[0]
-  });
-
   // Fetch transactions with real-time updates
-  const { data: transactions = [], isLoading, refetch } = useQuery({
+  const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['financial-transactions'],
     queryFn: async () => {
       console.log('Fetching financial transactions...');
@@ -82,56 +65,6 @@ const TransactionEditor: React.FC = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const handleAddTransaction = async () => {
-    if (!newTransaction.description || !newTransaction.Amount) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('financial_transactions')
-        .insert({
-          description: newTransaction.description,
-          amount: newTransaction.Amount.toString(),
-          Amount: newTransaction.Amount,
-          transaction_type: newTransaction.transaction_type,
-          category: newTransaction.category,
-          date: newTransaction.date,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Transaction Added",
-        description: "New transaction has been added successfully",
-      });
-
-      setNewTransaction({
-        description: '',
-        amount: '',
-        Amount: 0,
-        transaction_type: 'expense',
-        category: '',
-        date: new Date().toISOString().split('T')[0]
-      });
-      setShowAddForm(false);
-      refetch();
-    } catch (error) {
-      console.error('Error adding transaction:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add transaction",
-        variant: "destructive",
-      });
-    }
-  };
-
   const formatCurrency = (amount: string | number) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount.replace(/[^0-9.-]/g, '')) : amount;
     return new Intl.NumberFormat('en-UG', {
@@ -155,22 +88,14 @@ const TransactionEditor: React.FC = () => {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center">
-            Financial Transactions Manager
-            <Badge variant="outline" className="ml-2 bg-green-50 text-green-700">
+            Financial Transactions Viewer
+            <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700">
               {filteredTransactions.length} records
             </Badge>
           </span>
           <div className="flex gap-2">
-            {canEdit && (
-              <Button onClick={() => setShowAddForm(!showAddForm)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Transaction
-              </Button>
-            )}
-            <Button variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
+            <Download className="mr-2 h-4 w-4" />
+            Export
           </div>
         </CardTitle>
       </CardHeader>
@@ -198,54 +123,6 @@ const TransactionEditor: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Add Transaction Form */}
-        {showAddForm && canEdit && (
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                <Input
-                  placeholder="Description"
-                  value={newTransaction.description}
-                  onChange={(e) => setNewTransaction({ ...newTransaction, description: e.target.value })}
-                />
-                <Select
-                  value={newTransaction.transaction_type}
-                  onValueChange={(value: 'income' | 'expense') => 
-                    setNewTransaction({ ...newTransaction, transaction_type: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="income">Income</SelectItem>
-                    <SelectItem value="expense">Expense</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  placeholder="Category"
-                  value={newTransaction.category}
-                  onChange={(e) => setNewTransaction({ ...newTransaction, category: e.target.value })}
-                />
-                <Input
-                  type="number"
-                  placeholder="Amount"
-                  value={newTransaction.Amount}
-                  onChange={(e) => setNewTransaction({ ...newTransaction, Amount: parseFloat(e.target.value) || 0 })}
-                />
-                <Input
-                  type="date"
-                  value={newTransaction.date}
-                  onChange={(e) => setNewTransaction({ ...newTransaction, date: e.target.value })}
-                />
-                <Button onClick={handleAddTransaction} className="w-full">
-                  Add Transaction
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
@@ -280,26 +157,22 @@ const TransactionEditor: React.FC = () => {
                 <TableHead>Category</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <td colSpan={6} className="text-center py-8">Loading transactions...</td>
+                  <td colSpan={5} className="text-center py-8">Loading transactions...</td>
                 </TableRow>
               ) : filteredTransactions.length === 0 ? (
                 <TableRow>
-                  <td colSpan={6} className="text-center py-8">No transactions found</td>
+                  <td colSpan={5} className="text-center py-8">No transactions found</td>
                 </TableRow>
               ) : (
                 filteredTransactions.map((transaction) => (
-                  <EditableTransactionRow
+                  <ReadOnlyTransactionRow
                     key={transaction.id}
                     transaction={transaction}
-                    onUpdate={refetch}
-                    onDelete={refetch}
-                    canEdit={canEdit}
                   />
                 ))
               )}
