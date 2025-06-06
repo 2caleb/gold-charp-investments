@@ -328,25 +328,28 @@ const ClientDetail = () => {
                     <div className="space-y-4">
                       {client.loan_applications.map((application) => (
                         <div key={application.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h4 className="font-medium">{application.loan_type}</h4>
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                {getWorkflowIcon(application.status)}
+                                <h4 className="font-medium">{application.loan_type}</h4>
+                              </div>
                               <p className="text-lg font-bold text-green-600">
                                 UGX {parseFloat(application.loan_amount.replace(/[^0-9.]/g, '')).toLocaleString()}
                               </p>
+                              <p className="text-sm text-gray-600 mt-1">
+                                Applied: {format(new Date(application.created_at), 'MMM dd, yyyy')}
+                              </p>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              {getWorkflowIcon(application.status)}
-                              <Badge className={getStatusColor(application.status)}>
-                                {application.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              </Badge>
-                            </div>
+                            <Badge className={getStatusColor(application.status)}>
+                              {application.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </Badge>
                           </div>
                           
                           {application.workflow_status && (
                             <div className="mb-3">
-                              <p className="text-sm text-gray-600 mb-1">
-                                Current Stage: <span className="font-medium">{application.current_stage?.replace('_', ' ')}</span>
+                              <p className="text-sm text-gray-600 mb-2">
+                                Current Stage: <span className="font-medium capitalize">{application.current_stage?.replace('_', ' ')}</span>
                               </p>
                               <div className="flex space-x-1">
                                 {['field_officer', 'manager', 'director', 'chairperson', 'ceo'].map((stage) => {
@@ -366,16 +369,18 @@ const ClientDetail = () => {
                               </div>
                             </div>
                           )}
-                          
-                          <div className="flex justify-between items-center text-sm text-gray-500 mb-3">
-                            <span>Applied: {format(new Date(application.created_at), 'MMM dd, yyyy')}</span>
-                          </div>
-                          
-                          <Link to={`/loan-applications/${application.id}`}>
-                            <Button variant="outline" size="sm" className="w-full">
-                              View Application Details
-                            </Button>
-                          </Link>
+
+                          {application.status === 'rejected' && (
+                            <div className="mt-2 p-2 bg-red-50 rounded text-sm text-red-600">
+                              Rejected: Check application details for reason
+                            </div>
+                          )}
+
+                          {application.status === 'approved' && (
+                            <div className="mt-2 p-2 bg-green-50 rounded text-sm text-green-600">
+                              ✓ Application approved and ready for disbursement
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

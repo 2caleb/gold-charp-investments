@@ -39,17 +39,32 @@ const LiveLoanPerformance: React.FC<LiveLoanPerformanceProps> = ({ clientName })
     queryFn: async (): Promise<LiveLoanData[]> => {
       console.log('Fetching loan performance for client:', clientName);
       
-      const { data, error } = await supabase
+      // First try exact match
+      let { data, error } = await supabase
         .from('loan_book_live')
         .select('*')
         .eq('client_name', clientName)
         .order('loan_date', { ascending: false });
+
+      // If no exact match, try case-insensitive and trimmed match
+      if (!data || data.length === 0) {
+        console.log('No exact match found, trying case-insensitive search...');
+        const { data: fuzzyData, error: fuzzyError } = await supabase
+          .from('loan_book_live')
+          .select('*')
+          .ilike('client_name', `%${clientName.trim()}%`)
+          .order('loan_date', { ascending: false });
+        
+        data = fuzzyData;
+        error = fuzzyError;
+      }
 
       if (error) {
         console.error('Error fetching loan performance:', error);
         throw error;
       }
 
+      console.log('Found loan data:', data?.length || 0, 'records');
       return data || [];
     },
     enabled: !!clientName,
@@ -119,6 +134,7 @@ const LiveLoanPerformance: React.FC<LiveLoanPerformanceProps> = ({ clientName })
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600">Unable to load loan performance data.</p>
+          <p className="text-xs text-gray-500 mt-2">Search term: "{clientName}"</p>
         </CardContent>
       </Card>
     );
@@ -137,6 +153,7 @@ const LiveLoanPerformance: React.FC<LiveLoanPerformanceProps> = ({ clientName })
           <div className="text-center py-6">
             <DollarSign className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500">No active loans found for this client</p>
+            <p className="text-xs text-gray-400 mt-2">Searched for: "{clientName}"</p>
           </div>
         </CardContent>
       </Card>
