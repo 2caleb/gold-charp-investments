@@ -64,7 +64,7 @@ export const useEnhancedFinancialSync = () => {
             // Use Amount column first (numeric), fallback to parsing amount column
             if (transaction.Amount && transaction.Amount > 0) {
               return sum + transaction.Amount;
-            } else if (transaction.amount) {
+            } else if (transaction.amount !== null && transaction.amount !== undefined) {
               // Safely handle the amount field - check if it's already a number or string
               let parsedAmount = 0;
               if (typeof transaction.amount === 'number') {
@@ -83,7 +83,7 @@ export const useEnhancedFinancialSync = () => {
             // Use Amount column first (numeric), fallback to parsing amount column
             if (transaction.Amount && transaction.Amount > 0) {
               return sum + transaction.Amount;
-            } else if (transaction.amount) {
+            } else if (transaction.amount !== null && transaction.amount !== undefined) {
               // Safely handle the amount field - check if it's already a number or string
               let parsedAmount = 0;
               if (typeof transaction.amount === 'number') {

@@ -11,11 +11,11 @@ import { supabase } from '@/integrations/supabase/client';
 import ReadOnlyTransactionRow from './ReadOnlyTransactionRow';
 import { useFinancialTransactionsRealtime } from '@/hooks/use-financial-transactions-realtime';
 
-// Define the Transaction interface
+// Define the Transaction interface to match the database schema
 interface Transaction {
   id: string;
   description: string;
-  amount: string;
+  amount: number; // Changed to number to match database
   Amount: number;
   transaction_type: 'income' | 'expense';
   category: string;
@@ -52,7 +52,7 @@ const TransactionEditor: React.FC = () => {
       return (data || []).map(transaction => ({
         ...transaction,
         transaction_type: transaction.transaction_type as 'income' | 'expense',
-        Amount: transaction.Amount || parseFloat(transaction.amount?.replace(/[^0-9.-]/g, '') || '0')
+        Amount: transaction.Amount || (typeof transaction.amount === 'number' ? transaction.amount : parseFloat(String(transaction.amount || '0').replace(/[^0-9.-]/g, '')) || 0)
       })) as Transaction[];
     },
     refetchInterval: 30000, // Refetch every 30 seconds

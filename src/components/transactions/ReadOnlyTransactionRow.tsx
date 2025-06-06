@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 interface Transaction {
   id: string;
   description: string;
-  amount: string;
+  amount: number; // Changed to number to match database
   Amount: number;
   transaction_type: 'income' | 'expense';
   category: string;
