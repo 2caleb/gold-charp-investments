@@ -6,8 +6,10 @@ import { useLoanApplicationsQuery } from '@/hooks/use-loan-applications-query';
 import { useFinancialSummaryQuery } from '@/hooks/use-financial-summary-query';
 import { useDashboardRealtime } from '@/hooks/use-dashboard-realtime';
 import { calculateDashboardMetrics, getWorkflowStatus } from '@/utils/dashboard-metrics';
+import { useToast } from '@/hooks/use-toast';
 
 export const useDashboardData = () => {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalApplications: 0,
@@ -25,9 +27,19 @@ export const useDashboardData = () => {
     }
   });
 
-  // Use the separated query hooks
-  const { data: applications, isLoading: applicationsLoading, error: applicationsError } = useLoanApplicationsQuery();
-  const { data: financialSummary, isLoading: financialLoading } = useFinancialSummaryQuery();
+  // Use the separated query hooks with better error handling
+  const { 
+    data: applications, 
+    isLoading: applicationsLoading, 
+    error: applicationsError,
+    refetch: refetchApplications
+  } = useLoanApplicationsQuery();
+  
+  const { 
+    data: financialSummary, 
+    isLoading: financialLoading,
+    refetch: refetchFinancial
+  } = useFinancialSummaryQuery();
   
   // Set up real-time subscriptions
   useDashboardRealtime();
@@ -35,13 +47,56 @@ export const useDashboardData = () => {
   // Process dashboard metrics whenever applications data changes
   useEffect(() => {
     if (!applications) return;
-    setMetrics(calculateDashboardMetrics(applications));
-  }, [applications]);
+    
+    try {
+      setMetrics(calculateDashboardMetrics(applications));
+    } catch (error) {
+      console.error('Error calculating dashboard metrics:', error);
+      toast({
+        title: "Calculation Error",
+        description: "There was an error processing dashboard metrics",
+        variant: "destructive"
+      });
+    }
+  }, [applications, toast]);
 
-  const refreshData = () => {
+  // Handle errors with user feedback
+  useEffect(() => {
+    if (applicationsError) {
+      console.error('Applications error:', applicationsError);
+      toast({
+        title: "Data Loading Error",
+        description: "Failed to load loan applications. Please try refreshing.",
+        variant: "destructive"
+      });
+    }
+  }, [applicationsError, toast]);
+
+  const refreshData = async () => {
     console.log('Manually refreshing dashboard data');
-    queryClient.invalidateQueries({ queryKey: ['dashboard-applications'] });
-    queryClient.invalidateQueries({ queryKey: ['financial-summary'] });
+    
+    try {
+      await Promise.all([
+        refetchApplications(),
+        refetchFinancial()
+      ]);
+      
+      // Invalidate all dashboard-related queries
+      queryClient.invalidateQueries({ queryKey: ['dashboard-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['financial-summary'] });
+      
+      toast({
+        title: "Data Refreshed",
+        description: "Dashboard data has been updated successfully"
+      });
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh dashboard data. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   return {

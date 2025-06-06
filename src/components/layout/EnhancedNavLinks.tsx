@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useRolePermissions } from '@/hooks/use-role-permissions';
 import { 
   Home, 
   Users, 
@@ -14,10 +15,20 @@ import {
   Shield,
   UserCheck,
   ClipboardList,
-  Settings
+  Settings,
+  Crown,
+  Upload
 } from 'lucide-react';
 
-const navItems = [
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<any>;
+  description: string;
+  roles?: string[];
+}
+
+const mainNavItems: NavItem[] = [
   {
     title: 'Dashboard',
     href: '/dashboard',
@@ -25,22 +36,24 @@ const navItems = [
     description: 'Overview & Analytics'
   },
   {
+    title: 'Loan Applications',
+    href: '/loan-applications',
+    icon: FileText,
+    description: 'View All Applications',
+    roles: ['field_officer', 'manager', 'director', 'ceo', 'chairperson']
+  },
+  {
+    title: 'New Application',
+    href: '/loan-applications/new',
+    icon: ClipboardList,
+    description: 'Submit New Loan',
+    roles: ['field_officer', 'manager', 'director', 'ceo', 'chairperson']
+  },
+  {
     title: 'Clients',
     href: '/clients',
     icon: Users,
     description: 'Client Management'
-  },
-  {
-    title: 'Loan Applications',
-    href: '/loan-applications',
-    icon: FileText,
-    description: 'Application Processing'
-  },
-  {
-    title: 'New Application',
-    href: '/new-loan-application',
-    icon: ClipboardList,
-    description: 'Submit New Loan'
   },
   {
     title: 'Payments',
@@ -55,43 +68,36 @@ const navItems = [
     description: 'Financial Reports'
   },
   {
-    title: 'Calculator',
-    href: '/calculator',
-    icon: Calculator,
-    description: 'Loan Calculator'
-  },
-  {
-    title: 'Properties',
-    href: '/properties',
-    icon: Building,
-    description: 'Property Valuation'
-  },
-  {
-    title: 'Documents',
-    href: '/documents',
-    icon: Shield,
-    description: 'Document Management'
-  },
-  {
-    title: 'Notifications',
-    href: '/notifications',
-    icon: Bell,
-    description: 'System Alerts'
+    title: 'Premium Dashboard',
+    href: '/premium-dashboard',
+    icon: Crown,
+    description: 'Advanced Management',
+    roles: ['manager', 'director', 'ceo', 'chairperson']
   }
 ];
 
-const staffNavItems = [
+const staffNavItems: NavItem[] = [
   {
     title: 'Data Collection',
     href: '/staff/data-collection',
     icon: UserCheck,
-    description: 'Field Data Entry'
+    description: 'Field Data Entry',
+    roles: ['field_officer', 'manager', 'director', 'ceo', 'chairperson']
+  }
+];
+
+const quickActions: NavItem[] = [
+  {
+    title: 'Add New Client',
+    href: '/new-client',
+    icon: Users,
+    description: 'Register new client'
   },
   {
-    title: 'Collection Dashboard',
-    href: '/staff/data-collection-dashboard',
-    icon: ClipboardList,
-    description: 'Collection Overview'
+    title: 'New Loan Application',
+    href: '/new-loan-application',
+    icon: FileText,
+    description: 'Submit loan request'
   }
 ];
 
@@ -102,14 +108,24 @@ interface EnhancedNavLinksProps {
 
 const EnhancedNavLinks: React.FC<EnhancedNavLinksProps> = ({ isMobile = false, onLinkClick }) => {
   const location = useLocation();
+  const { userRole } = useRolePermissions();
 
   const isActivePath = (path: string) => {
+    if (path === '/dashboard' && location.pathname === '/') return true;
     return location.pathname === path || location.pathname.startsWith(path + '/');
   };
 
-  const NavLinkItem = ({ item }: { item: typeof navItems[0] }) => {
+  const hasRoleAccess = (item: NavItem) => {
+    if (!item.roles) return true;
+    if (!userRole) return false;
+    return item.roles.includes(userRole);
+  };
+
+  const NavLinkItem = ({ item }: { item: NavItem }) => {
     const isActive = isActivePath(item.href);
     const Icon = item.icon;
+
+    if (!hasRoleAccess(item)) return null;
 
     return (
       <Link
@@ -146,66 +162,36 @@ const EnhancedNavLinks: React.FC<EnhancedNavLinksProps> = ({ isMobile = false, o
     );
   };
 
+  const NavSection = ({ title, items }: { title: string; items: NavItem[] }) => {
+    const visibleItems = items.filter(hasRoleAccess);
+    
+    if (visibleItems.length === 0) return null;
+
+    return (
+      <div className={cn("space-y-1", !isMobile && "px-2")}>
+        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-2">
+          {title}
+        </div>
+        {visibleItems.map((item) => (
+          <NavLinkItem key={item.href} item={item} />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-1">
-      {/* Main Navigation */}
-      <div className={cn(
-        "space-y-1",
-        !isMobile && "px-2"
-      )}>
-        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-2">
-          Main Menu
+      <NavSection title="Main Menu" items={mainNavItems} />
+      
+      {staffNavItems.some(hasRoleAccess) && (
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+          <NavSection title="Staff Tools" items={staffNavItems} />
         </div>
-        {navItems.map((item) => (
-          <NavLinkItem key={item.href} item={item} />
-        ))}
-      </div>
+      )}
 
-      {/* Staff Navigation */}
-      <div className={cn(
-        "space-y-1 pt-4 border-t border-gray-200 dark:border-gray-700",
-        !isMobile && "px-2"
-      )}>
-        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-2">
-          Staff Tools
-        </div>
-        {staffNavItems.map((item) => (
-          <NavLinkItem key={item.href} item={item} />
-        ))}
-      </div>
-
-      {/* Quick Actions for Mobile */}
       {isMobile && (
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 py-2">
-            Quick Actions
-          </div>
-          <Link
-            to="/new-client"
-            onClick={onLinkClick}
-            className="group flex items-center px-3 py-2 rounded-md text-sm font-medium text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-          >
-            <Users className="mr-3 h-5 w-5" />
-            <div className="flex flex-col">
-              <span className="font-medium">Add New Client</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Register new client
-              </span>
-            </div>
-          </Link>
-          <Link
-            to="/new-loan-application"
-            onClick={onLinkClick}
-            className="group flex items-center px-3 py-2 rounded-md text-sm font-medium text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-          >
-            <FileText className="mr-3 h-5 w-5" />
-            <div className="flex flex-col">
-              <span className="font-medium">New Loan Application</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Submit loan request
-              </span>
-            </div>
-          </Link>
+          <NavSection title="Quick Actions" items={quickActions} />
         </div>
       )}
     </div>

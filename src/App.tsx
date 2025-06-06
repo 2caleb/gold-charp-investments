@@ -12,6 +12,7 @@ import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import NewLoanApplication from '@/pages/NewLoanApplication';
 import LoanApprovalPage from '@/pages/LoanApprovalPage';
+import LoanApplicationsList from '@/pages/LoanApplicationsList';
 import ClientsList from '@/pages/ClientsList';
 import ClientDetail from '@/pages/ClientDetail';
 import NewClient from '@/pages/NewClient';
@@ -51,6 +52,38 @@ function App() {
                   element={
                     <PrivateRoute>
                       <Dashboard />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <PrivateRoute>
+                      <Dashboard />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/loan-applications" 
+                  element={
+                    <PrivateRoute>
+                      <LoanApplicationsList />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/loan-applications/new" 
+                  element={
+                    <PrivateRoute>
+                      <NewLoanApplication />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/loan-applications/:id" 
+                  element={
+                    <PrivateRoute>
+                      <LoanApprovalPage />
                     </PrivateRoute>
                   } 
                 />

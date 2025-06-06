@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useExcelUpload } from '@/hooks/use-excel-upload';
-import { Upload, FileSpreadsheet, AlertCircle, Lock } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import SecurityGuard from '@/components/security/SecurityGuard';
 
@@ -53,21 +53,19 @@ const ExcelUploadCard: React.FC = () => {
         <CardTitle className="flex items-center text-blue-800">
           <FileSpreadsheet className="mr-2 h-5 w-5" />
           Excel File Upload
-          <SecurityGuard action="canUploadExcel" showMessage={false}>
-            <span className="ml-2 text-sm text-green-600">(Authorized)</span>
-          </SecurityGuard>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <SecurityGuard
           action="canUploadExcel"
           fallback={
-            <div className="text-center py-8">
-              <Lock className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500">Upload access restricted</p>
-              <p className="text-gray-400 text-sm">Contact Director Caleb for file uploads</p>
+            <div className="text-center py-6">
+              <FileSpreadsheet className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="text-gray-600 font-medium">Excel Upload</p>
+              <p className="text-gray-500 text-sm mt-1">Feature available for authorized users</p>
             </div>
           }
+          showMessage={false}
         >
           <Alert>
             <AlertCircle className="h-4 w-4" />
