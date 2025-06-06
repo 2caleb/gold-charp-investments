@@ -1,12 +1,13 @@
+
 import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, DollarSign, FileText, Users } from 'lucide-react';
+import { BarChart3, DollarSign, FileText, Users, Database } from 'lucide-react';
 import { useEnhancedFinancialSummaryQuery } from '@/hooks/use-enhanced-financial-summary';
 import { format } from 'date-fns';
 import DatabaseEditingGuide from '@/components/financial/DatabaseEditingGuide';
 import { Button } from '@/components/ui/button';
-import { Database } from 'lucide-react';
 
 const Dashboard = () => {
   const [showDatabaseGuide, setShowDatabaseGuide] = useState(false);
@@ -43,76 +44,80 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        {/* Add database editing button */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Button 
-            variant="outline" 
-            onClick={() => setShowDatabaseGuide(true)}
-            className="flex items-center gap-2"
-          >
-            <Database className="h-4 w-4" />
-            Edit Financial Data
-          </Button>
-        </div>
+        {/* Premium Welcome Section */}
+        <PremiumWelcomeSection />
 
-        {/* Financial Overview Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                UGX {(financialSummary?.total_income || 0).toLocaleString()}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Last updated: {formatDate(financialSummary?.last_calculated)}
-              </p>
-            </CardContent>
-          </Card>
+        {/* Financial Overview Section with Database Edit Button */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-900">Financial Overview</h2>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDatabaseGuide(true)}
+              className="flex items-center gap-2"
+            >
+              <Database className="h-4 w-4" />
+              Edit Financial Data
+            </Button>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                UGX {(financialSummary?.total_expenses || 0).toLocaleString()}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Last updated: {formatDate(financialSummary?.last_calculated)}
-              </p>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  UGX {(financialSummary?.total_income || 0).toLocaleString()}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Last updated: {formatDate(financialSummary?.last_calculated)}
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Loan Portfolio</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                UGX {(financialSummary?.total_loan_portfolio || 0).toLocaleString()}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Last updated: {formatDate(financialSummary?.last_calculated)}
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  UGX {(financialSummary?.total_expenses || 0).toLocaleString()}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Last updated: {formatDate(financialSummary?.last_calculated)}
+                </p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Collection Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {financialSummary?.collection_rate?.toFixed(1) || 0}%
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Last updated: {formatDate(financialSummary?.last_calculated)}
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Loan Portfolio</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  UGX {(financialSummary?.total_loan_portfolio || 0).toLocaleString()}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Last updated: {formatDate(financialSummary?.last_calculated)}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Collection Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {financialSummary?.collection_rate?.toFixed(1) || 0}%
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Last updated: {formatDate(financialSummary?.last_calculated)}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Loan and Client Statistics Section */}
