@@ -4,23 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useExcelUpload } from '@/hooks/use-excel-upload';
-import { useDirectorCaleb } from '@/hooks/use-director-caleb';
 import { Upload, FileSpreadsheet, AlertCircle, Lock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import SecurityGuard from '@/components/security/SecurityGuard';
 
 const ExcelUploadCard: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadExcelFile, uploadProgress } = useExcelUpload();
-  const { isDirectorCaleb, isLoading } = useDirectorCaleb();
 
   const handleFileSelect = () => {
-    if (!isDirectorCaleb) return;
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isDirectorCaleb) return;
-    
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -51,90 +47,65 @@ const ExcelUploadCard: React.FC = () => {
 
   const isUploading = uploadProgress.uploading || uploadProgress.processing;
 
-  if (isLoading) {
-    return (
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="ml-2">Loading...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!isDirectorCaleb) {
-    return (
-      <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200">
-        <CardHeader>
-          <CardTitle className="flex items-center text-gray-600">
-            <Lock className="mr-2 h-5 w-5" />
-            Excel File Upload (Restricted)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Excel file uploads are restricted to Director Caleb only. You can view and download existing shared Excel data.
-            </AlertDescription>
-          </Alert>
-          <div className="text-center py-8">
-            <FileSpreadsheet className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <p className="text-gray-500">Upload access restricted</p>
-            <p className="text-gray-400 text-sm">Contact Director Caleb for file uploads</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200">
       <CardHeader>
         <CardTitle className="flex items-center text-blue-800">
           <FileSpreadsheet className="mr-2 h-5 w-5" />
-          Excel File Upload (Director Access)
+          Excel File Upload
+          <SecurityGuard action="canUploadExcel" showMessage={false}>
+            <span className="ml-2 text-sm text-green-600">(Authorized)</span>
+          </SecurityGuard>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Upload Excel files (.xlsx, .xls) to share data with all users. Maximum file size: 10MB.
-          </AlertDescription>
-        </Alert>
-
-        <div className="space-y-4">
-          <Button
-            onClick={handleFileSelect}
-            disabled={isUploading}
-            className="w-full bg-blue-600 hover:bg-blue-700"
-            size="lg"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            {isUploading ? 'Processing...' : 'Select Excel File'}
-          </Button>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileChange}
-            className="hidden"
-          />
-
-          {isUploading && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{uploadProgress.stage}</span>
-                <span>{uploadProgress.progress}%</span>
-              </div>
-              <Progress value={uploadProgress.progress} className="w-full" />
+        <SecurityGuard
+          action="canUploadExcel"
+          fallback={
+            <div className="text-center py-8">
+              <Lock className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-500">Upload access restricted</p>
+              <p className="text-gray-400 text-sm">Contact Director Caleb for file uploads</p>
             </div>
-          )}
-        </div>
+          }
+        >
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Upload Excel files (.xlsx, .xls) to share data with all users. Maximum file size: 10MB.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-4">
+            <Button
+              onClick={handleFileSelect}
+              disabled={isUploading}
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              size="lg"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {isUploading ? 'Processing...' : 'Select Excel File'}
+            </Button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+
+            {isUploading && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>{uploadProgress.stage}</span>
+                  <span>{uploadProgress.progress}%</span>
+                </div>
+                <Progress value={uploadProgress.progress} className="w-full" />
+              </div>
+            )}
+          </div>
+        </SecurityGuard>
       </CardContent>
     </Card>
   );

@@ -5,14 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSharedExcelData } from '@/hooks/use-shared-excel-data';
-import { useDirectorCaleb } from '@/hooks/use-director-caleb';
-import { FileSpreadsheet, Download, Eye, Filter, Search, Lock } from 'lucide-react';
+import { FileSpreadsheet, Download, Eye, Filter, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import ExcelDownloadButton from './ExcelDownloadButton';
+import SecurityGuard from '@/components/security/SecurityGuard';
 
 const SharedExcelViewer: React.FC = () => {
   const { excelData, uploadHistory, groupedData, isLoading } = useSharedExcelData();
-  const { isDirectorCaleb } = useDirectorCaleb();
   const [selectedUpload, setSelectedUpload] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSheet, setSelectedSheet] = useState<string>('all');
@@ -100,9 +99,6 @@ const SharedExcelViewer: React.FC = () => {
           <CardTitle className="flex items-center text-purple-800">
             <FileSpreadsheet className="mr-2 h-5 w-5" />
             Shared Excel Data
-            {!isDirectorCaleb && (
-              <Lock className="ml-2 h-4 w-4 text-gray-500" />
-            )}
           </CardTitle>
           {filteredData.length > 0 && (
             <ExcelDownloadButton 
@@ -111,11 +107,11 @@ const SharedExcelViewer: React.FC = () => {
             />
           )}
         </div>
-        {!isDirectorCaleb && (
+        <SecurityGuard action="canUploadExcel" showMessage={false}>
           <p className="text-sm text-gray-600 mt-2">
-            You have view-only access to shared Excel data. Only Director Caleb can upload new files.
+            You have upload and management privileges for Excel files.
           </p>
-        )}
+        </SecurityGuard>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Filters */}
@@ -175,9 +171,7 @@ const SharedExcelViewer: React.FC = () => {
             <p className="text-gray-500 text-lg mb-2">No data available</p>
             <p className="text-gray-400 text-sm">
               {uploadHistory?.length === 0 
-                ? isDirectorCaleb 
-                  ? "Upload an Excel file to get started"
-                  : "No Excel files have been uploaded yet"
+                ? "No Excel files have been uploaded yet"
                 : "Try adjusting your filters or search term"
               }
             </p>

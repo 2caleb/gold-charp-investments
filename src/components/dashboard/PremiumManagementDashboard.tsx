@@ -2,12 +2,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
-import { useDirectorCaleb } from '@/hooks/use-director-caleb';
 import { useSharedExcelData } from '@/hooks/use-shared-excel-data';
 import ExcelUploadCard from '@/components/excel/ExcelUploadCard';
 import SharedExcelViewer from '@/components/excel/SharedExcelViewer';
 import PremiumFinancialOverview from './PremiumFinancialOverview';
 import EnhancedSmartDashboardMonitor from './EnhancedSmartDashboardMonitor';
+import SecurityGuard from '@/components/security/SecurityGuard';
 import { motion } from 'framer-motion';
 import { 
   Crown, 
@@ -16,13 +16,11 @@ import {
   Shield,
   BarChart3,
   Users,
-  DollarSign,
-  Lock
+  DollarSign
 } from 'lucide-react';
 
 const PremiumManagementDashboard: React.FC = () => {
   const { userRole, isDirector, isCEO, isChairperson } = useRolePermissions();
-  const { isDirectorCaleb } = useDirectorCaleb();
   const { uploadHistory } = useSharedExcelData();
 
   const isExecutive = isDirector || isCEO || isChairperson;
@@ -49,7 +47,6 @@ const PremiumManagementDashboard: React.FC = () => {
               <Shield className="h-5 w-5 mr-2 text-green-300" />
               <span className="text-sm font-medium capitalize">
                 Role: {userRole} {isExecutive && '(Executive Access)'}
-                {isDirectorCaleb && ' - Excel Upload Authorized'}
               </span>
             </div>
           </div>
@@ -78,21 +75,13 @@ const PremiumManagementDashboard: React.FC = () => {
                 <CardTitle className="flex items-center text-green-800">
                   <BarChart3 className="mr-2 h-5 w-5" />
                   Recent Upload Activity
-                  {!isDirectorCaleb && (
-                    <Lock className="ml-2 h-4 w-4 text-gray-500" />
-                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {recentUploads.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>
-                      {isDirectorCaleb 
-                        ? "No recent uploads. Upload your first Excel file to get started."
-                        : "No recent uploads. Only Director Caleb can upload Excel files."
-                      }
-                    </p>
+                    <p>No recent uploads available.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -130,13 +119,15 @@ const PremiumManagementDashboard: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Financial Overview */}
+      {/* Financial Overview - Protected */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <PremiumFinancialOverview />
+        <SecurityGuard action="canViewFinancials">
+          <PremiumFinancialOverview />
+        </SecurityGuard>
       </motion.div>
 
       {/* Shared Excel Data Viewer */}

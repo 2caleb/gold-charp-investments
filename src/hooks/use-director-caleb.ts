@@ -17,26 +17,17 @@ export const useDirectorCaleb = () => {
       }
 
       try {
-        // Check if user is Caleb by email and has director role
-        const { data: profileData, error } = await supabase
-          .from('profiles')
-          .select('role, email')
-          .eq('id', user.id)
-          .single();
+        // Use the new security function to check Director Caleb status
+        const { data, error } = await supabase.rpc('is_director_caleb', {
+          user_id: user.id
+        });
 
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           console.error('Error checking Director Caleb status:', error);
           setIsDirectorCaleb(false);
-          setIsLoading(false);
-          return;
+        } else {
+          setIsDirectorCaleb(data || false);
         }
-
-        // Check if user is Caleb Mwesigwa with director role
-        const isCaleb = profileData?.email === 'calebmwesigwa@goldcharpinvestments.com' ||
-                       user.email === 'calebmwesigwa@goldcharpinvestments.com';
-        const isDirector = profileData?.role === 'director';
-
-        setIsDirectorCaleb(isCaleb && isDirector);
       } catch (error) {
         console.error('Error in checkDirectorCaleb:', error);
         setIsDirectorCaleb(false);

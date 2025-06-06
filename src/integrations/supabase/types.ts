@@ -1114,6 +1114,14 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: string
+      }
+      is_director_caleb: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       update_financial_summary: {
         Args: Record<PropertyKey, never>
         Returns: undefined
