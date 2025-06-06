@@ -6,6 +6,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -52,6 +53,7 @@ interface DataCollectionDialogProps {
   recordingOnsite: boolean;
   setRecordingOnsite: (value: boolean) => void;
   onCompleteOnboarding: () => void;
+  triggerButton: React.ReactNode;
 }
 
 export const DataCollectionDialog: React.FC<DataCollectionDialogProps> = ({
@@ -86,7 +88,8 @@ export const DataCollectionDialog: React.FC<DataCollectionDialogProps> = ({
   hasAllRequiredDocuments,
   recordingOnsite,
   setRecordingOnsite,
-  onCompleteOnboarding
+  onCompleteOnboarding,
+  triggerButton
 }) => {
   // Create wrapper functions to match the expected signature
   const handleDeleteIdDocument = async (fileId: string) => {
@@ -107,6 +110,9 @@ export const DataCollectionDialog: React.FC<DataCollectionDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        {triggerButton}
+      </DialogTrigger>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 shadow-2xl border-0 rounded-lg transition-all duration-300 ease-in-out">
         <DialogHeader className="border-b pb-4 mb-4">
           <DialogTitle className="flex items-center justify-between">

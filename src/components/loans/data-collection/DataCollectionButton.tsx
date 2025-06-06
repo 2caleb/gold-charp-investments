@@ -1,8 +1,5 @@
 
 import React, { useState } from 'react';
-import {
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from 'lucide-react';
 import { useDesktopRedirect } from '@/hooks/use-desktop-redirect';
@@ -105,60 +102,61 @@ export const DataCollectionButton: React.FC<DataCollectionButtonProps> = ({
     // Navigate to loan applications or dashboard
     navigate('/loan-applications');
   };
+
+  // Create the trigger button
+  const triggerButton = (
+    <Button 
+      className={cn(
+        "bg-blue-700 hover:bg-blue-800 text-white transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl",
+        className
+      )}
+      size={size}
+      onClick={() => setOpen(true)}
+    >
+      {children || (
+        <>
+          <UserPlus className="mr-2 h-4 w-4" />
+          Client Onboarding
+        </>
+      )}
+    </Button>
+  );
   
   return (
-    <>
-      <DialogTrigger asChild>
-        <Button 
-          className={cn(
-            "bg-blue-700 hover:bg-blue-800 text-white transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl",
-            className
-          )}
-          size={size}
-        >
-          {children || (
-            <>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Client Onboarding
-            </>
-          )}
-        </Button>
-      </DialogTrigger>
-      
-      <DataCollectionDialog
-        open={open}
-        onOpenChange={handleOpenChange}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isSubmitting={isSubmitting}
-        formReady={formReady}
-        generatedLoanId={generatedLoanId}
-        clientId={clientId}
-        applicationId={applicationId}
-        isUploadingId={isUploadingId}
-        isUploadingPassport={isUploadingPassport}
-        isUploadingGuarantor1={isUploadingGuarantor1}
-        isUploadingGuarantor2={isUploadingGuarantor2}
-        idDocuments={idDocuments}
-        passportPhotos={passportPhotos}
-        guarantor1Photos={guarantor1Photos}
-        guarantor2Photos={guarantor2Photos}
-        onSubmit={handleSubmit}
-        handleUploadIdDocument={handleUploadIdDocument}
-        handleUploadPassportPhoto={handleUploadPassportPhoto}
-        handleUploadGuarantor1Photo={handleUploadGuarantor1Photo}
-        handleUploadGuarantor2Photo={handleUploadGuarantor2Photo}
-        deleteIdDocument={deleteIdDocument}
-        deletePassportPhoto={deletePassportPhoto}
-        deleteGuarantor1Photo={deleteGuarantor1Photo}
-        deleteGuarantor2Photo={deleteGuarantor2Photo}
-        handleFinish={handleFinish}
-        handleRegenerateLoanId={handleRegenerateLoanId}
-        hasAllRequiredDocuments={hasAllRequiredDocuments}
-        recordingOnsite={recordingOnsite}
-        setRecordingOnsite={setRecordingOnsite}
-        onCompleteOnboarding={handleCompleteOnboarding}
-      />
-    </>
+    <DataCollectionDialog
+      open={open}
+      onOpenChange={handleOpenChange}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      isSubmitting={isSubmitting}
+      formReady={formReady}
+      generatedLoanId={generatedLoanId}
+      clientId={clientId}
+      applicationId={applicationId}
+      isUploadingId={isUploadingId}
+      isUploadingPassport={isUploadingPassport}
+      isUploadingGuarantor1={isUploadingGuarantor1}
+      isUploadingGuarantor2={isUploadingGuarantor2}
+      idDocuments={idDocuments}
+      passportPhotos={passportPhotos}
+      guarantor1Photos={guarantor1Photos}
+      guarantor2Photos={guarantor2Photos}
+      onSubmit={handleSubmit}
+      handleUploadIdDocument={handleUploadIdDocument}
+      handleUploadPassportPhoto={handleUploadPassportPhoto}
+      handleUploadGuarantor1Photo={handleUploadGuarantor1Photo}
+      handleUploadGuarantor2Photo={handleUploadGuarantor2Photo}
+      deleteIdDocument={deleteIdDocument}
+      deletePassportPhoto={deletePassportPhoto}
+      deleteGuarantor1Photo={deleteGuarantor1Photo}
+      deleteGuarantor2Photo={deleteGuarantor2Photo}
+      handleFinish={handleFinish}
+      handleRegenerateLoanId={handleRegenerateLoanId}
+      hasAllRequiredDocuments={hasAllRequiredDocuments}
+      recordingOnsite={recordingOnsite}
+      setRecordingOnsite={setRecordingOnsite}
+      onCompleteOnboarding={handleCompleteOnboarding}
+      triggerButton={triggerButton}
+    />
   );
 };
