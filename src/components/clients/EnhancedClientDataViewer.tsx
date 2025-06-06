@@ -17,13 +17,15 @@ import {
   FileText,
   TrendingUp,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Info
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { useEnhancedClientData } from '@/hooks/use-enhanced-client-data';
 import { useClientRealtime } from '@/hooks/use-client-realtime';
 import { EnhancedClient } from '@/types/client';
+import { getApplicationStatusCategory } from '@/utils/clientDataMatching';
 
 const EnhancedClientDataViewer: React.FC = () => {
   const { toast } = useToast();
@@ -60,7 +62,7 @@ const EnhancedClientDataViewer: React.FC = () => {
     refetch();
     toast({
       title: "Refreshed",
-      description: "Client data has been updated with latest loan information"
+      description: "Client data has been updated with sophisticated matching algorithm"
     });
   };
 
@@ -68,22 +70,10 @@ const EnhancedClientDataViewer: React.FC = () => {
     return `UGX ${amount?.toLocaleString() || '0'}`;
   };
 
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 border-green-200';
-      case 'inactive': return 'bg-gray-100 text-gray-800 border-gray-200';
-      default: return 'bg-blue-100 text-blue-800 border-blue-200';
-    }
-  };
-
-  const getApplicationStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'disbursed': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-yellow-100 text-yellow-800';
-    }
-  };
+  // Calculate summary statistics for debugging
+  const totalClientsWithApps = categorizedClients.with_applications.length;
+  const totalActiveApplications = clients.reduce((sum, client) => sum + (client.active_applications || 0), 0);
+  const totalApprovedLoans = clients.reduce((sum, client) => sum + (client.approved_loans || 0), 0);
 
   if (error) {
     return (
@@ -113,13 +103,29 @@ const EnhancedClientDataViewer: React.FC = () => {
               <Users className="mr-2 h-5 w-5" />
               Enhanced Client Data ({clients.length})
               <Badge variant="outline" className="ml-2">
-                Live Updates
+                Sophisticated Matching
               </Badge>
             </CardTitle>
             <Button onClick={handleRefresh} variant="outline" size="sm">
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
+          </div>
+          
+          {/* Data Quality Indicator */}
+          <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-1">
+              <Info className="h-4 w-4" />
+              <span>With Apps: {totalClientsWithApps}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <TrendingUp className="h-4 w-4" />
+              <span>Active: {totalActiveApplications}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <CheckCircle className="h-4 w-4" />
+              <span>Approved: {totalApprovedLoans}</span>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -180,6 +186,11 @@ const EnhancedClientDataViewer: React.FC = () => {
                     ? 'Try adjusting your search terms'
                     : 'Clients will appear here when they match the selected category'}
                 </p>
+                {activeTab === 'active_loans' && (
+                  <p className="text-sm text-gray-400 mt-2">
+                    Active loans include: submitted, pending review, under approval
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -206,11 +217,12 @@ const ClientCard: React.FC<{ client: EnhancedClient }> = ({ client }) => {
   };
 
   const getApplicationStatusColor = (status: string) => {
-    switch (status) {
+    const category = getApplicationStatusCategory(status);
+    switch (category) {
       case 'approved': return 'bg-green-100 text-green-800';
       case 'rejected': return 'bg-red-100 text-red-800';
-      case 'disbursed': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-yellow-100 text-yellow-800';
+      case 'active': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -255,53 +267,56 @@ const ClientCard: React.FC<{ client: EnhancedClient }> = ({ client }) => {
             </div>
           </div>
 
-          {/* Loan Applications Summary */}
+          {/* Enhanced Loan Applications Summary */}
           {(client.total_applications || 0) > 0 && (
-            <div className="border-t pt-4 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">Loan Applications:</span>
-                <span className="font-medium">{client.total_applications}</span>
+            <div className="border-t pt-4 space-y-3">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="p-2 bg-blue-50 rounded">
+                  <div className="text-lg font-bold text-blue-600">{client.total_applications}</div>
+                  <div className="text-xs text-blue-600">Total</div>
+                </div>
+                <div className="p-2 bg-yellow-50 rounded">
+                  <div className="text-lg font-bold text-yellow-600">{client.active_applications || 0}</div>
+                  <div className="text-xs text-yellow-600">Active</div>
+                </div>
+                <div className="p-2 bg-green-50 rounded">
+                  <div className="text-lg font-bold text-green-600">{client.approved_loans || 0}</div>
+                  <div className="text-xs text-green-600">Approved</div>
+                </div>
               </div>
-              {(client.active_applications || 0) > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Active:</span>
-                  <Badge className="bg-yellow-100 text-yellow-800">
-                    {client.active_applications}
-                  </Badge>
-                </div>
-              )}
-              {(client.approved_loans || 0) > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Approved:</span>
-                  <Badge className="bg-green-100 text-green-800">
-                    {client.approved_loans}
-                  </Badge>
-                </div>
-              )}
+              
               {(client.total_loan_amount || 0) > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Total Amount:</span>
-                  <span className="font-medium text-green-600">
+                <div className="text-center p-2 bg-purple-50 rounded">
+                  <div className="font-medium text-purple-600">
                     {formatCurrency(client.total_loan_amount || 0)}
-                  </span>
+                  </div>
+                  <div className="text-xs text-purple-600">Total Loan Value</div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Recent Applications */}
+          {/* Recent Applications with Enhanced Status */}
           {client.loan_applications && client.loan_applications.length > 0 && (
             <div className="border-t pt-4">
               <h4 className="text-sm font-medium mb-2">Recent Applications:</h4>
               <div className="space-y-2">
                 {client.loan_applications.slice(0, 2).map((app) => (
-                  <div key={app.id} className="flex items-center justify-between text-xs">
-                    <span className="truncate">{app.loan_type}</span>
+                  <div key={app.id} className="flex items-center justify-between text-xs p-2 bg-gray-50 rounded">
+                    <div>
+                      <div className="font-medium truncate">{app.loan_type}</div>
+                      <div className="text-gray-500">{formatCurrency(parseFloat(app.loan_amount.replace(/[^0-9.]/g, '')) || 0)}</div>
+                    </div>
                     <Badge className={getApplicationStatusColor(app.status)}>
-                      {app.status.replace('_', ' ')}
+                      {getApplicationStatusCategory(app.status)}
                     </Badge>
                   </div>
                 ))}
+                {client.loan_applications.length > 2 && (
+                  <div className="text-xs text-gray-500 text-center">
+                    +{client.loan_applications.length - 2} more applications
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -333,7 +348,7 @@ const ClientCard: React.FC<{ client: EnhancedClient }> = ({ client }) => {
             <Button asChild variant="outline" size="sm" className="w-full">
               <Link to={`/client/${client.id}`}>
                 <Eye className="mr-2 h-4 w-4" />
-                View Details & Applications
+                View Full Details & Loan Performance
               </Link>
             </Button>
           </div>

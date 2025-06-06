@@ -2,12 +2,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedClient, LoanApplicationSummary } from '@/types/client';
+import { 
+  matchClientToApplications, 
+  calculateClientStatistics,
+  getApplicationStatusCategory 
+} from '@/utils/clientDataMatching';
 
 export const useEnhancedClientData = () => {
   return useQuery({
     queryKey: ['enhanced-clients-data'],
     queryFn: async () => {
-      console.log('Fetching enhanced client data with loan applications...');
+      console.log('Fetching enhanced client data with sophisticated matching...');
       
       // Fetch clients from the correct table
       const { data: clients, error: clientError } = await supabase
@@ -25,7 +30,7 @@ export const useEnhancedClientData = () => {
         return [];
       }
 
-      // Fetch loan applications for all clients
+      // Fetch ALL loan applications (we'll do sophisticated matching)
       const { data: applications, error: appError } = await supabase
         .from('loan_applications')
         .select(`
@@ -36,7 +41,10 @@ export const useEnhancedClientData = () => {
           status,
           created_at,
           phone_number,
-          id_number
+          id_number,
+          purpose_of_loan,
+          employment_status,
+          monthly_income
         `)
         .order('created_at', { ascending: false });
 
@@ -54,18 +62,22 @@ export const useEnhancedClientData = () => {
         console.error('Error fetching workflows:', workflowError);
       }
 
-      // Enhance clients with loan application data
+      console.log(`Processing ${clients.length} clients and ${applications?.length || 0} applications`);
+
+      // Enhanced clients with sophisticated matching
       const enhancedClients: EnhancedClient[] = clients.map(client => {
-        // Find applications for this client by matching name, phone, or ID
-        const clientApplications = applications?.filter(app => 
-          app.client_name === client.full_name ||
-          app.phone_number === client.phone_number ||
-          app.id_number === client.id_number
-        ) || [];
+        console.log(`Processing client: ${client.full_name}`);
+        
+        // Use sophisticated matching to find applications for this client
+        const clientApplications = applications ? 
+          matchClientToApplications(client, applications) : [];
+
+        console.log(`Found ${clientApplications.length} matching applications for ${client.full_name}`);
 
         // Add workflow status to applications
         const applicationsWithWorkflow: LoanApplicationSummary[] = clientApplications.map(app => {
           const workflow = workflows?.find(w => w.loan_application_id === app.id);
+          
           return {
             id: app.id,
             loan_amount: app.loan_amount,
@@ -84,30 +96,40 @@ export const useEnhancedClientData = () => {
           };
         });
 
-        // Calculate summary statistics
-        const totalApplications = applicationsWithWorkflow.length;
-        const activeApplications = applicationsWithWorkflow.filter(app => 
-          ['submitted', 'pending_manager', 'pending_director', 'pending_ceo', 'pending_chairperson'].includes(app.status)
-        ).length;
-        const approvedLoans = applicationsWithWorkflow.filter(app => 
-          app.status === 'approved' || app.status === 'disbursed'
-        ).length;
-        const totalLoanAmount = applicationsWithWorkflow.reduce((sum, app) => {
-          const amount = parseFloat(app.loan_amount.replace(/[^0-9.]/g, '')) || 0;
-          return sum + amount;
-        }, 0);
+        // Calculate accurate statistics using the new utility functions
+        const statistics = calculateClientStatistics(applicationsWithWorkflow);
+
+        console.log(`Client ${client.full_name} statistics:`, {
+          total: statistics.totalApplications,
+          active: statistics.activeApplications,
+          approved: statistics.approvedLoans,
+          amount: statistics.totalLoanAmount
+        });
 
         return {
           ...client,
           loan_applications: applicationsWithWorkflow,
-          total_applications: totalApplications,
-          active_applications: activeApplications,
-          approved_loans: approvedLoans,
-          total_loan_amount: totalLoanAmount
+          total_applications: statistics.totalApplications,
+          active_applications: statistics.activeApplications,
+          approved_loans: statistics.approvedLoans,
+          total_loan_amount: statistics.totalLoanAmount
         };
       });
 
-      console.log(`Enhanced ${enhancedClients.length} clients with loan application data`);
+      // Log summary statistics
+      const totalClients = enhancedClients.length;
+      const clientsWithApps = enhancedClients.filter(c => (c.total_applications || 0) > 0).length;
+      const totalActiveApps = enhancedClients.reduce((sum, c) => sum + (c.active_applications || 0), 0);
+      const totalApprovedLoans = enhancedClients.reduce((sum, c) => sum + (c.approved_loans || 0), 0);
+
+      console.log('Enhanced client data summary:', {
+        totalClients,
+        clientsWithApps,
+        totalActiveApps,
+        totalApprovedLoans,
+        matchingSuccessRate: clientsWithApps > 0 ? ((clientsWithApps / totalClients) * 100).toFixed(1) + '%' : '0%'
+      });
+
       return enhancedClients;
     },
     retry: 2,
