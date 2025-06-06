@@ -59,7 +59,7 @@ const MoneyTransferHero = () => {
               
               <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
                 Transfer money globally with Gold Charp's premium international money transfer service. 
-                Competitive rates, secure transactions, and lightning-fast delivery to over 50 countries.
+                Competitive rates, secure transactions, and lightning-fast delivery to the pearl of Africa.
               </p>
             </div>
 

@@ -284,14 +284,13 @@ const PremiumFeeCalculator: React.FC<PremiumFeeCalculatorProps> = ({ exchangeRat
                     </div>
 
                     <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-4">
-                      <h4 className="font-semibold text-sm mb-2">Why Gold Charp?</h4>
-                      <ul className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
-                        <li>✓ Premium service guarantee</li>
-                        <li>✓ 24/7 customer support</li>
-                        <li>✓ Real-time tracking</li>
-                        <li>✓ Competitive exchange rates</li>
-                        <li>✓ Secure & regulated</li>
-                      </ul>
+                      <h4 className="font-semibold text-sm mb-2">Contact Gold Charp</h4>
+                      <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
+                        <p>📞 +256-393103974</p>
+                        <p>📞 +256-790501202</p>
+                        <p>📞 +256-200943073</p>
+                        <p>📧 info@goldcharpinvestments.com</p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -570,8 +571,8 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates = [] }) => 
               <p className="text-sm text-gray-600">Saturday: 9:00 AM - 4:00 PM</p>
               <p className="text-sm text-gray-600">Sunday: Closed</p>
               <div className="pt-2 border-t">
-                <p className="text-sm text-gray-600">📞 Phone: +256 700 123 456</p>
-                <p className="text-sm text-gray-600">📧 Email: transfers@goldcharp.com</p>
+                <p className="text-sm text-gray-600">📞 Phone: +256-393103974, +256-790501202, +256-200943073</p>
+                <p className="text-sm text-gray-600">📧 Email: info@goldcharpinvestments.com</p>
                 <p className="text-sm text-gray-600">🌐 Website: www.goldcharp.com</p>
               </div>
             </div>
