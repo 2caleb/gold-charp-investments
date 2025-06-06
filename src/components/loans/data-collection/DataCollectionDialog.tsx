@@ -42,10 +42,10 @@ interface DataCollectionDialogProps {
   handleUploadPassportPhoto: (file: File, description?: string, tags?: string[]) => Promise<void>;
   handleUploadGuarantor1Photo: (file: File, description?: string, tags?: string[]) => Promise<void>;
   handleUploadGuarantor2Photo: (file: File, description?: string, tags?: string[]) => Promise<void>;
-  deleteIdDocument: (id: string) => void;
-  deletePassportPhoto: (id: string) => void;
-  deleteGuarantor1Photo: (id: string) => void;
-  deleteGuarantor2Photo: (id: string) => void;
+  deleteIdDocument: (id: string) => Promise<void>;
+  deletePassportPhoto: (id: string) => Promise<void>;
+  deleteGuarantor1Photo: (id: string) => Promise<void>;
+  deleteGuarantor2Photo: (id: string) => Promise<void>;
   handleFinish: () => void;
   handleRegenerateLoanId: () => void;
   hasAllRequiredDocuments: boolean;
@@ -88,6 +88,23 @@ export const DataCollectionDialog: React.FC<DataCollectionDialogProps> = ({
   setRecordingOnsite,
   onCompleteOnboarding
 }) => {
+  // Create wrapper functions to match the expected signature
+  const handleDeleteIdDocument = async (fileId: string) => {
+    await deleteIdDocument(fileId);
+  };
+
+  const handleDeletePassportPhoto = async (fileId: string) => {
+    await deletePassportPhoto(fileId);
+  };
+
+  const handleDeleteGuarantor1Photo = async (fileId: string) => {
+    await deleteGuarantor1Photo(fileId);
+  };
+
+  const handleDeleteGuarantor2Photo = async (fileId: string) => {
+    await deleteGuarantor2Photo(fileId);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto bg-white dark:bg-gray-900 shadow-2xl border-0 rounded-lg transition-all duration-300 ease-in-out">
@@ -145,10 +162,10 @@ export const DataCollectionDialog: React.FC<DataCollectionDialogProps> = ({
               passportPhotos={passportPhotos}
               guarantor1Photos={guarantor1Photos}
               guarantor2Photos={guarantor2Photos}
-              deleteIdDocument={deleteIdDocument}
-              deletePassportPhoto={deletePassportPhoto}
-              deleteGuarantor1Photo={deleteGuarantor1Photo}
-              deleteGuarantor2Photo={deleteGuarantor2Photo}
+              deleteIdDocument={handleDeleteIdDocument}
+              deletePassportPhoto={handleDeletePassportPhoto}
+              deleteGuarantor1Photo={handleDeleteGuarantor1Photo}
+              deleteGuarantor2Photo={handleDeleteGuarantor2Photo}
               formReady={formReady}
               enableScanning={true}
               enableMediaCapture={true}
