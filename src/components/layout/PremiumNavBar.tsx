@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -85,7 +84,7 @@ const PremiumNavBar = () => {
   };
 
   const quickLinks = [
-    { name: 'Home', href: '/', icon: Home },
+    { name: 'Home', href: '/home', icon: Home },
     { name: 'Properties', href: '/properties', icon: Building2 },
     { name: 'Loan Calculator', href: '/calculator', icon: Calculator },
     { name: 'Loan Options', href: '/loans', icon: FileText },
@@ -109,7 +108,7 @@ const PremiumNavBar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo Section */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center space-x-3 group">
+            <Link to="/home" className="flex items-center space-x-3 group">
               <div className="relative">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-700 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300">
                   <span className="text-white font-bold text-lg">GC</span>

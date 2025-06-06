@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
@@ -21,6 +20,12 @@ import ReportsPage from '@/pages/ReportsPage';
 import NotFound from '@/pages/NotFound';
 import DataCollectionDashboard from '@/pages/staff/DataCollectionDashboard';
 import StaffRoute from '@/components/auth/StaffRoute';
+import Index from '@/pages/Index';
+import About from '@/pages/About';
+import Contact from '@/pages/Contact';
+import Properties from '@/pages/Properties';
+import Calculator from '@/pages/Calculator';
+import Loans from '@/pages/Loans';
 
 // Create a query client instance
 const queryClient = new QueryClient({
@@ -44,6 +49,14 @@ function App() {
                 {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                
+                {/* Public Pages */}
+                <Route path="/home" element={<Index />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/properties" element={<Properties />} />
+                <Route path="/calculator" element={<Calculator />} />
+                <Route path="/loans" element={<Loans />} />
 
                 {/* Protected Routes */}
                 <Route 
@@ -62,6 +75,7 @@ function App() {
                     </PrivateRoute>
                   } 
                 />
+                
                 <Route 
                   path="/loan-applications" 
                   element={
