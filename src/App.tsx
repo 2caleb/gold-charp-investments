@@ -21,7 +21,6 @@ import ReportsPage from '@/pages/ReportsPage';
 import NotFound from '@/pages/NotFound';
 import DataCollectionDashboard from '@/pages/staff/DataCollectionDashboard';
 import StaffRoute from '@/components/auth/StaffRoute';
-import PremiumDashboard from '@/pages/PremiumDashboard';
 
 // Create a query client instance
 const queryClient = new QueryClient({
@@ -140,15 +139,6 @@ function App() {
                   element={
                     <PrivateRoute>
                       <ReportsPage />
-                    </PrivateRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="/premium-dashboard" 
-                  element={
-                    <PrivateRoute>
-                      <PremiumDashboard />
                     </PrivateRoute>
                   } 
                 />
