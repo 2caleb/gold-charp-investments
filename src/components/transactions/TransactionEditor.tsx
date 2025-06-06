@@ -15,7 +15,7 @@ import { useFinancialTransactionsRealtime } from '@/hooks/use-financial-transact
 interface Transaction {
   id: string;
   description: string;
-  amount: number; // Changed to number to match database
+  amount: string; // Changed to string to match database
   Amount: number;
   transaction_type: 'income' | 'expense';
   category: string;
