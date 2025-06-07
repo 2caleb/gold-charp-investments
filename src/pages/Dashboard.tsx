@@ -6,9 +6,11 @@ import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection'
 const Dashboard = () => {
   return (
     <DashboardLayout>
-      <div className="space-y-8 max-w-4xl mx-auto">
-        {/* Premium Welcome Section as Main Content */}
-        <PremiumWelcomeSection />
+      <div className="space-y-8 max-w-7xl mx-auto">
+        {/* Fixed spacing and layout for the welcome section */}
+        <div className="mt-6">
+          <PremiumWelcomeSection />
+        </div>
       </div>
     </DashboardLayout>
   );

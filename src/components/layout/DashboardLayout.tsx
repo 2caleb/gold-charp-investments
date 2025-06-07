@@ -16,8 +16,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {/* Desktop Sidebar */}
         <DesktopNav />
         
-        {/* Main Content */}
-        <main className="flex-1 md:ml-64">
+        {/* Main Content with proper top spacing */}
+        <main className="flex-1 md:ml-64 pt-16">
           <div className="p-6">
             {children}
           </div>

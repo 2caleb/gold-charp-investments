@@ -3,41 +3,32 @@ import React from 'react';
 import Layout from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PropertyValuationForm from '@/components/property-evaluation/PropertyValuationForm';
-import PropertyAnalytics from '@/components/property-evaluation/PropertyAnalytics';
-import RegionalComparison from '@/components/property-evaluation/RegionalComparison';
-import EnhancedPropertyValuationForm from '@/components/property-evaluation/EnhancedPropertyValuationForm';
-import EnhancedPropertyAnalytics from '@/components/property-evaluation/EnhancedPropertyAnalytics';
+import EnhancedMarketAnalytics from '@/components/property-evaluation/EnhancedMarketAnalytics';
 
 const PropertyEvaluation = () => {
   return (
     <Layout>
-      <div className="container max-w-7xl mx-auto px-4 py-8 md:py-12">
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold">Smart Property Evaluation System</h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300 mt-2">
-              Advanced property valuation using GIS analysis, market data, and professional assessment algorithms
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+        <div className="container mx-auto px-4">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold mb-4 dark:text-white">Property Evaluation Center</h1>
+            <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
+              Get accurate property valuations and comprehensive market insights enhanced with real-time economic data from UBOS and World Bank APIs.
             </p>
           </div>
-          
+
           <Tabs defaultValue="valuation" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-              <TabsTrigger value="valuation">Smart Valuation</TabsTrigger>
-              <TabsTrigger value="regional">Regional Analysis</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="valuation">Property Valuation</TabsTrigger>
               <TabsTrigger value="analytics">Market Analytics</TabsTrigger>
-              <TabsTrigger value="enhanced-analytics">Advanced Analytics</TabsTrigger>
             </TabsList>
-            <TabsContent value="valuation" className="pt-6">
-              <EnhancedPropertyValuationForm />
+            
+            <TabsContent value="valuation" className="mt-6">
+              <PropertyValuationForm />
             </TabsContent>
-            <TabsContent value="regional" className="pt-6">
-              <RegionalComparison />
-            </TabsContent>
-            <TabsContent value="analytics" className="pt-6">
-              <PropertyAnalytics />
-            </TabsContent>
-            <TabsContent value="enhanced-analytics" className="pt-6">
-              <EnhancedPropertyAnalytics />
+            
+            <TabsContent value="analytics" className="mt-6">
+              <EnhancedMarketAnalytics />
             </TabsContent>
           </Tabs>
         </div>
