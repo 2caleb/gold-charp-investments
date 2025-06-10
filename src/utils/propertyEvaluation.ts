@@ -1,12 +1,12 @@
 
 import { distanceFromCoordinates } from './geoUtils';
 
-// Constants
+// Constants based on your Python implementation
 export const INFLATION_RATE = 0.065; // 6.5% annual inflation in Uganda
 export const CURRENT_YEAR = new Date().getFullYear();
 export const KAMPALA_COORDS = { lat: 0.3476, lng: 32.5825 };
 
-// Base prices per square meter as of 2022 (in UGX)
+// Base prices per square meter as of 2022 (in UGX) - expanded from your Python code
 export const BASE_PRICES_2022 = {
   kampala: { land: 1800000, residential: 2400000, commercial: 3500000, industrial: 2800000 },
   wakiso: { land: 1000000, residential: 1500000, commercial: 2000000, industrial: 1800000 },
@@ -15,6 +15,14 @@ export const BASE_PRICES_2022 = {
   entebbe: { land: 900000, residential: 1300000, commercial: 1800000, industrial: 1600000 },
   mbarara: { land: 750000, residential: 1200000, commercial: 1600000, industrial: 1400000 },
   gulu: { land: 500000, residential: 900000, commercial: 1300000, industrial: 1100000 },
+  masaka: { land: 650000, residential: 1000000, commercial: 1400000, industrial: 1200000 },
+  fort_portal: { land: 550000, residential: 950000, commercial: 1300000, industrial: 1100000 },
+  kabale: { land: 600000, residential: 1000000, commercial: 1350000, industrial: 1150000 },
+  soroti: { land: 450000, residential: 800000, commercial: 1200000, industrial: 1000000 },
+  lira: { land: 400000, residential: 750000, commercial: 1100000, industrial: 950000 },
+  mbale: { land: 500000, residential: 850000, commercial: 1250000, industrial: 1050000 },
+  arua: { land: 350000, residential: 700000, commercial: 1000000, industrial: 900000 },
+  kasese: { land: 480000, residential: 820000, commercial: 1180000, industrial: 1000000 },
 };
 
 export interface PropertyData {
@@ -47,13 +55,24 @@ export interface PropertyValuation {
     tenure: number;
     zoning: number;
   };
+  reportData: {
+    basePrice: number;
+    totalAdjustmentFactor: number;
+    inflationAdjustment: number;
+  };
 }
 
+/**
+ * Calculate inflated price based on year of valuation
+ */
 export function getInflatedPrice(price: number, yearOfValuation: number): number {
   const yearsAgo = CURRENT_YEAR - yearOfValuation;
   return price * Math.pow(1 + INFLATION_RATE, yearsAgo);
 }
 
+/**
+ * Get base price per square meter for location and property type
+ */
 export function getBasePricePerSqm(location: string, propertyType: string): number {
   const locationKey = location.toLowerCase() as keyof typeof BASE_PRICES_2022;
   const locationPrices = BASE_PRICES_2022[locationKey] || BASE_PRICES_2022.gulu;
@@ -61,6 +80,9 @@ export function getBasePricePerSqm(location: string, propertyType: string): numb
   return getInflatedPrice(basePrice, 2022);
 }
 
+/**
+ * Calculate distance adjustment factor based on distance to city center
+ */
 export function calculateDistanceAdjustment(distanceKm: number): number {
   if (distanceKm <= 5) return 1.25;
   if (distanceKm <= 15) return 1.1;
@@ -68,6 +90,9 @@ export function calculateDistanceAdjustment(distanceKm: number): number {
   return 1.0;
 }
 
+/**
+ * Calculate amenities adjustment factor
+ */
 export function calculateAmenitiesAdjustment(hasRoadAccess: boolean, hasUtilities: boolean): number {
   let factor = 1.0;
   if (!hasRoadAccess) factor *= 0.8;
@@ -75,6 +100,9 @@ export function calculateAmenitiesAdjustment(hasRoadAccess: boolean, hasUtilitie
   return factor;
 }
 
+/**
+ * Calculate age adjustment factor for structures
+ */
 export function calculateAgeAdjustment(ageYears?: number): number {
   if (!ageYears) return 1.0;
   
@@ -85,6 +113,9 @@ export function calculateAgeAdjustment(ageYears?: number): number {
   return 1.0;
 }
 
+/**
+ * Calculate condition adjustment factor
+ */
 export function calculateConditionAdjustment(condition?: string): number {
   switch (condition) {
     case 'new': return 1.15;
@@ -96,6 +127,9 @@ export function calculateConditionAdjustment(condition?: string): number {
   }
 }
 
+/**
+ * Calculate tenure type adjustment factor
+ */
 export function calculateTenureAdjustment(tenureType?: string): number {
   switch (tenureType) {
     case 'leasehold': return 0.85;
@@ -105,6 +139,9 @@ export function calculateTenureAdjustment(tenureType?: string): number {
   }
 }
 
+/**
+ * Calculate zoning adjustment factor
+ */
 export function calculateZoningAdjustment(zoning?: string): number {
   switch (zoning) {
     case 'commercial': return 1.2;
@@ -116,6 +153,9 @@ export function calculateZoningAdjustment(zoning?: string): number {
   }
 }
 
+/**
+ * Main property evaluation function based on your Python algorithm
+ */
 export function evaluateProperty(property: PropertyData): PropertyValuation {
   const basePrice = getBasePricePerSqm(property.location, property.propertyType);
   
@@ -128,8 +168,11 @@ export function evaluateProperty(property: PropertyData): PropertyValuation {
   const tenureFactor = calculateTenureAdjustment(property.tenureType);
   const zoningFactor = calculateZoningAdjustment(property.zoning);
   
+  // Calculate total adjustment factor
+  const totalAdjustmentFactor = distanceFactor * amenitiesFactor * ageFactor * conditionFactor * tenureFactor * zoningFactor;
+  
   // Calculate adjusted price per square meter
-  const adjustedPricePerSqm = basePrice * distanceFactor * amenitiesFactor * ageFactor * conditionFactor * tenureFactor * zoningFactor;
+  const adjustedPricePerSqm = basePrice * totalAdjustmentFactor;
   
   // Calculate total fair value
   const fairValue = Math.round(property.sizeInSqm * adjustedPricePerSqm);
@@ -154,5 +197,26 @@ export function evaluateProperty(property: PropertyData): PropertyValuation {
       tenure: tenureFactor,
       zoning: zoningFactor,
     },
+    reportData: {
+      basePrice,
+      totalAdjustmentFactor,
+      inflationAdjustment: getInflatedPrice(1, property.yearOfValuation || CURRENT_YEAR),
+    },
+  };
+}
+
+/**
+ * Generate property valuation report data for PDF generation
+ */
+export function generatePropertyReportData(property: PropertyData, valuation: PropertyValuation) {
+  return {
+    property: {
+      ...property,
+      coordinates: property.latitude && property.longitude ? `${property.latitude}, ${property.longitude}` : 'Not provided',
+      distanceToKampala: property.distanceToCityKm ? `${property.distanceToCityKm.toFixed(2)} km` : 'Not calculated',
+    },
+    valuation,
+    generatedDate: new Date().toLocaleDateString(),
+    generatedTime: new Date().toLocaleTimeString(),
   };
 }

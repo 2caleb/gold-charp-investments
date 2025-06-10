@@ -3,6 +3,7 @@ import React from 'react';
 import Layout from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PropertyValuationForm from '@/components/property-evaluation/PropertyValuationForm';
+import EnhancedPropertyValuationForm from '@/components/property-evaluation/EnhancedPropertyValuationForm';
 import EnhancedMarketAnalytics from '@/components/property-evaluation/EnhancedMarketAnalytics';
 
 const PropertyEvaluation = () => {
@@ -17,13 +18,18 @@ const PropertyEvaluation = () => {
             </p>
           </div>
 
-          <Tabs defaultValue="valuation" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="valuation">Property Valuation</TabsTrigger>
+          <Tabs defaultValue="advanced-valuation" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="advanced-valuation">Advanced Valuation</TabsTrigger>
+              <TabsTrigger value="basic-valuation">Basic Valuation</TabsTrigger>
               <TabsTrigger value="analytics">Market Analytics</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="valuation" className="mt-6">
+            <TabsContent value="advanced-valuation" className="mt-6">
+              <EnhancedPropertyValuationForm />
+            </TabsContent>
+            
+            <TabsContent value="basic-valuation" className="mt-6">
               <PropertyValuationForm />
             </TabsContent>
             

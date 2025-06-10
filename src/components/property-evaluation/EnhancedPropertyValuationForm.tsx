@@ -14,8 +14,9 @@ import { Building2, MapPin, Calculator, FileText, Download } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { evaluateProperty, PropertyData, PropertyValuation } from '@/utils/propertyEvaluation';
+import { evaluateProperty, PropertyData, PropertyValuation, generatePropertyReportData } from '@/utils/propertyEvaluation';
 import { getDistanceToKampala, UGANDA_DISTRICTS } from '@/utils/geoUtils';
+import { jsPDF } from 'jspdf';
 
 const formSchema = z.object({
   location: z.string().min(1, 'Location is required'),
@@ -37,6 +38,7 @@ const EnhancedPropertyValuationForm = () => {
   const { toast } = useToast();
   const [valuationResults, setValuationResults] = useState<PropertyValuation | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [propertyData, setPropertyData] = useState<PropertyData | null>(null);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -79,7 +81,7 @@ const EnhancedPropertyValuationForm = () => {
       const lng = parseFloat(values.longitude || '0');
       const distanceToCityKm = lat && lng ? getDistanceToKampala(lat, lng) : undefined;
       
-      const propertyData: PropertyData = {
+      const propertyDataInput: PropertyData = {
         location: values.district,
         latitude: lat || undefined,
         longitude: lng || undefined,
@@ -95,8 +97,9 @@ const EnhancedPropertyValuationForm = () => {
       };
 
       // Calculate valuation
-      const valuation = evaluateProperty(propertyData);
+      const valuation = evaluateProperty(propertyDataInput);
       setValuationResults(valuation);
+      setPropertyData(propertyDataInput);
       
       toast({
         title: "Valuation Complete",
@@ -113,13 +116,94 @@ const EnhancedPropertyValuationForm = () => {
     }
   };
 
-  const generateReport = () => {
-    if (!valuationResults) return;
+  const generatePDFReport = () => {
+    if (!valuationResults || !propertyData) return;
     
-    toast({
-      title: "Report Generated",
-      description: "Comprehensive property valuation report has been generated.",
-    });
+    try {
+      const reportData = generatePropertyReportData(propertyData, valuationResults);
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(20);
+      doc.text("Property Valuation Report", 20, 30);
+      
+      doc.setFontSize(12);
+      doc.text(`Generated on: ${reportData.generatedDate} at ${reportData.generatedTime}`, 20, 45);
+      
+      // Property Details
+      doc.setFontSize(16);
+      doc.text("Property Details", 20, 65);
+      
+      doc.setFontSize(12);
+      let yPos = 80;
+      const details = [
+        `Location: ${reportData.property.location}`,
+        `Type: ${reportData.property.propertyType.charAt(0).toUpperCase() + reportData.property.propertyType.slice(1)}`,
+        `Size: ${reportData.property.sizeInSqm} sqm`,
+        `Coordinates: ${reportData.property.coordinates}`,
+        `Distance to Kampala: ${reportData.property.distanceToKampala}`,
+        `Road Access: ${reportData.property.hasRoadAccess ? 'Yes' : 'No'}`,
+        `Utilities: ${reportData.property.hasUtilities ? 'Yes' : 'No'}`,
+        `Age: ${reportData.property.ageYears || 'N/A'} years`,
+        `Condition: ${reportData.property.condition || 'N/A'}`,
+        `Tenure: ${reportData.property.tenureType || 'N/A'}`,
+        `Zoning: ${reportData.property.zoning || 'N/A'}`,
+      ];
+      
+      details.forEach(detail => {
+        doc.text(detail, 20, yPos);
+        yPos += 10;
+      });
+      
+      // Valuation Results
+      yPos += 10;
+      doc.setFontSize(16);
+      doc.text("Valuation Results", 20, yPos);
+      yPos += 15;
+      
+      doc.setFontSize(14);
+      doc.text(`Fair Market Value: UGX ${reportData.valuation.fairValue.toLocaleString()}`, 20, yPos);
+      yPos += 10;
+      doc.text(`Market Price: UGX ${reportData.valuation.marketPrice.toLocaleString()}`, 20, yPos);
+      yPos += 10;
+      doc.text(`Forced Sale Price: UGX ${reportData.valuation.forcedPrice.toLocaleString()}`, 20, yPos);
+      yPos += 10;
+      doc.text(`Price per SqM: UGX ${reportData.valuation.pricePerSqm.toLocaleString()}`, 20, yPos);
+      
+      // Adjustment Factors
+      yPos += 20;
+      doc.setFontSize(16);
+      doc.text("Adjustment Factors", 20, yPos);
+      yPos += 15;
+      
+      doc.setFontSize(12);
+      const factors = [
+        `Distance Factor: ${(reportData.valuation.adjustmentFactors.distance * 100).toFixed(0)}%`,
+        `Amenities Factor: ${(reportData.valuation.adjustmentFactors.amenities * 100).toFixed(0)}%`,
+        `Age Factor: ${(reportData.valuation.adjustmentFactors.age * 100).toFixed(0)}%`,
+        `Condition Factor: ${(reportData.valuation.adjustmentFactors.condition * 100).toFixed(0)}%`,
+        `Tenure Factor: ${(reportData.valuation.adjustmentFactors.tenure * 100).toFixed(0)}%`,
+        `Zoning Factor: ${(reportData.valuation.adjustmentFactors.zoning * 100).toFixed(0)}%`,
+      ];
+      
+      factors.forEach(factor => {
+        doc.text(factor, 20, yPos);
+        yPos += 8;
+      });
+      
+      doc.save(`Property_Valuation_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+      toast({
+        title: "Report Generated",
+        description: "Comprehensive property valuation report has been downloaded.",
+      });
+    } catch (error) {
+      toast({
+        title: "Report Error",
+        description: "There was an error generating the PDF report.",
+        variant: "destructive",
+      });
+    }
   };
 
   const districts = Object.entries(UGANDA_DISTRICTS).map(([key, value]) => ({
@@ -580,7 +664,7 @@ const EnhancedPropertyValuationForm = () => {
                 </p>
               </div>
 
-              <Button variant="outline" className="w-full" onClick={generateReport}>
+              <Button variant="outline" className="w-full" onClick={generatePDFReport}>
                 <Download className="mr-2 h-4 w-4" />
                 Generate Detailed Report
               </Button>
