@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -14,7 +13,7 @@ import { Building2, MapPin, Calculator, FileText, Download } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { evaluateProperty, PropertyData, PropertyValuation, generatePropertyReportData } from '@/utils/propertyEvaluation';
+import { evaluateProperty, PropertyData, PropertyValuation, generatePropertyReportData, acresToSquareMeters, squareMetersToAcres } from '@/utils/propertyEvaluation';
 import { getDistanceToKampala, UGANDA_DISTRICTS } from '@/utils/geoUtils';
 import { jsPDF } from 'jspdf';
 
@@ -23,7 +22,7 @@ const formSchema = z.object({
   district: z.string().min(1, 'District is required'),
   latitude: z.string().optional(),
   longitude: z.string().optional(),
-  sizeInSqm: z.string().min(1, 'Size is required'),
+  sizeInAcres: z.string().min(1, 'Size is required'),
   propertyType: z.enum(['land', 'residential', 'commercial', 'industrial']),
   hasRoadAccess: z.boolean().default(true),
   hasUtilities: z.boolean().default(false),
@@ -47,7 +46,7 @@ const EnhancedPropertyValuationForm = () => {
       district: '',
       latitude: '',
       longitude: '',
-      sizeInSqm: '',
+      sizeInAcres: '',
       propertyType: 'residential',
       hasRoadAccess: true,
       hasUtilities: false,
@@ -62,6 +61,7 @@ const EnhancedPropertyValuationForm = () => {
   const watchDistrict = form.watch('district');
   const watchLatitude = form.watch('latitude');
   const watchLongitude = form.watch('longitude');
+  const watchSizeInAcres = form.watch('sizeInAcres');
 
   // Auto-populate coordinates when district is selected
   useEffect(() => {
@@ -81,11 +81,14 @@ const EnhancedPropertyValuationForm = () => {
       const lng = parseFloat(values.longitude || '0');
       const distanceToCityKm = lat && lng ? getDistanceToKampala(lat, lng) : undefined;
       
+      // Convert acres to square meters for calculation
+      const sizeInSqm = acresToSquareMeters(parseFloat(values.sizeInAcres));
+      
       const propertyDataInput: PropertyData = {
         location: values.district,
         latitude: lat || undefined,
         longitude: lng || undefined,
-        sizeInSqm: parseFloat(values.sizeInSqm),
+        sizeInSqm,
         propertyType: values.propertyType,
         distanceToCityKm,
         hasRoadAccess: values.hasRoadAccess,
@@ -139,7 +142,7 @@ const EnhancedPropertyValuationForm = () => {
       const details = [
         `Location: ${reportData.property.location}`,
         `Type: ${reportData.property.propertyType.charAt(0).toUpperCase() + reportData.property.propertyType.slice(1)}`,
-        `Size: ${reportData.property.sizeInSqm} sqm`,
+        `Size: ${reportData.property.sizeInAcres.toFixed(2)} acres (${reportData.property.sizeInSqm} sqm)`,
         `Coordinates: ${reportData.property.coordinates}`,
         `Distance to Kampala: ${reportData.property.distanceToKampala}`,
         `Road Access: ${reportData.property.hasRoadAccess ? 'Yes' : 'No'}`,
@@ -369,13 +372,18 @@ const EnhancedPropertyValuationForm = () => {
 
                     <FormField
                       control={form.control}
-                      name="sizeInSqm"
+                      name="sizeInAcres"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Size (Square Meters)</FormLabel>
+                          <FormLabel>Size (Acres)</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="e.g. 600" {...field} />
+                            <Input type="number" step="0.01" placeholder="e.g. 0.25" {...field} />
                           </FormControl>
+                          {watchSizeInAcres && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              ≈ {Math.round(acresToSquareMeters(parseFloat(watchSizeInAcres) || 0)).toLocaleString()} square meters
+                            </p>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}
@@ -563,7 +571,7 @@ const EnhancedPropertyValuationForm = () => {
 
       <div className="lg:col-span-3">
         {/* Results will be displayed here */}
-        {valuationResults ? (
+        {valuationResults && propertyData ? (
           <Card className="shadow-md h-full">
             <CardHeader className="bg-gradient-to-r from-purple-700 to-purple-900 text-white rounded-t-lg">
               <CardTitle className="flex items-center text-xl">
@@ -575,6 +583,25 @@ const EnhancedPropertyValuationForm = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
+              {/* Property Summary */}
+              <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                <h3 className="font-medium mb-2">Property Summary</h3>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span>Size:</span>
+                    <span>{squareMetersToAcres(propertyData.sizeInSqm).toFixed(2)} acres ({propertyData.sizeInSqm.toLocaleString()} sqm)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Type:</span>
+                    <span className="capitalize">{propertyData.propertyType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Location:</span>
+                    <span>{propertyData.location}</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Valuation Results */}
               <div className="grid grid-cols-1 gap-4">
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
@@ -707,7 +734,7 @@ const EnhancedPropertyValuationForm = () => {
                 <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
                   <h3 className="font-medium mb-1">💡 Pro Tip</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    For the most accurate valuation, ensure all property details are complete, including exact coordinates and infrastructure access.
+                    Enter property size in acres for easier measurement. The system automatically converts to square meters for calculations and displays both units for clarity.
                   </p>
                 </div>
               </div>

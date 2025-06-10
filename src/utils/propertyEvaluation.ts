@@ -1,10 +1,12 @@
-
 import { distanceFromCoordinates } from './geoUtils';
 
 // Constants based on your Python implementation
 export const INFLATION_RATE = 0.065; // 6.5% annual inflation in Uganda
 export const CURRENT_YEAR = new Date().getFullYear();
 export const KAMPALA_COORDS = { lat: 0.3476, lng: 32.5825 };
+
+// Conversion constants
+export const SQM_PER_ACRE = 4047; // 1 acre = 4,047 square meters
 
 // Base prices per square meter as of 2022 (in UGX) - expanded from your Python code
 export const BASE_PRICES_2022 = {
@@ -60,6 +62,20 @@ export interface PropertyValuation {
     totalAdjustmentFactor: number;
     inflationAdjustment: number;
   };
+}
+
+/**
+ * Convert acres to square meters
+ */
+export function acresToSquareMeters(acres: number): number {
+  return acres * SQM_PER_ACRE;
+}
+
+/**
+ * Convert square meters to acres
+ */
+export function squareMetersToAcres(sqm: number): number {
+  return sqm / SQM_PER_ACRE;
 }
 
 /**
@@ -212,6 +228,7 @@ export function generatePropertyReportData(property: PropertyData, valuation: Pr
   return {
     property: {
       ...property,
+      sizeInAcres: squareMetersToAcres(property.sizeInSqm), // Add acres for display
       coordinates: property.latitude && property.longitude ? `${property.latitude}, ${property.longitude}` : 'Not provided',
       distanceToKampala: property.distanceToCityKm ? `${property.distanceToCityKm.toFixed(2)} km` : 'Not calculated',
     },
