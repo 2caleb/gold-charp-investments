@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import WeeklyReportsViewer from '@/components/reports/WeeklyReportsViewer';
@@ -23,8 +22,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { DateRange } from 'react-day-picker';
-import { exportFinancialDashboardToPDF, exportFinancialSummaryToExcel } from '@/utils/pdfExportUtils';
-import { exportFinancialSummaryToExcel as exportToExcel } from '@/utils/excelExportUtils';
+import { exportFinancialDashboardToPDF } from '@/utils/pdfExportUtils';
+import { exportFinancialSummaryToExcel } from '@/utils/excelExportUtils';
 
 const ReportsPage: React.FC = () => {
   const { userRole, isLoading: roleLoading } = useRolePermissions();
