@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -61,16 +62,16 @@ const NewLoanApplication = () => {
 
   return (
     <Layout>
-      <section className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8 md:py-16 transition-all duration-500">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-10">
+      <section className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 md:py-20 transition-all duration-500">
+        <div className="container mx-auto px-6 md:px-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 md:mb-16">
             <div className="animate-fade-in">
               <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4 dark:text-white bg-clip-text text-transparent bg-gradient-to-r from-blue-900 to-blue-700 dark:from-blue-400 dark:to-blue-200">New Loan Application</h1>
               <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 max-w-3xl">
                 Fill out the form below to submit a new loan application or use the client onboarding process for a guided experience.
               </p>
             </div>
-            <div className="mt-4 md:mt-0 flex flex-wrap gap-3 animate-fade-in">
+            <div className="mt-6 md:mt-0 flex flex-wrap gap-4 animate-fade-in">
               <DataCollectionButton onDataCollected={handleDataCollected} />
               
               <Button variant="outline" asChild className="flex items-center transition-all duration-300 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20">
@@ -89,14 +90,14 @@ const NewLoanApplication = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-10">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-16">
             <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800 transition-all duration-300 hover:shadow-lg hover:border-blue-300 transform hover:translate-y-[-5px]">
-              <CardContent className="p-6">
-                <div className="rounded-full bg-gradient-to-br from-blue-500 to-blue-700 w-12 h-12 flex items-center justify-center mb-4">
-                  <UserPlus className="h-6 w-6 text-white" />
+              <CardContent className="p-8">
+                <div className="rounded-full bg-gradient-to-br from-blue-500 to-blue-700 w-16 h-16 flex items-center justify-center mb-6">
+                  <UserPlus className="h-8 w-8 text-white" />
                 </div>
-                <h3 className="font-serif text-lg font-semibold mb-2">Client Onboarding</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <h3 className="font-serif text-xl font-semibold mb-3">Client Onboarding</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                   Complete guided client onboarding with document collection
                 </p>
                 <DataCollectionButton onDataCollected={handleDataCollected} />
@@ -104,12 +105,12 @@ const NewLoanApplication = () => {
             </Card>
             
             <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg hover:border-blue-300 transform hover:translate-y-[-5px]">
-              <CardContent className="p-6">
-                <div className="rounded-full bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-600 w-12 h-12 flex items-center justify-center mb-4">
-                  <FileText className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+              <CardContent className="p-8">
+                <div className="rounded-full bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-600 w-16 h-16 flex items-center justify-center mb-6">
+                  <FileText className="h-8 w-8 text-gray-700 dark:text-gray-300" />
                 </div>
-                <h3 className="font-serif text-lg font-semibold mb-2">Loan Documentation</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <h3 className="font-serif text-xl font-semibold mb-3">Loan Documentation</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                   Manage required documentation for loan approval
                 </p>
                 <Button variant="outline" asChild className="w-full transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20">
@@ -119,12 +120,12 @@ const NewLoanApplication = () => {
             </Card>
             
             <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg hover:border-blue-300 transform hover:translate-y-[-5px]">
-              <CardContent className="p-6">
-                <div className="rounded-full bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-600 w-12 h-12 flex items-center justify-center mb-4">
-                  <Calendar className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+              <CardContent className="p-8">
+                <div className="rounded-full bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-600 w-16 h-16 flex items-center justify-center mb-6">
+                  <Calendar className="h-8 w-8 text-gray-700 dark:text-gray-300" />
                 </div>
-                <h3 className="font-serif text-lg font-semibold mb-2">Payment Schedule</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <h3 className="font-serif text-xl font-semibold mb-3">Payment Schedule</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                   View loan repayment schedules and options
                 </p>
                 <Button variant="outline" asChild className="w-full transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20">
@@ -134,12 +135,12 @@ const NewLoanApplication = () => {
             </Card>
             
             <Card className="dark:bg-gray-800 transition-all duration-300 hover:shadow-lg hover:border-blue-300 transform hover:translate-y-[-5px]">
-              <CardContent className="p-6">
-                <div className="rounded-full bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-600 w-12 h-12 flex items-center justify-center mb-4">
-                  <Table className="h-6 w-6 text-gray-700 dark:text-gray-300" />
+              <CardContent className="p-8">
+                <div className="rounded-full bg-gradient-to-br from-gray-100 to-gray-300 dark:from-gray-700 dark:to-gray-600 w-16 h-16 flex items-center justify-center mb-6">
+                  <Table className="h-8 w-8 text-gray-700 dark:text-gray-300" />
                 </div>
-                <h3 className="font-serif text-lg font-semibold mb-2">Loan Analytics</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                <h3 className="font-serif text-xl font-semibold mb-3">Loan Analytics</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                   Track portfolio performance and insights
                 </p>
                 <Button variant="outline" asChild className="w-full transition-all duration-200 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20">
@@ -149,56 +150,58 @@ const NewLoanApplication = () => {
             </Card>
           </div>
 
-          <div className="mx-auto max-w-4xl animate-fade-in">
+          <div className="mx-auto max-w-6xl animate-fade-in">
             {submissionError && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-xl">
                 <p className="text-red-800 text-sm">{submissionError}</p>
               </div>
             )}
             
-            <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-xl">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-900/10 dark:to-transparent">
-                <h2 className="text-2xl font-serif font-bold flex items-center text-blue-900 dark:text-blue-400">
-                  <FileText className="mr-2 h-5 w-5 text-blue-700 dark:text-blue-500" />
+            <div className="bg-white dark:bg-gray-800 shadow-xl rounded-2xl border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-2xl">
+              <div className="p-8 md:p-10 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-transparent dark:from-blue-900/10 dark:to-transparent rounded-t-2xl">
+                <h2 className="text-3xl font-serif font-bold flex items-center text-blue-900 dark:text-blue-400 mb-4">
+                  <FileText className="mr-3 h-6 w-6 text-blue-700 dark:text-blue-500" />
                   Loan Application Form
                 </h2>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">
+                <p className="text-gray-600 dark:text-gray-400 text-lg">
                   Complete all required fields for your loan request
                 </p>
               </div>
-              <LoanApplicationForm 
-                onSubmit={onFormSubmit}
-                isSubmitting={isSubmitting}
-                clients={clients}
-                isLoadingClients={isLoadingClients}
-              />
+              <div className="p-8 md:p-12">
+                <LoanApplicationForm 
+                  onSubmit={onFormSubmit}
+                  isSubmitting={isSubmitting}
+                  clients={clients}
+                  isLoadingClients={isLoadingClients}
+                />
+              </div>
             </div>
             
-            <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-900/50 dark:to-transparent rounded-lg border border-gray-100 dark:border-gray-800">
-              <h3 className="text-lg font-medium mb-4">Additional Services</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button variant="outline" asChild className="flex items-center justify-center py-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
+            <div className="mt-12 p-8 bg-gradient-to-r from-gray-50 to-transparent dark:from-gray-900/50 dark:to-transparent rounded-xl border border-gray-100 dark:border-gray-800">
+              <h3 className="text-xl font-medium mb-6">Additional Services</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Button variant="outline" asChild className="flex items-center justify-center py-8 px-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
                   <Link to="/services/insurance">
-                    <Shield className="h-5 w-5 mr-2 text-blue-700" />
-                    <span>Insurance Options</span>
+                    <Shield className="h-6 w-6 mr-3 text-blue-700" />
+                    <span className="text-base">Insurance Options</span>
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="flex items-center justify-center py-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
+                <Button variant="outline" asChild className="flex items-center justify-center py-8 px-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
                   <Link to="/services/fast-track">
-                    <Clock className="h-5 w-5 mr-2 text-blue-700" />
-                    <span>Fast Track Approval</span>
+                    <Clock className="h-6 w-6 mr-3 text-blue-700" />
+                    <span className="text-base">Fast Track Approval</span>
                   </Link>
                 </Button>
-                <Button variant="outline" asChild className="flex items-center justify-center py-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
+                <Button variant="outline" asChild className="flex items-center justify-center py-8 px-6 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/10">
                   <Link to="/services/business-support">
-                    <Building className="h-5 w-5 mr-2 text-blue-700" />
-                    <span>Business Support</span>
+                    <Building className="h-6 w-6 mr-3 text-blue-700" />
+                    <span className="text-base">Business Support</span>
                   </Link>
                 </Button>
               </div>
             </div>
             
-            <div className="mt-6 text-center">
+            <div className="mt-8 text-center">
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Need assistance? Contact our support team at <a href="mailto:info@goldcharpinvestments.com" className="text-blue-600 hover:underline transition-all duration-200">info@goldcharpinvestments.com</a> or call us at +256-393103974
               </p>
