@@ -1273,6 +1273,42 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_reports: {
+        Row: {
+          applications_approved: number
+          applications_rejected: number
+          applications_reviewed: number
+          created_at: string | null
+          id: string
+          pending_applications: number
+          report_week: string
+          role_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          applications_approved?: number
+          applications_rejected?: number
+          applications_reviewed?: number
+          created_at?: string | null
+          id?: string
+          pending_applications?: number
+          report_week: string
+          role_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          applications_approved?: number
+          applications_rejected?: number
+          applications_reviewed?: number
+          created_at?: string | null
+          id?: string
+          pending_applications?: number
+          report_week?: string
+          role_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -28,10 +28,14 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('Processing request:', requestBody);
 
-    const { action, loan_id, approver_id, decision, notes } = requestBody;
+    const { action, loan_id, approver_id, decision, notes, target_role } = requestBody;
 
     if (action === 'process_workflow') {
       return await processWorkflow(supabaseClient, loan_id, approver_id, decision, notes || '');
+    } else if (action === 'get_weekly_reports') {
+      return await getWeeklyReports(supabaseClient, target_role);
+    } else if (action === 'generate_weekly_report') {
+      return await generateWeeklyReport(supabaseClient);
     } else {
       return new Response(
         JSON.stringify({ error: "Invalid action" }),
@@ -53,6 +57,171 @@ serve(async (req) => {
     );
   }
 });
+
+async function getWeeklyReports(supabaseClient: any, targetRole: string) {
+  try {
+    console.log('Fetching weekly reports for role:', targetRole);
+    
+    const { data, error } = await supabaseClient
+      .from('weekly_reports')
+      .select('*')
+      .eq('role_type', targetRole)
+      .order('report_week', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Error fetching weekly reports:', error);
+      throw new Error(`Failed to fetch weekly reports: ${error.message}`);
+    }
+
+    console.log('Successfully fetched', data?.length || 0, 'reports');
+    
+    return new Response(
+      JSON.stringify(data || []),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
+  } catch (error: any) {
+    console.error('Error in getWeeklyReports:', error);
+    throw error;
+  }
+}
+
+async function generateWeeklyReport(supabaseClient: any) {
+  try {
+    console.log('Generating weekly reports for all roles');
+    
+    // Get the start of the current week (Monday)
+    const now = new Date();
+    const currentWeekStart = new Date(now);
+    currentWeekStart.setDate(now.getDate() - now.getDay() + 1);
+    currentWeekStart.setHours(0, 0, 0, 0);
+    
+    // Get the end of the current week (Sunday)
+    const currentWeekEnd = new Date(currentWeekStart);
+    currentWeekEnd.setDate(currentWeekStart.getDate() + 6);
+    currentWeekEnd.setHours(23, 59, 59, 999);
+
+    console.log('Report period:', currentWeekStart.toISOString(), 'to', currentWeekEnd.toISOString());
+
+    const generatedReports = [];
+
+    // Generate reports for each role
+    for (const role of WORKFLOW_STAGES) {
+      console.log('Generating report for role:', role);
+      
+      // Check if report already exists for this week and role
+      const { data: existingReport } = await supabaseClient
+        .from('weekly_reports')
+        .select('id')
+        .eq('role_type', role)
+        .eq('report_week', currentWeekStart.toISOString().split('T')[0])
+        .maybeSingle();
+
+      if (existingReport) {
+        console.log('Report already exists for', role, 'this week');
+        continue;
+      }
+
+      // Calculate statistics for this role
+      const stats = await calculateRoleStatistics(supabaseClient, role, currentWeekStart, currentWeekEnd);
+      
+      // Insert the report
+      const { data: newReport, error } = await supabaseClient
+        .from('weekly_reports')
+        .insert({
+          role_type: role,
+          report_week: currentWeekStart.toISOString().split('T')[0],
+          applications_reviewed: stats.reviewed,
+          applications_approved: stats.approved,
+          applications_rejected: stats.rejected,
+          pending_applications: stats.pending
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error inserting report for', role, ':', error);
+      } else {
+        console.log('Successfully generated report for', role);
+        generatedReports.push(newReport);
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        message: `Generated ${generatedReports.length} weekly reports`,
+        reports: generatedReports
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
+  } catch (error: any) {
+    console.error('Error in generateWeeklyReport:', error);
+    throw error;
+  }
+}
+
+async function calculateRoleStatistics(supabaseClient: any, role: string, weekStart: Date, weekEnd: Date) {
+  try {
+    // Get all applications that were in this role's stage during the week
+    const { data: applications, error } = await supabaseClient
+      .from('loan_applications')
+      .select(`
+        id,
+        status,
+        created_at,
+        last_updated,
+        loan_applications_workflow (
+          current_stage,
+          ${role}_approved,
+          updated_at
+        )
+      `)
+      .gte('created_at', weekStart.toISOString())
+      .lte('created_at', weekEnd.toISOString());
+
+    if (error) {
+      console.error('Error fetching applications for stats:', error);
+      return { reviewed: 0, approved: 0, rejected: 0, pending: 0 };
+    }
+
+    let reviewed = 0;
+    let approved = 0;
+    let rejected = 0;
+    let pending = 0;
+
+    // Count applications based on their status and workflow stage
+    applications?.forEach((app: any) => {
+      const workflow = app.loan_applications_workflow?.[0];
+      
+      // Count as reviewed if the application reached this role's stage
+      if (workflow && (workflow.current_stage === role || app.status.includes(role))) {
+        reviewed++;
+        
+        // Check if approved by this role
+        if (workflow[`${role}_approved`] === true) {
+          approved++;
+        } else if (workflow[`${role}_approved`] === false || app.status === 'rejected') {
+          rejected++;
+        } else if (workflow.current_stage === role) {
+          pending++;
+        }
+      }
+    });
+
+    console.log(`Stats for ${role}:`, { reviewed, approved, rejected, pending });
+    return { reviewed, approved, rejected, pending };
+  } catch (error: any) {
+    console.error('Error calculating role statistics:', error);
+    return { reviewed: 0, approved: 0, rejected: 0, pending: 0 };
+  }
+}
 
 async function processWorkflow(
   supabaseClient: any,
