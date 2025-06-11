@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
@@ -13,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 import { 
   CreditCard, 
   TrendingUp, 
@@ -28,10 +28,14 @@ import {
   Send
 } from 'lucide-react';
 import { useFinancialSummaryQuery } from '@/hooks/use-financial-summary-query';
+import { exportLoanBookToExcel, exportExpensesToExcel } from '@/utils/excelExportUtils';
 
 const Payments = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
+  const [isExportingLoanBook, setIsExportingLoanBook] = useState(false);
+  const [isExportingExpenses, setIsExportingExpenses] = useState(false);
+  const { toast } = useToast();
 
   // Use simplified financial summary query
   const { data: financialSummary, isLoading: summaryLoading, refetch: refetchSummary } = useFinancialSummaryQuery();
@@ -99,6 +103,48 @@ const Payments = () => {
       supabase.removeChannel(summaryChannel);
     };
   }, [refetchLoanBook, refetchExpenses, refetchSummary]);
+
+  const handleExportLoanBook = async () => {
+    setIsExportingLoanBook(true);
+    try {
+      console.log('Exporting loan book to Excel...');
+      await exportLoanBookToExcel(filteredLoanBook);
+      toast({
+        title: 'Export Successful',
+        description: 'Loan book exported to Excel successfully',
+      });
+    } catch (error: any) {
+      console.error('Error exporting loan book:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export loan book to Excel',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExportingLoanBook(false);
+    }
+  };
+
+  const handleExportExpenses = async () => {
+    setIsExportingExpenses(true);
+    try {
+      console.log('Exporting expenses to Excel...');
+      await exportExpensesToExcel(filteredExpenses);
+      toast({
+        title: 'Export Successful',
+        description: 'Expenses exported to Excel successfully',
+      });
+    } catch (error: any) {
+      console.error('Error exporting expenses:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export expenses to Excel',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExportingExpenses(false);
+    }
+  };
 
   const formatCurrency = (amount: string | number | null | undefined) => {
     if (!amount) return 'UGX 0';
@@ -315,9 +361,14 @@ const Payments = () => {
                         <Filter className="mr-2 h-4 w-4" />
                         Filter
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleExportLoanBook}
+                        disabled={isExportingLoanBook}
+                      >
                         <Download className="mr-2 h-4 w-4" />
-                        Export
+                        {isExportingLoanBook ? 'Exporting...' : 'Export'}
                       </Button>
                     </div>
                   </CardTitle>
@@ -416,9 +467,14 @@ const Payments = () => {
                         <Filter className="mr-2 h-4 w-4" />
                         Filter
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleExportExpenses}
+                        disabled={isExportingExpenses}
+                      >
                         <Download className="mr-2 h-4 w-4" />
-                        Export
+                        {isExportingExpenses ? 'Exporting...' : 'Export'}
                       </Button>
                     </div>
                   </CardTitle>

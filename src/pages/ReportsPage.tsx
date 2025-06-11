@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import WeeklyReportsViewer from '@/components/reports/WeeklyReportsViewer';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
@@ -8,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { useToast } from '@/hooks/use-toast';
 import { 
   FileText, 
   TrendingUp, 
@@ -20,19 +22,41 @@ import {
   Calendar
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { DateRange } from 'react-day-picker';
+import { exportFinancialDashboardToPDF, exportFinancialSummaryToExcel } from '@/utils/pdfExportUtils';
+import { exportFinancialSummaryToExcel as exportToExcel } from '@/utils/excelExportUtils';
 
 const ReportsPage: React.FC = () => {
   const { userRole, isLoading: roleLoading } = useRolePermissions();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
 
   const { data: reportData, isLoading } = useQuery({
-    queryKey: ['reports-data'],
+    queryKey: ['reports-data', dateRange],
     queryFn: async () => {
       try {
+        // Build date filters
+        let summaryQuery = supabase.from('financial_summary').select('*').order('created_at', { ascending: false }).limit(1);
+        let transactionsQuery = supabase.from('financial_transactions').select('*').order('date', { ascending: false });
+        let loanBookQuery = supabase.from('loan_book_live').select('*');
+        let expensesQuery = supabase.from('expenses_live').select('*').order('expense_date', { ascending: false });
+
+        // Apply date filters if date range is selected
+        if (dateRange?.from && dateRange?.to) {
+          const fromDate = dateRange.from.toISOString().split('T')[0];
+          const toDate = dateRange.to.toISOString().split('T')[0];
+          
+          transactionsQuery = transactionsQuery.gte('date', fromDate).lte('date', toDate);
+          loanBookQuery = loanBookQuery.gte('loan_date', fromDate).lte('loan_date', toDate);
+          expensesQuery = expensesQuery.gte('expense_date', fromDate).lte('expense_date', toDate);
+        }
+
         const [summaryRes, transactionsRes, loanBookRes, expensesRes] = await Promise.all([
-          supabase.from('financial_summary').select('*').order('created_at', { ascending: false }).limit(1).single(),
-          supabase.from('financial_transactions').select('*').order('date', { ascending: false }),
-          supabase.from('loan_book').select('*'),
-          supabase.from('Expenses').select('*').order('Date', { ascending: false })
+          summaryQuery.single(),
+          transactionsQuery,
+          loanBookQuery,
+          expensesQuery
         ]);
 
         return {
@@ -47,6 +71,34 @@ const ReportsPage: React.FC = () => {
       }
     },
   });
+
+  const handleExportReport = async () => {
+    setIsExporting(true);
+    try {
+      console.log('Exporting comprehensive financial dashboard report...');
+      await exportFinancialDashboardToPDF(
+        reportData?.summary,
+        reportData?.transactions || [],
+        reportData?.loanBook || [],
+        reportData?.expenses || [],
+        dateRange ? { from: dateRange.from!, to: dateRange.to! } : undefined
+      );
+      
+      toast({
+        title: 'Export Successful',
+        description: 'Financial dashboard report exported successfully',
+      });
+    } catch (error: any) {
+      console.error('Error exporting financial dashboard report:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export financial dashboard report',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const formatCurrency = (amount: string | number) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -105,16 +157,43 @@ const ReportsPage: React.FC = () => {
             <p className="text-gray-600 mt-2">Comprehensive financial analysis and reporting</p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="h-10">
-              <Calendar className="mr-2 h-4 w-4" />
-              Date Range
-            </Button>
-            <Button className="bg-gradient-to-r from-purple-600 to-blue-600 h-10">
+            <DateRangePicker
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+            />
+            <Button 
+              className="bg-gradient-to-r from-purple-600 to-blue-600 h-10"
+              onClick={handleExportReport}
+              disabled={isExporting}
+            >
               <Download className="mr-2 h-4 w-4" />
-              Export Report
+              {isExporting ? 'Exporting...' : 'Export Report'}
             </Button>
           </div>
         </motion.div>
+
+        {/* Show active date filter */}
+        {dateRange?.from && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2"
+          >
+            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+              <Calendar className="mr-1 h-3 w-3" />
+              Filtered: {dateRange.from.toLocaleDateString()} 
+              {dateRange.to && ` - ${dateRange.to.toLocaleDateString()}`}
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setDateRange(undefined)}
+              className="h-6 px-2 text-xs"
+            >
+              Clear Filter
+            </Button>
+          </motion.div>
+        )}
 
         {/* Financial Summary Cards */}
         <motion.div

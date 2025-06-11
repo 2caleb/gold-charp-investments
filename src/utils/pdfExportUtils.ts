@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -491,5 +490,209 @@ export const exportMultipleReportsToPDF = async (
   } catch (error) {
     console.error('Error generating consolidated comprehensive PDF:', error);
     throw new Error('Failed to generate consolidated comprehensive PDF report');
+  }
+};
+
+export const exportFinancialDashboardToPDF = async (
+  financialData: FinancialData,
+  transactionData: TransactionData[],
+  loanBookData: any[],
+  expensesData: any[],
+  dateRange?: { from: Date; to: Date }
+) => {
+  try {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    let yPosition = 20;
+
+    // Header Section
+    pdf.setFontSize(24);
+    pdf.setTextColor(124, 58, 237);
+    pdf.text('Gold Charp Financial Services', pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 12;
+    pdf.setFontSize(18);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('Comprehensive Financial Dashboard Report', pageWidth / 2, yPosition, { align: 'center' });
+    
+    yPosition += 8;
+    pdf.setFontSize(12);
+    pdf.setTextColor(75, 85, 99);
+    
+    if (dateRange) {
+      const fromDate = dateRange.from.toLocaleDateString();
+      const toDate = dateRange.to.toLocaleDateString();
+      pdf.text(`Report Period: ${fromDate} to ${toDate}`, pageWidth / 2, yPosition, { align: 'center' });
+    } else {
+      pdf.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
+    }
+    
+    yPosition += 20;
+
+    // Executive Summary Section
+    pdf.setFontSize(16);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('Executive Financial Summary', 20, yPosition);
+    yPosition += 12;
+
+    const formatCurrency = (amount: number) => {
+      return new Intl.NumberFormat('en-UG', {
+        style: 'currency',
+        currency: 'UGX',
+        minimumFractionDigits: 0,
+      }).format(amount || 0);
+    };
+
+    // Financial KPI Grid
+    const kpiData = [
+      ['Total Income', formatCurrency(financialData?.total_income || 0)],
+      ['Total Expenses', formatCurrency(financialData?.total_expenses || 0)],
+      ['Net Income', formatCurrency(financialData?.net_income || 0)],
+      ['Loan Portfolio', formatCurrency(financialData?.total_loan_portfolio || 0)],
+      ['Total Repaid', formatCurrency(financialData?.total_repaid || 0)],
+      ['Outstanding Balance', formatCurrency(financialData?.outstanding_balance || 0)],
+      ['Active Loan Holders', (financialData?.active_loan_holders || 0).toString()],
+      ['Collection Rate', `${(financialData?.collection_rate || 0).toFixed(1)}%`]
+    ];
+
+    // Create KPI table
+    const cellWidth = (pageWidth - 40) / 2;
+    const cellHeight = 10;
+    
+    kpiData.forEach((kpi, index) => {
+      const x = 20 + ((index % 2) * cellWidth);
+      const y = yPosition + (Math.floor(index / 2) * cellHeight);
+      
+      // Background
+      pdf.setFillColor(248, 250, 252);
+      pdf.rect(x, y - 2, cellWidth, cellHeight, 'F');
+      
+      // Border
+      pdf.setDrawColor(229, 231, 235);
+      pdf.rect(x, y - 2, cellWidth, cellHeight);
+      
+      // Text
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(`${kpi[0]}: ${kpi[1]}`, x + 2, y + 4);
+    });
+    
+    yPosition += (Math.ceil(kpiData.length / 2) * cellHeight) + 20;
+
+    // Financial Performance Analysis
+    pdf.setFontSize(16);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('Financial Performance Analysis', 20, yPosition);
+    yPosition += 12;
+
+    const profitMargin = financialData?.total_income && financialData?.net_income
+      ? ((financialData.net_income / financialData.total_income) * 100).toFixed(1)
+      : '0.0';
+
+    const analysisMetrics = [
+      `• Profit Margin: ${profitMargin}%`,
+      `• Collection Efficiency: ${(financialData?.collection_rate || 0).toFixed(1)}%`,
+      `• Portfolio Health: ${financialData?.collection_rate && financialData.collection_rate >= 80 ? 'Healthy' : 'Needs Attention'}`,
+      `• Active Loan Count: ${financialData?.active_loan_holders || 0} holders`
+    ];
+
+    pdf.setFontSize(11);
+    pdf.setTextColor(75, 85, 99);
+    analysisMetrics.forEach((metric, index) => {
+      pdf.text(metric, 25, yPosition + (index * 7));
+    });
+    yPosition += (analysisMetrics.length * 7) + 15;
+
+    // Recent Financial Activity
+    if (transactionData && transactionData.length > 0) {
+      let filteredTransactions = transactionData;
+      if (dateRange) {
+        filteredTransactions = transactionData.filter(transaction => {
+          const transactionDate = new Date(transaction.date);
+          return transactionDate >= dateRange.from && transactionDate <= dateRange.to;
+        });
+      }
+
+      pdf.setFontSize(16);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('Recent Financial Activity', 20, yPosition);
+      yPosition += 12;
+
+      const recentTransactions = filteredTransactions.slice(0, 8);
+      recentTransactions.forEach((transaction, index) => {
+        if (yPosition > pageHeight - 40) {
+          pdf.addPage();
+          yPosition = 20;
+        }
+
+        const amount = formatCurrency(transaction.amount);
+        const description = transaction.description.substring(0, 35) + (transaction.description.length > 35 ? '...' : '');
+        const typeColor = transaction.transaction_type === 'income' ? [34, 197, 94] : [239, 68, 68];
+        
+        pdf.setFontSize(10);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`• ${description}`, 25, yPosition);
+        
+        pdf.setTextColor(typeColor[0], typeColor[1], typeColor[2]);
+        pdf.text(`${transaction.transaction_type === 'income' ? '+' : '-'}${amount}`, pageWidth - 60, yPosition);
+        
+        yPosition += 6;
+      });
+      yPosition += 15;
+    }
+
+    // Loan Portfolio Summary
+    if (loanBookData && loanBookData.length > 0) {
+      if (yPosition > pageHeight - 60) {
+        pdf.addPage();
+        yPosition = 20;
+      }
+
+      pdf.setFontSize(16);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text('Loan Portfolio Summary', 20, yPosition);
+      yPosition += 12;
+
+      const totalLoans = loanBookData.length;
+      const activeLoans = loanBookData.filter(loan => loan.status === 'active').length;
+      const avgLoanAmount = loanBookData.reduce((sum, loan) => sum + (loan.amount_returnable || 0), 0) / totalLoans;
+
+      const portfolioMetrics = [
+        `• Total Loan Records: ${totalLoans}`,
+        `• Active Loans: ${activeLoans}`,
+        `• Average Loan Amount: ${formatCurrency(avgLoanAmount)}`,
+        `• Portfolio Utilization: ${((activeLoans / totalLoans) * 100).toFixed(1)}%`
+      ];
+
+      pdf.setFontSize(11);
+      pdf.setTextColor(75, 85, 99);
+      portfolioMetrics.forEach((metric, index) => {
+        pdf.text(metric, 25, yPosition + (index * 7));
+      });
+      yPosition += (portfolioMetrics.length * 7) + 15;
+    }
+
+    // Footer
+    pdf.setFontSize(8);
+    pdf.setTextColor(107, 114, 128);
+    const generatedDate = new Date().toLocaleString();
+    pdf.text(`Generated on: ${generatedDate}`, 20, pageHeight - 20);
+    pdf.text('Confidential - Internal Use Only', pageWidth - 80, pageHeight - 20);
+
+    // Generate filename
+    const dateStr = dateRange 
+      ? `${dateRange.from.toISOString().split('T')[0]}_to_${dateRange.to.toISOString().split('T')[0]}`
+      : new Date().toISOString().split('T')[0];
+    
+    const filename = `financial-dashboard-${dateStr}.pdf`;
+    
+    // Save the PDF
+    pdf.save(filename);
+    
+    return { success: true, filename };
+  } catch (error) {
+    console.error('Error generating financial dashboard PDF:', error);
+    throw new Error('Failed to generate financial dashboard PDF report');
   }
 };
