@@ -20,6 +20,27 @@ interface WeeklyReport {
   created_at: string;
 }
 
+interface FinancialData {
+  total_income?: number;
+  total_expenses?: number;
+  net_income?: number;
+  total_loan_portfolio?: number;
+  total_repaid?: number;
+  outstanding_balance?: number;
+  active_loan_holders?: number;
+  collection_rate?: number;
+}
+
+interface TransactionData {
+  id: string;
+  amount: number;
+  description: string;
+  category: string;
+  transaction_type: string;
+  date: string;
+  status: string;
+}
+
 const WeeklyReportsViewer: React.FC = () => {
   const [reports, setReports] = useState<WeeklyReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,22 +50,44 @@ const WeeklyReportsViewer: React.FC = () => {
   const { userRole } = useRolePermissions();
   const { toast } = useToast();
 
-  // Fetch financial data for PDF export
+  // Fetch comprehensive financial data for PDF export
   const { data: financialData } = useQuery({
-    queryKey: ['financial-summary-for-pdf'],
+    queryKey: ['comprehensive-financial-data'],
     queryFn: async () => {
+      console.log('Fetching comprehensive financial data for PDF export...');
+      
       const { data, error } = await supabase
         .from('financial_summary')
         .select('*')
-        .order('created_at', { ascending: false })
+        .order('calculated_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching financial data:', error);
         return null;
       }
       return data;
+    },
+  });
+
+  // Fetch recent transaction data for PDF export
+  const { data: transactionData } = useQuery({
+    queryKey: ['recent-transactions-for-pdf'],
+    queryFn: async () => {
+      console.log('Fetching recent transactions for PDF export...');
+      
+      const { data, error } = await supabase
+        .from('financial_transactions')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(20);
+      
+      if (error) {
+        console.error('Error fetching transaction data:', error);
+        return [];
+      }
+      return data || [];
     },
   });
 
@@ -112,16 +155,17 @@ const WeeklyReportsViewer: React.FC = () => {
   const handleExportReport = async (report: WeeklyReport) => {
     setExportingReportId(report.id);
     try {
-      await exportWeeklyReportToPDF(report, financialData);
+      console.log('Exporting comprehensive report with financial data...');
+      await exportWeeklyReportToPDF(report, financialData, transactionData);
       toast({
         title: 'Export Successful',
-        description: `Report for ${report.role_type} exported successfully`,
+        description: `Comprehensive report for ${report.role_type} exported successfully`,
       });
     } catch (error: any) {
-      console.error('Error exporting report:', error);
+      console.error('Error exporting comprehensive report:', error);
       toast({
         title: 'Export Failed',
-        description: 'Failed to export report to PDF',
+        description: 'Failed to export comprehensive report to PDF',
         variant: 'destructive',
       });
     } finally {
@@ -141,16 +185,17 @@ const WeeklyReportsViewer: React.FC = () => {
 
     setIsExportingAll(true);
     try {
-      await exportMultipleReportsToPDF(reports, financialData);
+      console.log('Exporting consolidated comprehensive report...');
+      await exportMultipleReportsToPDF(reports, financialData, transactionData);
       toast({
         title: 'Export Successful',
-        description: 'All reports exported successfully',
+        description: 'All comprehensive reports exported successfully',
       });
     } catch (error: any) {
-      console.error('Error exporting all reports:', error);
+      console.error('Error exporting all comprehensive reports:', error);
       toast({
         title: 'Export Failed',
-        description: 'Failed to export consolidated report',
+        description: 'Failed to export consolidated comprehensive report',
         variant: 'destructive',
       });
     } finally {
@@ -178,8 +223,8 @@ const WeeklyReportsViewer: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Weekly Reports</h1>
-          <p className="text-gray-600">View and generate weekly workflow reports</p>
+          <h1 className="text-3xl font-bold">Comprehensive Financial Reports</h1>
+          <p className="text-gray-600">Generate and export detailed financial and workflow reports</p>
         </div>
         <div className="flex gap-3">
           {reports.length > 0 && (
@@ -190,7 +235,7 @@ const WeeklyReportsViewer: React.FC = () => {
               className="flex items-center gap-2"
             >
               <FileDown className="h-4 w-4" />
-              {isExportingAll ? 'Exporting All...' : 'Export All Reports'}
+              {isExportingAll ? 'Exporting All...' : 'Export All Comprehensive Reports'}
             </Button>
           )}
           <Button 
@@ -260,6 +305,53 @@ const WeeklyReportsViewer: React.FC = () => {
                   </div>
                 </div>
                 
+                {financialData && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600 mb-2">Financial Overview (Current Period):</div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                      <div className="text-center">
+                        <div className="font-semibold text-green-600">
+                          {new Intl.NumberFormat('en-UG', {
+                            style: 'currency',
+                            currency: 'UGX',
+                            notation: 'compact',
+                            maximumFractionDigits: 0
+                          }).format(financialData.total_income || 0)}
+                        </div>
+                        <div className="text-gray-500">Income</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-red-600">
+                          {new Intl.NumberFormat('en-UG', {
+                            style: 'currency',
+                            currency: 'UGX',
+                            notation: 'compact',
+                            maximumFractionDigits: 0
+                          }).format(financialData.total_expenses || 0)}
+                        </div>
+                        <div className="text-gray-500">Expenses</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-blue-600">
+                          {new Intl.NumberFormat('en-UG', {
+                            style: 'currency',
+                            currency: 'UGX',
+                            notation: 'compact',
+                            maximumFractionDigits: 0
+                          }).format(financialData.total_loan_portfolio || 0)}
+                        </div>
+                        <div className="text-gray-500">Portfolio</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-purple-600">
+                          {(financialData.collection_rate || 0).toFixed(1)}%
+                        </div>
+                        <div className="text-gray-500">Collection</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">
@@ -272,7 +364,7 @@ const WeeklyReportsViewer: React.FC = () => {
                       disabled={exportingReportId === report.id}
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      {exportingReportId === report.id ? 'Exporting...' : 'Export PDF'}
+                      {exportingReportId === report.id ? 'Exporting...' : 'Export Comprehensive PDF'}
                     </Button>
                   </div>
                 </div>
