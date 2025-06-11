@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Calendar, Download, FileText, TrendingUp } from 'lucide-react';
+import { Calendar, Download, FileText, TrendingUp, FileDown } from 'lucide-react';
 import { useRolePermissions } from '@/hooks/use-role-permissions';
+import { exportWeeklyReportToPDF, exportMultipleReportsToPDF } from '@/utils/pdfExportUtils';
+import { useQuery } from '@tanstack/react-query';
 
 interface WeeklyReport {
   id: string;
@@ -22,8 +24,29 @@ const WeeklyReportsViewer: React.FC = () => {
   const [reports, setReports] = useState<WeeklyReport[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [exportingReportId, setExportingReportId] = useState<string | null>(null);
+  const [isExportingAll, setIsExportingAll] = useState(false);
   const { userRole } = useRolePermissions();
   const { toast } = useToast();
+
+  // Fetch financial data for PDF export
+  const { data: financialData } = useQuery({
+    queryKey: ['financial-summary-for-pdf'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('financial_summary')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching financial data:', error);
+        return null;
+      }
+      return data;
+    },
+  });
 
   useEffect(() => {
     if (userRole && ['manager', 'director', 'chairperson', 'ceo'].includes(userRole)) {
@@ -86,6 +109,55 @@ const WeeklyReportsViewer: React.FC = () => {
     }
   };
 
+  const handleExportReport = async (report: WeeklyReport) => {
+    setExportingReportId(report.id);
+    try {
+      await exportWeeklyReportToPDF(report, financialData);
+      toast({
+        title: 'Export Successful',
+        description: `Report for ${report.role_type} exported successfully`,
+      });
+    } catch (error: any) {
+      console.error('Error exporting report:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export report to PDF',
+        variant: 'destructive',
+      });
+    } finally {
+      setExportingReportId(null);
+    }
+  };
+
+  const handleExportAllReports = async () => {
+    if (reports.length === 0) {
+      toast({
+        title: 'No Reports',
+        description: 'No reports available to export',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsExportingAll(true);
+    try {
+      await exportMultipleReportsToPDF(reports, financialData);
+      toast({
+        title: 'Export Successful',
+        description: 'All reports exported successfully',
+      });
+    } catch (error: any) {
+      console.error('Error exporting all reports:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export consolidated report',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExportingAll(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -109,14 +181,27 @@ const WeeklyReportsViewer: React.FC = () => {
           <h1 className="text-3xl font-bold">Weekly Reports</h1>
           <p className="text-gray-600">View and generate weekly workflow reports</p>
         </div>
-        <Button 
-          onClick={generateWeeklyReport}
-          disabled={isGenerating}
-          className="flex items-center gap-2"
-        >
-          <TrendingUp className="h-4 w-4" />
-          {isGenerating ? 'Generating...' : 'Generate Report'}
-        </Button>
+        <div className="flex gap-3">
+          {reports.length > 0 && (
+            <Button 
+              onClick={handleExportAllReports}
+              disabled={isExportingAll}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <FileDown className="h-4 w-4" />
+              {isExportingAll ? 'Exporting All...' : 'Export All Reports'}
+            </Button>
+          )}
+          <Button 
+            onClick={generateWeeklyReport}
+            disabled={isGenerating}
+            className="flex items-center gap-2"
+          >
+            <TrendingUp className="h-4 w-4" />
+            {isGenerating ? 'Generating...' : 'Generate Report'}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6">
@@ -180,9 +265,14 @@ const WeeklyReportsViewer: React.FC = () => {
                     <span className="text-sm text-gray-500">
                       Generated: {formatDate(report.created_at)}
                     </span>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleExportReport(report)}
+                      disabled={exportingReportId === report.id}
+                    >
                       <Download className="h-4 w-4 mr-2" />
-                      Export
+                      {exportingReportId === report.id ? 'Exporting...' : 'Export PDF'}
                     </Button>
                   </div>
                 </div>
