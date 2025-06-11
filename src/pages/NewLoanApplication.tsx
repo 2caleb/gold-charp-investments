@@ -211,5 +211,3 @@ const NewLoanApplication = () => {
 };
 
 export default NewLoanApplication;
-
-</initial_code>
