@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { useFinancialSummaryQuery } from '@/hooks/use-financial-summary-query';
 import { exportLoanBookToExcel, exportExpensesToExcel } from '@/utils/excelExportUtils';
+import DynamicLoanBookTable from '@/components/payments/DynamicLoanBookTable';
 
 const Payments = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -331,7 +332,7 @@ const Payments = () => {
               </TabsTrigger>
               <TabsTrigger value="loan-book" className="text-sm">
                 <DollarSign className="mr-2 h-4 w-4" />
-                Live Loan Book
+                Smart Loan Book
               </TabsTrigger>
               <TabsTrigger value="expenses" className="text-sm">
                 <TrendingDown className="mr-2 h-4 w-4" />
@@ -348,109 +349,12 @@ const Payments = () => {
             </TabsContent>
 
             <TabsContent value="loan-book" className="space-y-6 mt-6">
-              <Card className="shadow-lg">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <span className="flex items-center text-lg">
-                      <DollarSign className="mr-3 h-5 w-5" />
-                      Live Loan Book ({filteredLoanBook.length} records) 
-                      <Badge variant="outline" className="ml-2 bg-green-50 text-green-700">Real-time</Badge>
-                    </span>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Filter className="mr-2 h-4 w-4" />
-                        Filter
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleExportLoanBook}
-                        disabled={isExportingLoanBook}
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        {isExportingLoanBook ? 'Exporting...' : 'Export'}
-                      </Button>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Search by client name..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 h-10"
-                      />
-                    </div>
-                  </div>
-                  <div className="rounded-md border overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Client Name</TableHead>
-                          <TableHead>Amount Returnable</TableHead>
-                          <TableHead>Amount Paid 1</TableHead>
-                          <TableHead>Amount Paid 2</TableHead>
-                          <TableHead>Amount Paid 3</TableHead>
-                          <TableHead>Remaining Balance</TableHead>
-                          <TableHead>Payment Mode</TableHead>
-                          <TableHead>Loan Date</TableHead>
-                          <TableHead>Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredLoanBook.length > 0 ? (
-                          filteredLoanBook.map((loan) => (
-                            <TableRow key={loan.id}>
-                              <TableCell className="font-medium">{loan.client_name}</TableCell>
-                              <TableCell className="text-blue-600 font-semibold">
-                                {formatCurrency(loan.amount_returnable)}
-                              </TableCell>
-                              <TableCell className="text-green-600">
-                                {formatCurrency(loan.amount_paid_1)}
-                              </TableCell>
-                              <TableCell className="text-green-600">
-                                {formatCurrency(loan.amount_paid_2)}
-                              </TableCell>
-                              <TableCell className="text-green-600">
-                                {formatCurrency(loan.amount_paid_3)}
-                              </TableCell>
-                              <TableCell className="text-red-600 font-semibold">
-                                {formatCurrency(loan.remaining_balance)}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{loan.payment_mode || 'Not specified'}</Badge>
-                              </TableCell>
-                              <TableCell>{new Date(loan.loan_date).toLocaleDateString()}</TableCell>
-                              <TableCell>
-                                <Badge 
-                                  variant={loan.status === 'active' ? 'default' : 'secondary'}
-                                  className={loan.status === 'active' ? 'bg-green-100 text-green-800' : ''}
-                                >
-                                  {loan.status}
-                                </Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={9} className="text-center py-8">
-                              <div className="flex flex-col items-center gap-2">
-                                <AlertCircle className="h-8 w-8 text-gray-400" />
-                                <p className="text-gray-500">
-                                  {loanBookData && loanBookData.length === 0 ? 'No loan records available' : 'No records match your search'}
-                                </p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
+              <DynamicLoanBookTable
+                loanData={loanBookData}
+                isLoading={loanBookLoading}
+                onExport={handleExportLoanBook}
+                isExporting={isExportingLoanBook}
+              />
             </TabsContent>
 
             <TabsContent value="expenses" className="space-y-4 mt-4">
