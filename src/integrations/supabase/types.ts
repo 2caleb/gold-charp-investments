@@ -649,6 +649,7 @@ export type Database = {
           amount_paid_2: number | null
           amount_paid_3: number | null
           amount_paid_4: number | null
+          amount_paid_5: number | null
           amount_returnable: number
           client_name: string
           created_at: string | null
@@ -665,6 +666,7 @@ export type Database = {
           amount_paid_2?: number | null
           amount_paid_3?: number | null
           amount_paid_4?: number | null
+          amount_paid_5?: number | null
           amount_returnable?: number
           client_name: string
           created_at?: string | null
@@ -681,6 +683,7 @@ export type Database = {
           amount_paid_2?: number | null
           amount_paid_3?: number | null
           amount_paid_4?: number | null
+          amount_paid_5?: number | null
           amount_returnable?: number
           client_name?: string
           created_at?: string | null

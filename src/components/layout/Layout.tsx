@@ -2,6 +2,7 @@
 import React from 'react';
 import PremiumNavBar from './PremiumNavBar';
 import Footer from './Footer';
+import ChatWidget from '@/components/chat/ChatWidget';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,6 +19,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </main>
       
       <Footer />
+      
+      {/* AI Chatbot Widget */}
+      <ChatWidget />
     </div>
   );
 };

@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationsProvider } from '@/contexts/NotificationsContext';
+import { ChatProvider } from '@/components/chat/ChatProvider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PrivateRoute from '@/components/auth/PrivateRoute';
 import Login from '@/pages/Login';
@@ -53,150 +53,152 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <NotificationsProvider>
-          <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-            <Toaster />
-            <BrowserRouter>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                
-                {/* Public Pages */}
-                <Route path="/home" element={<Index />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/properties" element={<Properties />} />
-                <Route path="/properties/:id" element={<PropertyDetail />} />
-                <Route path="/calculator" element={<Calculator />} />
-                <Route path="/loans" element={<Loans />} />
-                <Route path="/loans/mortgage" element={<MortgageLoansPage />} />
-                <Route path="/loans/refinance" element={<RefinanceLoansPage />} />
-                <Route path="/loans/equity" element={<EquityLoansPage />} />
-                <Route path="/money-transfer" element={<MoneyTransfer />} />
-                <Route path="/property-evaluation" element={<PropertyEvaluation />} />
-                
-                {/* Services Routes */}
-                <Route path="/services" element={<ServicesPage />} />
-                <Route path="/services/insurance" element={<Insurance />} />
-                <Route path="/services/fast-track" element={<FastTrack />} />
-                <Route path="/services/business-support" element={<BusinessSupport />} />
-                <Route path="/services/mortgage" element={<Loans />} />
+          <ChatProvider>
+            <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+              <Toaster />
+              <BrowserRouter>
+                <Routes>
+                  {/* Public Routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  
+                  {/* Public Pages */}
+                  <Route path="/home" element={<Index />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/properties" element={<Properties />} />
+                  <Route path="/properties/:id" element={<PropertyDetail />} />
+                  <Route path="/calculator" element={<Calculator />} />
+                  <Route path="/loans" element={<Loans />} />
+                  <Route path="/loans/mortgage" element={<MortgageLoansPage />} />
+                  <Route path="/loans/refinance" element={<RefinanceLoansPage />} />
+                  <Route path="/loans/equity" element={<EquityLoansPage />} />
+                  <Route path="/money-transfer" element={<MoneyTransfer />} />
+                  <Route path="/property-evaluation" element={<PropertyEvaluation />} />
+                  
+                  {/* Services Routes */}
+                  <Route path="/services" element={<ServicesPage />} />
+                  <Route path="/services/insurance" element={<Insurance />} />
+                  <Route path="/services/fast-track" element={<FastTrack />} />
+                  <Route path="/services/business-support" element={<BusinessSupport />} />
+                  <Route path="/services/mortgage" element={<Loans />} />
 
-                {/* Protected Routes */}
-                <Route 
-                  path="/" 
-                  element={
-                    <PrivateRoute>
-                      <Dashboard />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/dashboard" 
-                  element={
-                    <PrivateRoute>
-                      <Dashboard />
-                    </PrivateRoute>
-                  } 
-                />
-                
-                <Route 
-                  path="/loan-applications" 
-                  element={
-                    <PrivateRoute>
-                      <LoanApplicationsList />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/loan-applications/new" 
-                  element={
-                    <PrivateRoute>
-                      <NewLoanApplication />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/loan-applications/:id" 
-                  element={
-                    <PrivateRoute>
-                      <LoanApprovalPage />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/new-loan-application" 
-                  element={
-                    <PrivateRoute>
-                      <NewLoanApplication />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/loan-approval/:id" 
-                  element={
-                    <PrivateRoute>
-                      <LoanApprovalPage />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/clients" 
-                  element={
-                    <PrivateRoute>
-                      <ClientsList />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/client/:id" 
-                  element={
-                    <PrivateRoute>
-                      <ClientDetail />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/new-client" 
-                  element={
-                    <PrivateRoute>
-                      <NewClient />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/payments" 
-                  element={
-                    <PrivateRoute>
-                      <Payments />
-                    </PrivateRoute>
-                  } 
-                />
-                <Route 
-                  path="/reports" 
-                  element={
-                    <PrivateRoute>
-                      <ReportsPage />
-                    </PrivateRoute>
-                  } 
-                />
+                  {/* Protected Routes */}
+                  <Route 
+                    path="/" 
+                    element={
+                      <PrivateRoute>
+                        <Dashboard />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/dashboard" 
+                    element={
+                      <PrivateRoute>
+                        <Dashboard />
+                      </PrivateRoute>
+                    } 
+                  />
+                  
+                  <Route 
+                    path="/loan-applications" 
+                    element={
+                      <PrivateRoute>
+                        <LoanApplicationsList />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/loan-applications/new" 
+                    element={
+                      <PrivateRoute>
+                        <NewLoanApplication />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/loan-applications/:id" 
+                    element={
+                      <PrivateRoute>
+                        <LoanApprovalPage />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/new-loan-application" 
+                    element={
+                      <PrivateRoute>
+                        <NewLoanApplication />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/loan-approval/:id" 
+                    element={
+                      <PrivateRoute>
+                        <LoanApprovalPage />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/clients" 
+                    element={
+                      <PrivateRoute>
+                        <ClientsList />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/client/:id" 
+                    element={
+                      <PrivateRoute>
+                        <ClientDetail />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/new-client" 
+                    element={
+                      <PrivateRoute>
+                        <NewClient />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/payments" 
+                    element={
+                      <PrivateRoute>
+                        <Payments />
+                      </PrivateRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/reports" 
+                    element={
+                      <PrivateRoute>
+                        <ReportsPage />
+                      </PrivateRoute>
+                    } 
+                  />
 
-                {/* Staff Routes */}
-                <Route 
-                  path="/staff/data-collection" 
-                  element={
-                    <StaffRoute>
-                      <DataCollectionDashboard />
-                    </StaffRoute>
-                  } 
-                />
+                  {/* Staff Routes */}
+                  <Route 
+                    path="/staff/data-collection" 
+                    element={
+                      <StaffRoute>
+                        <DataCollectionDashboard />
+                      </StaffRoute>
+                    } 
+                  />
 
-                {/* Catch all route */}
-                <Route path="/404" element={<NotFound />} />
-                <Route path="*" element={<Navigate to="/404" replace />} />
-              </Routes>
-            </BrowserRouter>
-          </ThemeProvider>
+                  {/* Catch all route */}
+                  <Route path="/404" element={<NotFound />} />
+                  <Route path="*" element={<Navigate to="/404" replace />} />
+                </Routes>
+              </BrowserRouter>
+            </ThemeProvider>
+          </ChatProvider>
         </NotificationsProvider>
       </AuthProvider>
     </QueryClientProvider>
