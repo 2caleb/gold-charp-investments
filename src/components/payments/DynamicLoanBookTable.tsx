@@ -35,6 +35,8 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  
+  // Updated to include all 12 payment columns with exact database names
   const [visibleColumns, setVisibleColumns] = useState({
     amount_paid_1: true,
     amount_paid_2: true,
@@ -43,6 +45,11 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
     amount_paid_5: true,
     Amount_paid_6: true,
     Amount_paid_7: true,
+    Amount_Paid_8: true,
+    Amount_Paid_9: true,
+    Amount_Paid_10: true,
+    Amount_Paid_11: true,
+    Amount_Paid_12: true,
   });
 
   // Apply smart calculations to the loan data
@@ -54,6 +61,25 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
       loan.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) || ''
     );
   }, [smartLoanData, searchTerm]);
+
+  // Create a mapping for user-friendly column labels
+  const getColumnLabel = (columnName: string) => {
+    const columnMap: { [key: string]: string } = {
+      amount_paid_1: 'Payment 1',
+      amount_paid_2: 'Payment 2',
+      amount_paid_3: 'Payment 3',
+      amount_paid_4: 'Payment 4',
+      amount_paid_5: 'Payment 5',
+      Amount_paid_6: 'Payment 6',
+      Amount_paid_7: 'Payment 7',
+      Amount_Paid_8: 'Payment 8',
+      Amount_Paid_9: 'Payment 9',
+      Amount_Paid_10: 'Payment 10',
+      Amount_Paid_11: 'Payment 11',
+      Amount_Paid_12: 'Payment 12',
+    };
+    return columnMap[columnName] || columnName;
+  };
 
   const formatCurrency = (amount: string | number | null | undefined) => {
     if (!amount) return 'UGX 0';
@@ -106,7 +132,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
     }
   };
 
-  // Calculate which payment columns have data
+  // Calculate which payment columns have data - updated for all 12 columns
   const activePaymentColumns = useMemo(() => {
     const columns = Object.keys(visibleColumns);
     return columns.filter(col => {
@@ -140,7 +166,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
             <TrendingUp className="mr-3 h-5 w-5" />
             Smart Dynamic Loan Book ({filteredData.length} records)
             <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700">
-              Real-time • Smart Calculations
+              Real-time • All 12 Payment Columns
             </Badge>
           </span>
           <div className="flex gap-2 flex-wrap">
@@ -174,9 +200,9 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
             />
           </div>
 
-          {/* Column Visibility Controls */}
+          {/* Column Visibility Controls - Updated for all 12 columns */}
           <div className="flex flex-wrap gap-2">
-            <span className="text-sm font-medium text-gray-600">Show Columns:</span>
+            <span className="text-sm font-medium text-gray-600">Show Payment Columns:</span>
             {Object.entries(visibleColumns).map(([column, visible]) => (
               <Button
                 key={column}
@@ -186,7 +212,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                 className={`h-8 ${visible ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}
               >
                 {visible ? <Eye className="mr-1 h-3 w-3" /> : <EyeOff className="mr-1 h-3 w-3" />}
-                {column.replace('_', ' ').replace('Amount ', 'Payment ')}
+                {getColumnLabel(column)}
               </Button>
             ))}
           </div>
@@ -224,7 +250,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                 <TableHead>Amount Returnable</TableHead>
                 {activePaymentColumns.map(column => (
                   <TableHead key={column} className="text-center">
-                    {column.replace('_', ' ').replace('Amount ', 'Payment ')}
+                    {getColumnLabel(column)}
                   </TableHead>
                 ))}
                 <TableHead>Smart Balance</TableHead>
@@ -342,7 +368,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                                 <div>
                                   <p className="font-medium text-gray-700">Active Payments</p>
                                   <p className="text-lg font-semibold text-blue-600">
-                                    {loan.activePayments.length} of 7
+                                    {loan.activePayments.length} of 12
                                   </p>
                                 </div>
                                 <div>

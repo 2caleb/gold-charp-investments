@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 
 interface LoanData {
@@ -11,6 +12,11 @@ interface LoanData {
   amount_paid_5: number;
   Amount_paid_6: number;
   Amount_paid_7: number;
+  Amount_Paid_8: number;
+  Amount_Paid_9: number;
+  Amount_Paid_10: number;
+  Amount_Paid_11: number;
+  Amount_Paid_12: number;
   remaining_balance: number;
   loan_date: string;
   status: string;
@@ -45,7 +51,7 @@ interface SmartLoanData extends LoanData {
 export const useSmartLoanCalculations = (rawLoanData: LoanData[]) => {
   const smartCalculatedData = useMemo(() => {
     return rawLoanData.map((loan): SmartLoanData => {
-      // 1. Independent Total Calculations
+      // 1. Independent Total Calculations - All 12 payment columns
       const paymentAmounts = [
         loan.amount_paid_1 || 0,
         loan.amount_paid_2 || 0,
@@ -53,7 +59,12 @@ export const useSmartLoanCalculations = (rawLoanData: LoanData[]) => {
         loan.amount_paid_4 || 0,
         loan.amount_paid_5 || 0,
         loan.Amount_paid_6 || 0,
-        loan.Amount_paid_7 || 0
+        loan.Amount_paid_7 || 0,
+        loan.Amount_Paid_8 || 0,
+        loan.Amount_Paid_9 || 0,
+        loan.Amount_Paid_10 || 0,
+        loan.Amount_Paid_11 || 0,
+        loan.Amount_Paid_12 || 0
       ];
 
       const calculated_total_paid = paymentAmounts.reduce((sum, amount) => sum + amount, 0);
@@ -112,7 +123,7 @@ export const useSmartLoanCalculations = (rawLoanData: LoanData[]) => {
 
       // Calculate collection efficiency
       const loanAge = Math.max(1, Math.floor((new Date().getTime() - new Date(loan.loan_date).getTime()) / (1000 * 60 * 60 * 24 * 30))); // months
-      const expectedPayments = Math.min(loanAge, 7); // assuming 7 payment cycles
+      const expectedPayments = Math.min(loanAge, 12); // assuming 12 payment cycles
       const actualPayments = activePayments.length;
       const collection_efficiency = expectedPayments > 0 ? (actualPayments / expectedPayments) * 100 : 0;
 

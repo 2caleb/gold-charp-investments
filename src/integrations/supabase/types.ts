@@ -670,12 +670,17 @@ export type Database = {
       loan_book_live: {
         Row: {
           amount_paid_1: number | null
+          Amount_Paid_10: number | null
+          Amount_Paid_11: number | null
+          Amount_Paid_12: number | null
           amount_paid_2: number | null
           amount_paid_3: number | null
           amount_paid_4: number | null
           amount_paid_5: number | null
           Amount_paid_6: number | null
           Amount_paid_7: number | null
+          Amount_Paid_8: number | null
+          Amount_Paid_9: number | null
           amount_returnable: number
           client_name: string
           created_at: string | null
@@ -689,12 +694,17 @@ export type Database = {
         }
         Insert: {
           amount_paid_1?: number | null
+          Amount_Paid_10?: number | null
+          Amount_Paid_11?: number | null
+          Amount_Paid_12?: number | null
           amount_paid_2?: number | null
           amount_paid_3?: number | null
           amount_paid_4?: number | null
           amount_paid_5?: number | null
           Amount_paid_6?: number | null
           Amount_paid_7?: number | null
+          Amount_Paid_8?: number | null
+          Amount_Paid_9?: number | null
           amount_returnable?: number
           client_name: string
           created_at?: string | null
@@ -708,12 +718,17 @@ export type Database = {
         }
         Update: {
           amount_paid_1?: number | null
+          Amount_Paid_10?: number | null
+          Amount_Paid_11?: number | null
+          Amount_Paid_12?: number | null
           amount_paid_2?: number | null
           amount_paid_3?: number | null
           amount_paid_4?: number | null
           amount_paid_5?: number | null
           Amount_paid_6?: number | null
           Amount_paid_7?: number | null
+          Amount_Paid_8?: number | null
+          Amount_Paid_9?: number | null
           amount_returnable?: number
           client_name?: string
           created_at?: string | null
