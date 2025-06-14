@@ -198,6 +198,10 @@ const handler = async (req: Request): Promise<Response> => {
     // Provide more specific error messages for common issues
     if (error.message.includes('API key')) {
       fallbackResponse = "There's an issue with the AI service configuration. Please contact Gold Charp Investments at info@goldcharpinvestments.com or +256-393103974 for assistance.";
+    } else if (error.message.includes('OpenAI API error: 429')) {
+      fallbackResponse = "Our AI assistant is temporarily unavailable due to high demand. Please try again in a few minutes or contact Gold Charp Investments directly at info@goldcharpinvestments.com or +256-393103974 for immediate assistance.";
+    } else if (error.message.includes('insufficient_quota')) {
+      fallbackResponse = "Our AI service is temporarily unavailable due to capacity limits. Please contact Gold Charp Investments directly at info@goldcharpinvestments.com or +256-393103974 for immediate assistance with your real estate and credit inquiries.";
     } else if (error.message.includes('OpenAI API error: 401')) {
       fallbackResponse = "The AI service authentication needs to be updated. Please contact Gold Charp Investments at info@goldcharpinvestments.com or +256-393103974 for assistance.";
     }
