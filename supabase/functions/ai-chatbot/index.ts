@@ -99,6 +99,17 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Check if OpenAI API key is configured
+    if (!openAIApiKey) {
+      console.error('OPENAI_API_KEY is not configured');
+      throw new Error('OpenAI API key is not configured. Please contact the administrator.');
+    }
+
+    if (!openAIApiKey.startsWith('sk-')) {
+      console.error('Invalid OpenAI API key format');
+      throw new Error('Invalid OpenAI API key format. The key should start with "sk-".');
+    }
+
     const { message, conversationHistory = [], userContext = {} }: ChatRequest = await req.json();
 
     if (!message?.trim()) {
@@ -121,7 +132,8 @@ const handler = async (req: Request): Promise<Response> => {
       }
     ];
 
-    // Call OpenAI API
+    // Call OpenAI API with updated model
+    console.log('Calling OpenAI API with gpt-4.1-2025-04-14 model');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -129,7 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-4.1-2025-04-14', // Updated to latest model
         messages,
         temperature: 0.7,
         max_tokens: 1500,
@@ -141,14 +153,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('OpenAI API error response:', errorData);
+      console.error('OpenAI API status:', response.status);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI API response received successfully');
+    
     const botResponse = data.choices[0]?.message?.content;
 
     if (!botResponse) {
+      console.error('No response content from OpenAI API');
       throw new Error('No response from AI model');
     }
 
@@ -177,7 +193,14 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error('Error in AI chatbot function:', error);
     
-    const fallbackResponse = "I apologize, but I'm experiencing technical difficulties. Please contact Gold Charp Investments directly at info@goldcharpinvestments.com or +256-393103974 for immediate assistance with your real estate and credit inquiries.";
+    let fallbackResponse = "I apologize, but I'm experiencing technical difficulties. Please contact Gold Charp Investments directly at info@goldcharpinvestments.com or +256-393103974 for immediate assistance with your real estate and credit inquiries.";
+    
+    // Provide more specific error messages for common issues
+    if (error.message.includes('API key')) {
+      fallbackResponse = "There's an issue with the AI service configuration. Please contact Gold Charp Investments at info@goldcharpinvestments.com or +256-393103974 for assistance.";
+    } else if (error.message.includes('OpenAI API error: 401')) {
+      fallbackResponse = "The AI service authentication needs to be updated. Please contact Gold Charp Investments at info@goldcharpinvestments.com or +256-393103974 for assistance.";
+    }
     
     return new Response(JSON.stringify({
       response: fallbackResponse,
