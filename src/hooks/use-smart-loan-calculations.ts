@@ -166,11 +166,7 @@ export const useSmartLoanCalculations = (rawLoanData: LoanData[]) => {
         // Enhanced display data
         activePayments,
         recentlyUpdated: recentlyUpdated(),
-        isCompleted,
-        
-        // Keep original fields for compatibility
-        totalPaid: calculated_total_paid,
-        progress: Math.min(calculated_progress, 100)
+        isCompleted
       };
     });
   }, [rawLoanData]);
