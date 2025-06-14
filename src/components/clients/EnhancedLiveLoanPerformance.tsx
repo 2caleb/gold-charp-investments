@@ -3,13 +3,15 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useLiveLoanPerformance } from '@/hooks/use-live-loan-performance';
+import { useSmartLoanCalculations } from '@/hooks/use-smart-loan-calculations';
 import { TrendingUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 
-// Import the smaller components
+// Import the enhanced smart components
 import LiveStatusHeader from './loan-performance/LiveStatusHeader';
-import SummaryCards from './loan-performance/SummaryCards';
-import LoanCard from './loan-performance/LoanCard';
+import SmartSummaryCards from './loan-performance/SmartSummaryCards';
+import EnhancedLoanCard from './loan-performance/EnhancedLoanCard';
+import SmartDataQualityIndicator from './loan-performance/SmartDataQualityIndicator';
 import LoadingState from './loan-performance/LoadingState';
 import ErrorState from './loan-performance/ErrorState';
 import EmptyState from './loan-performance/EmptyState';
@@ -23,6 +25,14 @@ const EnhancedLiveLoanPerformance: React.FC<EnhancedLiveLoanPerformanceProps> = 
   const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
   
   const { data: loanData, isLoading, error } = useLiveLoanPerformance(clientName);
+  
+  // Apply smart calculations to the raw loan data
+  const { 
+    smartLoanData, 
+    portfolioMetrics, 
+    hasDataQualityIssues, 
+    dataQualityScore 
+  } = useSmartLoanCalculations(loanData || []);
 
   if (isLoading) {
     return <LoadingState />;
@@ -32,65 +42,75 @@ const EnhancedLiveLoanPerformance: React.FC<EnhancedLiveLoanPerformanceProps> = 
     return <ErrorState clientName={clientName} />;
   }
 
-  if (!loanData || loanData.length === 0) {
+  if (!smartLoanData || smartLoanData.length === 0) {
     return <EmptyState clientName={clientName} />;
   }
 
-  // Smart filtering: separate active and completed loans
-  const activeLoans = loanData.filter(loan => !loan.isCompleted);
-  const completedLoans = loanData.filter(loan => loan.isCompleted);
-  const displayLoans = showCompleted ? loanData : activeLoans;
-
-  // Calculate summary statistics for active loans only
-  const activeLoanStats = activeLoans.reduce((stats, loan) => ({
-    totalLoaned: stats.totalLoaned + loan.amount_returnable,
-    totalPaid: stats.totalPaid + loan.totalPaid,
-    totalRemaining: stats.totalRemaining + (loan.remaining_balance || 0)
-  }), { totalLoaned: 0, totalPaid: 0, totalRemaining: 0 });
-
-  const averageProgress = activeLoans.length > 0 ? 
-    activeLoans.reduce((sum, loan) => sum + loan.progress, 0) / activeLoans.length : 0;
+  // Smart filtering: separate active and completed loans using calculated data
+  const activeLoans = smartLoanData.filter(loan => !loan.isCompleted);
+  const completedLoans = smartLoanData.filter(loan => loan.isCompleted);
+  const displayLoans = showCompleted ? smartLoanData : activeLoans;
 
   return (
     <div className="space-y-6">
-      {/* Live Status Header */}
+      {/* Enhanced Live Status Header */}
       <LiveStatusHeader
-        recentlyUpdated={loanData.some(loan => loan.recentlyUpdated)}
+        recentlyUpdated={smartLoanData.some(loan => loan.recentlyUpdated)}
         completedCount={completedLoans.length}
         showCompleted={showCompleted}
         onToggleCompleted={() => setShowCompleted(!showCompleted)}
       />
 
-      {/* Summary Cards - Only for active loans */}
+      {/* Smart Data Quality Monitor */}
+      <SmartDataQualityIndicator
+        dataQualityScore={dataQualityScore}
+        hasIssues={hasDataQualityIssues}
+        totalLoans={portfolioMetrics.total_loans}
+        reliableLoans={portfolioMetrics.reliable_loans}
+        loansNeedingAttention={portfolioMetrics.loans_needing_attention}
+      />
+
+      {/* Smart Summary Cards - Using reliable calculations */}
       {activeLoans.length > 0 && (
-        <SummaryCards
-          totalLoaned={activeLoanStats.totalLoaned}
-          totalPaid={activeLoanStats.totalPaid}
-          totalRemaining={activeLoanStats.totalRemaining}
-          averageProgress={averageProgress}
+        <SmartSummaryCards
+          reliableTotalLoaned={portfolioMetrics.reliable_total_portfolio}
+          reliableTotalPaid={portfolioMetrics.reliable_total_paid}
+          reliableTotalRemaining={portfolioMetrics.reliable_total_remaining}
+          reliableCollectionRate={portfolioMetrics.reliable_collection_rate}
+          totalLoans={portfolioMetrics.total_loans}
+          reliableLoans={portfolioMetrics.reliable_loans}
+          averageCollectionEfficiency={portfolioMetrics.average_collection_efficiency}
+          dataQualityScore={dataQualityScore}
         />
       )}
 
-      {/* Detailed Loan Performance */}
+      {/* Enhanced Detailed Loan Performance */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center">
               <TrendingUp className="mr-2 h-5 w-5" />
-              Loan Details ({displayLoans.length} loans)
+              Smart Loan Analysis ({displayLoans.length} loans)
             </span>
-            {activeLoans.length !== loanData.length && (
-              <Badge variant="secondary">
-                {completedLoans.length} completed loans
-              </Badge>
-            )}
+            <div className="flex items-center space-x-2">
+              {hasDataQualityIssues && (
+                <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                  Auto-Calculating
+                </Badge>
+              )}
+              {activeLoans.length !== smartLoanData.length && (
+                <Badge variant="secondary">
+                  {completedLoans.length} completed loans
+                </Badge>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <AnimatePresence>
             <div className="space-y-4">
               {displayLoans.map((loan) => (
-                <LoanCard
+                <EnhancedLoanCard
                   key={loan.id}
                   loan={loan}
                   expandedLoanId={expandedLoanId}
