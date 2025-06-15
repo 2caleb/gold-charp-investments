@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +50,11 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
     Amount_Paid_11: true,
     Amount_Paid_12: true,
   });
+
+  // Add new visible risk columns
+  const [showRiskScore, setShowRiskScore] = useState(true);
+  const [showRiskLevel, setShowRiskLevel] = useState(true);
+  const [showDefaultProb, setShowDefaultProb] = useState(false);
 
   // Apply smart calculations to the loan data
   const { smartLoanData, portfolioMetrics } = useSmartLoanCalculations(loanData || []);
@@ -216,6 +220,31 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
               </Button>
             ))}
           </div>
+
+          {/* Risk Column Toggles */}
+          <div className="flex gap-2">
+            <Button
+              variant={showRiskScore ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowRiskScore((s) => !s)}
+            >
+              Risk Score
+            </Button>
+            <Button
+              variant={showRiskLevel ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowRiskLevel((s) => !s)}
+            >
+              Risk Level
+            </Button>
+            <Button
+              variant={showDefaultProb ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowDefaultProb((s) => !s)}
+            >
+              Default Probability
+            </Button>
+          </div>
         </div>
 
         {/* Smart Portfolio Summary */}
@@ -258,6 +287,9 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                 <TableHead>Pattern</TableHead>
                 <TableHead>Quality</TableHead>
                 <TableHead>Status</TableHead>
+                {showRiskScore && <TableHead>Risk Score</TableHead>}
+                {showRiskLevel && <TableHead>Risk Level</TableHead>}
+                {showDefaultProb && <TableHead>Prob. Default</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -346,6 +378,47 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                             {loan.status}
                           </Badge>
                         </TableCell>
+                        {showRiskScore && (
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={
+                                loan.risk_level === "low"
+                                  ? "bg-green-50 text-green-700"
+                                  : loan.risk_level === "medium"
+                                  ? "bg-yellow-50 text-yellow-700"
+                                  : loan.risk_level === "high"
+                                  ? "bg-orange-50 text-orange-700"
+                                  : "bg-red-100 text-red-800"
+                              }
+                            >
+                              {loan.risk_score}
+                            </Badge>
+                          </TableCell>
+                        )}
+                        {showRiskLevel && (
+                          <TableCell className="capitalize">
+                            <Badge
+                              variant="outline"
+                              className={
+                                loan.risk_level === "low"
+                                  ? "bg-green-50 text-green-700"
+                                  : loan.risk_level === "medium"
+                                  ? "bg-yellow-50 text-yellow-700"
+                                  : loan.risk_level === "high"
+                                  ? "bg-orange-50 text-orange-700"
+                                  : "bg-red-100 text-red-800"
+                              }
+                            >
+                              {loan.risk_level}
+                            </Badge>
+                          </TableCell>
+                        )}
+                        {showDefaultProb && (
+                          <TableCell>
+                            {(loan.default_probability * 100).toFixed(0)}%
+                          </TableCell>
+                        )}
                       </motion.tr>
 
                       {/* Expanded Row Details */}

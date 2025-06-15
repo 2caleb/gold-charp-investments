@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { LoanBookLiveRecord } from '@/types/loan-book-live-record';
+import { scoreLoanRisk } from './riskScoringUtils';
+import { supabase } from '@/integrations/supabase/client';
 
 // Use explicitly LoanBookLiveRecord as input
 export interface SmartLoanData extends LoanBookLiveRecord {
@@ -23,6 +25,12 @@ export interface SmartLoanData extends LoanBookLiveRecord {
   activePayments: number[];
   recentlyUpdated: boolean;
   isCompleted: boolean;
+
+  // === risk columns (for components/UI) ===
+  risk_score: number;
+  default_probability: number;
+  risk_level: 'low' | 'medium' | 'high' | 'critical';
+  risk_factors?: Record<string, any>;
 }
 
 export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
@@ -126,8 +134,39 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
       };
       const isCompleted = calculated_progress >= 100 || loan.status === 'completed';
 
+      // === RISK SCORING ENRICHMENT ===
+      const {
+        risk_score,
+        default_probability,
+        risk_level,
+        risk_factors,
+      } = scoreLoanRisk(loan);
+
+      // Log risk if different or new (best effort, async fire-and-forget)
+      if (
+        loan.risk_score !== risk_score ||
+        loan.default_probability !== default_probability ||
+        loan.risk_level !== risk_level
+      ) {
+        (async () => {
+          try {
+            await supabase.from("loan_risk_prediction_log").insert({
+              loan_id: loan.id,
+              risk_score,
+              default_probability,
+              model_version: "rule-based-v1",
+              model_input: loan,
+              model_output: { risk_score, default_probability, risk_level, risk_factors },
+            });
+          } catch (err) {
+            console.warn("Risk log insert failed:", err);
+          }
+        })();
+      }
+
       return {
         ...loan,
+        // ... calculated fields as before ...
         calculated_total_paid,
         calculated_remaining_balance,
         calculated_progress: Math.min(calculated_progress, 100),
@@ -140,7 +179,12 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
         collection_efficiency: Math.min(collection_efficiency, 100),
         activePayments,
         recentlyUpdated: recentlyUpdated(),
-        isCompleted
+        isCompleted,
+        // === risk columns (for components/UI) ===
+        risk_score,
+        default_probability,
+        risk_level,
+        risk_factors,
       };
     });
   }, [rawLoanData]);

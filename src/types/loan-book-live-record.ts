@@ -1,4 +1,3 @@
-
 /**
  * The official LoanBookLiveRecord interface matches the columns from the Supabase table "loan_book_live".
  * ALL 12 payment columns are included and precisely named as per your schema.
@@ -27,4 +26,9 @@ export interface LoanBookLiveRecord {
   created_at: string;
   updated_at: string;
   user_id?: string | null;
+  // New risk analytics columns
+  risk_score: number;
+  default_probability: number;
+  risk_level: 'low' | 'medium' | 'high' | 'critical';
+  risk_factors?: Record<string, any>;
 }

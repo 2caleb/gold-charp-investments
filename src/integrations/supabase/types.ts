@@ -684,10 +684,14 @@ export type Database = {
           amount_returnable: number
           client_name: string
           created_at: string | null
+          default_probability: number
           id: string
           loan_date: string
           payment_mode: string | null
           remaining_balance: number | null
+          risk_factors: Json | null
+          risk_level: string
+          risk_score: number
           status: string | null
           updated_at: string | null
           user_id: string | null
@@ -708,10 +712,14 @@ export type Database = {
           amount_returnable?: number
           client_name: string
           created_at?: string | null
+          default_probability?: number
           id?: string
           loan_date?: string
           payment_mode?: string | null
           remaining_balance?: number | null
+          risk_factors?: Json | null
+          risk_level?: string
+          risk_score?: number
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -732,15 +740,101 @@ export type Database = {
           amount_returnable?: number
           client_name?: string
           created_at?: string | null
+          default_probability?: number
           id?: string
           loan_date?: string
           payment_mode?: string | null
           remaining_balance?: number | null
+          risk_factors?: Json | null
+          risk_level?: string
+          risk_score?: number
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
+      }
+      loan_risk_history: {
+        Row: {
+          calculated_at: string | null
+          calculated_by: string | null
+          default_probability: number
+          id: string
+          loan_id: string
+          risk_factors: Json | null
+          risk_level: string
+          risk_score: number
+        }
+        Insert: {
+          calculated_at?: string | null
+          calculated_by?: string | null
+          default_probability: number
+          id?: string
+          loan_id: string
+          risk_factors?: Json | null
+          risk_level: string
+          risk_score: number
+        }
+        Update: {
+          calculated_at?: string | null
+          calculated_by?: string | null
+          default_probability?: number
+          id?: string
+          loan_id?: string
+          risk_factors?: Json | null
+          risk_level?: string
+          risk_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_risk_history_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loan_book_live"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loan_risk_prediction_log: {
+        Row: {
+          calculated_at: string | null
+          default_probability: number
+          id: string
+          loan_id: string
+          model_input: Json | null
+          model_output: Json | null
+          model_version: string
+          risk_score: number
+        }
+        Insert: {
+          calculated_at?: string | null
+          default_probability: number
+          id?: string
+          loan_id: string
+          model_input?: Json | null
+          model_output?: Json | null
+          model_version: string
+          risk_score: number
+        }
+        Update: {
+          calculated_at?: string | null
+          default_probability?: number
+          id?: string
+          loan_id?: string
+          model_input?: Json | null
+          model_output?: Json | null
+          model_version?: string
+          risk_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_risk_prediction_log_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loan_book_live"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loan_workflow_log: {
         Row: {

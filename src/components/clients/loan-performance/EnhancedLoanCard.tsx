@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -42,6 +41,9 @@ interface SmartLoanData {
   amount_paid_5: number;
   Amount_paid_6: number;
   Amount_paid_7: number;
+  risk_score: number;
+  risk_level: 'low' | 'medium' | 'high';
+  default_probability: number;
 }
 
 interface EnhancedLoanCardProps {
@@ -139,7 +141,7 @@ const EnhancedLoanCard: React.FC<EnhancedLoanCardProps> = ({ loan, expandedLoanI
       )}
 
       {/* Financial Overview - Using Smart Calculations */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <p className="text-sm text-gray-500">Amount Returnable</p>
           <p className="font-bold text-lg">{formatCurrency(loan.amount_returnable || 0)}</p>
@@ -157,6 +159,46 @@ const EnhancedLoanCard: React.FC<EnhancedLoanCardProps> = ({ loan, expandedLoanI
             {loan.has_calculation_errors && <span className="text-red-500 ml-1">(Calculated)</span>}
           </p>
           <p className="font-bold text-lg text-orange-600">{formatCurrency(loan.calculated_remaining_balance)}</p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-500">Risk Score</p>
+          <Badge
+            variant="outline"
+            className={
+              loan.risk_level === "low"
+                ? "bg-green-50 text-green-700"
+                : loan.risk_level === "medium"
+                ? "bg-yellow-50 text-yellow-700"
+                : loan.risk_level === "high"
+                ? "bg-orange-50 text-orange-700"
+                : "bg-red-100 text-red-800"
+            }
+          >
+            {loan.risk_score ? loan.risk_score : "N/A"}
+          </Badge>
+        </div>
+        <div>
+          <p className="text-sm text-gray-500">Risk Level</p>
+          <Badge
+            variant="outline"
+            className={
+              loan.risk_level === "low"
+                ? "bg-green-50 text-green-700"
+                : loan.risk_level === "medium"
+                ? "bg-yellow-50 text-yellow-700"
+                : loan.risk_level === "high"
+                ? "bg-orange-50 text-orange-700"
+                : "bg-red-100 text-red-800"
+            }
+          >
+            {loan.risk_level}
+          </Badge>
+        </div>
+        <div>
+          <p className="text-sm text-gray-500">Default Probability</p>
+          <p className="font-semibold text-red-700">
+            {loan.default_probability ? (loan.default_probability * 100).toFixed(0) + "%" : "N/A"}
+          </p>
         </div>
       </div>
 
