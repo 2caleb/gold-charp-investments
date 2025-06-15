@@ -1,3 +1,4 @@
+
 /**
  * The official LoanBookLiveRecord interface matches the columns from the Supabase table "loan_book_live".
  * ALL 12 payment columns are included and precisely named as per your schema.

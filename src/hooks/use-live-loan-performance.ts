@@ -1,4 +1,3 @@
-
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,7 +10,8 @@ function validateLoanBookRecordSchema(obj: any): LoanBookLiveRecord | null {
     'id', 'client_name', 'amount_returnable', 'amount_paid_1', 'amount_paid_2', 'amount_paid_3',
     'amount_paid_4', 'amount_paid_5', 'Amount_paid_6', 'Amount_paid_7', 'Amount_Paid_8',
     'Amount_Paid_9', 'Amount_Paid_10', 'Amount_Paid_11', 'Amount_Paid_12', 'remaining_balance',
-    'loan_date', 'status', 'payment_mode', 'created_at', 'updated_at'
+    'loan_date', 'status', 'payment_mode', 'created_at', 'updated_at',
+    'risk_score', 'default_probability', 'risk_level', 'risk_factors',
   ];
   let ok = true;
   requiredFields.forEach(f => {
@@ -66,6 +66,10 @@ export const useLiveLoanPerformance = (clientName: string) => {
           created_at: String(loan.created_at || ""),
           updated_at: String(loan.updated_at || ""),
           user_id: loan.user_id ?? null,
+          risk_score: loan.risk_score ?? 0,
+          default_probability: loan.default_probability ?? 0,
+          risk_level: (loan.risk_level || "low"),
+          risk_factors: loan.risk_factors || {},
         };
         validateLoanBookRecordSchema(record);
         return record;

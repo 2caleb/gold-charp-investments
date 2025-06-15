@@ -128,3 +128,35 @@ const EnhancedLiveLoanPerformance: React.FC<EnhancedLiveLoanPerformanceProps> = 
 };
 
 export default EnhancedLiveLoanPerformance;
+
+interface SmartLoanData {
+  id: string;
+  client_name: string;
+  amount_returnable: number;
+  calculated_total_paid: number;
+  calculated_remaining_balance: number;
+  calculated_progress: number;
+  data_quality_score: number;
+  has_calculation_errors: boolean;
+  discrepancies: string[];
+  confidence_level: 'high' | 'medium' | 'low';
+  payment_pattern: 'regular' | 'irregular' | 'declining' | 'accelerating';
+  estimated_completion_date: string | null;
+  collection_efficiency: number;
+  activePayments: number[];
+  recentlyUpdated: boolean;
+  isCompleted: boolean;
+  loan_date: string;
+  status: string;
+  payment_mode: string;
+  amount_paid_1: number;
+  amount_paid_2: number;
+  amount_paid_3: number;
+  amount_paid_4: number;
+  amount_paid_5: number;
+  Amount_paid_6: number;
+  Amount_paid_7: number;
+  risk_score: number;
+  risk_level: 'low' | 'medium' | 'high' | 'critical'; // <-- add 'critical'
+  default_probability: number;
+}
