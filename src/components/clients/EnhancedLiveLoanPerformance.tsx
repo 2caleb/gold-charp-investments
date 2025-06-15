@@ -16,6 +16,8 @@ import LoadingState from './loan-performance/LoadingState';
 import ErrorState from './loan-performance/ErrorState';
 import EmptyState from './loan-performance/EmptyState';
 
+import { LoanBookLiveRecord } from '@/types/loan-book-live-record';
+
 interface EnhancedLiveLoanPerformanceProps {
   clientName: string;
 }
@@ -24,9 +26,10 @@ const EnhancedLiveLoanPerformance: React.FC<EnhancedLiveLoanPerformanceProps> = 
   const [showCompleted, setShowCompleted] = useState(false);
   const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
   
+  // rawLoanData is type LoanBookLiveRecord[], always type-safe and complete!
   const { data: rawLoanData, isLoading, error } = useLiveLoanPerformance(clientName);
   
-  // The loan data is already properly transformed by the hook, so we can use it directly
+  // Pass the raw data directly; calculations are handled centrally
   const { 
     smartLoanData, 
     portfolioMetrics, 
