@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,10 +25,10 @@ const EnhancedLiveLoanPerformance: React.FC<EnhancedLiveLoanPerformanceProps> = 
   const [showCompleted, setShowCompleted] = useState(false);
   const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
   
-  // rawLoanData is type LoanBookLiveRecord[], always type-safe and complete!
+  // Now rawLoanData is guaranteed to be of type LoanBookLiveRecord[]
   const { data: rawLoanData, isLoading, error } = useLiveLoanPerformance(clientName);
   
-  // Pass the raw data directly; calculations are handled centrally
+  // No transformation here! The calculation logic is fully delegated
   const { 
     smartLoanData, 
     portfolioMetrics, 

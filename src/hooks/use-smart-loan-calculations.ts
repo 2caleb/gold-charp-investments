@@ -26,9 +26,11 @@ export interface SmartLoanData extends LoanBookLiveRecord {
 }
 
 export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
+  // Accepts only valid LoanBookLiveRecords. No DB interaction here.
+
   const smartCalculatedData = useMemo(() => {
     return rawLoanData.map((loan): SmartLoanData => {
-      // Build payments array from all 12 fields
+      // Defensive: all 12 payment slots - must match the LoanBookLiveRecord
       const paymentAmounts = [
         loan.amount_paid_1 || 0,
         loan.amount_paid_2 || 0,
@@ -41,7 +43,7 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
         loan.Amount_Paid_9 || 0,
         loan.Amount_Paid_10 || 0,
         loan.Amount_Paid_11 || 0,
-        loan.Amount_Paid_12 || 0
+        loan.Amount_Paid_12 || 0,
       ];
 
       const calculated_total_paid = paymentAmounts.reduce((sum, amount) => sum + amount, 0);

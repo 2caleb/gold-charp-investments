@@ -1,4 +1,9 @@
 
+/**
+ * The official LoanBookLiveRecord interface matches the columns from the Supabase table "loan_book_live".
+ * ALL 12 payment columns are included and precisely named as per your schema.
+ * Fields not in the DB must NOT be added here.
+ */
 export interface LoanBookLiveRecord {
   id: string;
   client_name: string;
@@ -21,6 +26,5 @@ export interface LoanBookLiveRecord {
   payment_mode: string;
   created_at: string;
   updated_at: string;
-  // Optionally: user_id, if you use it.
   user_id?: string | null;
 }
