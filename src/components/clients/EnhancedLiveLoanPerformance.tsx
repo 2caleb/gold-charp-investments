@@ -26,31 +26,13 @@ const EnhancedLiveLoanPerformance: React.FC<EnhancedLiveLoanPerformanceProps> = 
   
   const { data: rawLoanData, isLoading, error } = useLiveLoanPerformance(clientName);
   
-  // Transform the raw loan data to match the LoanData interface expected by useSmartLoanCalculations
-  const transformedLoanData = rawLoanData?.map(loan => ({
-    ...loan,
-    // Ensure all 12 payment columns exist, defaulting to 0 if missing
-    amount_paid_1: loan.amount_paid_1 || 0,
-    amount_paid_2: loan.amount_paid_2 || 0,
-    amount_paid_3: loan.amount_paid_3 || 0,
-    amount_paid_4: loan.amount_paid_4 || 0,
-    amount_paid_5: loan.amount_paid_5 || 0,
-    Amount_paid_6: loan.Amount_paid_6 || 0,
-    Amount_paid_7: loan.Amount_paid_7 || 0,
-    Amount_Paid_8: loan.Amount_Paid_8 || 0,
-    Amount_Paid_9: loan.Amount_Paid_9 || 0,
-    Amount_Paid_10: loan.Amount_Paid_10 || 0,
-    Amount_Paid_11: loan.Amount_Paid_11 || 0,
-    Amount_Paid_12: loan.Amount_Paid_12 || 0,
-  })) || [];
-  
-  // Apply smart calculations to the transformed loan data
+  // The loan data is already properly transformed by the hook, so we can use it directly
   const { 
     smartLoanData, 
     portfolioMetrics, 
     hasDataQualityIssues, 
     dataQualityScore 
-  } = useSmartLoanCalculations(transformedLoanData);
+  } = useSmartLoanCalculations(rawLoanData || []);
 
   if (isLoading) {
     return <LoadingState />;

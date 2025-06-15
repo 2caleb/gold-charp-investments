@@ -15,6 +15,11 @@ interface LiveLoanData {
   amount_paid_5: number;
   Amount_paid_6: number;
   Amount_paid_7: number;
+  Amount_Paid_8: number;
+  Amount_Paid_9: number;
+  Amount_Paid_10: number;
+  Amount_Paid_11: number;
+  Amount_Paid_12: number;
   remaining_balance: number;
   loan_date: string;
   status: string;
@@ -74,6 +79,7 @@ export const useLiveLoanPerformance = (clientName: string) => {
                  loan.amount_returnable > 0;
         })
         .map(loan => {
+          // Updated to include all 12 payment columns
           const paymentAmounts = [
             loan.amount_paid_1 || 0,
             loan.amount_paid_2 || 0,
@@ -81,13 +87,18 @@ export const useLiveLoanPerformance = (clientName: string) => {
             loan.amount_paid_4 || 0,
             loan.amount_paid_5 || 0,
             loan.Amount_paid_6 || 0,
-            loan.Amount_paid_7 || 0
+            loan.Amount_paid_7 || 0,
+            loan.Amount_Paid_8 || 0,
+            loan.Amount_Paid_9 || 0,
+            loan.Amount_Paid_10 || 0,
+            loan.Amount_Paid_11 || 0,
+            loan.Amount_Paid_12 || 0
           ];
 
           const totalPaid = paymentAmounts.reduce((sum, amount) => sum + amount, 0);
           const progress = loan.amount_returnable > 0 ? (totalPaid / loan.amount_returnable) * 100 : 0;
           
-          // Find which payment slots have values
+          // Find which payment slots have values (updated for all 12 columns)
           const activePayments = paymentAmounts
             .map((amount, index) => ({ amount, index: index + 1 }))
             .filter(payment => payment.amount > 0)
@@ -103,6 +114,19 @@ export const useLiveLoanPerformance = (clientName: string) => {
 
           return {
             ...loan,
+            // Ensure all payment columns are properly mapped with default values
+            amount_paid_1: loan.amount_paid_1 || 0,
+            amount_paid_2: loan.amount_paid_2 || 0,
+            amount_paid_3: loan.amount_paid_3 || 0,
+            amount_paid_4: loan.amount_paid_4 || 0,
+            amount_paid_5: loan.amount_paid_5 || 0,
+            Amount_paid_6: loan.Amount_paid_6 || 0,
+            Amount_paid_7: loan.Amount_paid_7 || 0,
+            Amount_Paid_8: loan.Amount_Paid_8 || 0,
+            Amount_Paid_9: loan.Amount_Paid_9 || 0,
+            Amount_Paid_10: loan.Amount_Paid_10 || 0,
+            Amount_Paid_11: loan.Amount_Paid_11 || 0,
+            Amount_Paid_12: loan.Amount_Paid_12 || 0,
             totalPaid,
             progress,
             activePayments,
