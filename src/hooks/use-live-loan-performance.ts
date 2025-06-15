@@ -40,9 +40,31 @@ export const useLiveLoanPerformance = (clientName: string) => {
 
       if (error) throw error;
 
-      // Ensure all records are valid types, fallback missing payments to 0
+      // Helper to validate that risk_level is allowed, fallback to "low"
+      const isAllowedRiskLevel = (level: any): level is LoanBookLiveRecord['risk_level'] =>
+        ['low', 'medium', 'high', 'critical'].includes(level);
+
       const mapped = (data || []).map(loan => {
-        // Defensive: apply 0 default for any missing Number fields
+        // Defensive: parse risk_factors and risk_level safely
+        let safeRiskLevel: LoanBookLiveRecord['risk_level'] = 'low';
+        if (isAllowedRiskLevel(loan.risk_level)) {
+          safeRiskLevel = loan.risk_level;
+        }
+
+        let safeRiskFactors: Record<string, any> = {};
+        if (typeof loan.risk_factors === 'object' && loan.risk_factors !== null) {
+          safeRiskFactors = loan.risk_factors;
+        } else if (typeof loan.risk_factors === 'string') {
+          try { 
+            safeRiskFactors = JSON.parse(loan.risk_factors);
+            if (typeof safeRiskFactors !== 'object' || safeRiskFactors === null) {
+              safeRiskFactors = {};
+            }
+          } catch {
+            safeRiskFactors = {};
+          }
+        }
+
         const record: LoanBookLiveRecord = {
           id: loan.id,
           client_name: loan.client_name,
@@ -68,8 +90,8 @@ export const useLiveLoanPerformance = (clientName: string) => {
           user_id: loan.user_id ?? null,
           risk_score: loan.risk_score ?? 0,
           default_probability: loan.default_probability ?? 0,
-          risk_level: (loan.risk_level || "low"),
-          risk_factors: loan.risk_factors || {},
+          risk_level: safeRiskLevel,
+          risk_factors: safeRiskFactors,
         };
         validateLoanBookRecordSchema(record);
         return record;
