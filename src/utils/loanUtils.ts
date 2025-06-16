@@ -1,3 +1,4 @@
+
 /**
  * Utility functions for loan processing
  */
@@ -48,7 +49,7 @@ export function generateRejectionReason(
   monthlyIncome: string
 ): string {
   const numericLoanAmount = parseFloat(loanAmount.replace(/,/g, ''));
-  const numericMonthlyIncome = parseFloat(monthlyIncome.replace(/,/g, '));
+  const numericMonthlyIncome = parseFloat(monthlyIncome.replace(/,/g, ''));
   
   // Calculate debt-to-income ratio (loan amount / annual income)
   const annualIncome = numericMonthlyIncome * 12;
@@ -99,7 +100,7 @@ export function generateDownsizingReason(
 ): string {
   const numericOriginal = parseFloat(originalAmount.replace(/,/g, ''));
   const numericApproved = parseFloat(approvedAmount.replace(/,/g, ''));
-  const numericMonthlyIncome = parseFloat(monthlyIncome.replace(/,/g, '));
+  const numericMonthlyIncome = parseFloat(monthlyIncome.replace(/,/g, ''));
   
   const annualIncome = numericMonthlyIncome * 12;
   const originalRatio = numericOriginal / annualIncome;
