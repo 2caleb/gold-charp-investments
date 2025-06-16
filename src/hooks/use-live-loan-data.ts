@@ -14,12 +14,15 @@ export const useLiveLoanData = () => {
 
       if (error) throw error;
       
-      // Transform the data to ensure risk_level is typed correctly
+      // Transform the data to ensure types match the interface
       return (data || []).map(loan => ({
         ...loan,
         risk_level: ['low', 'medium', 'high', 'critical'].includes(loan.risk_level) 
           ? loan.risk_level as 'low' | 'medium' | 'high' | 'critical'
-          : 'low'
+          : 'low',
+        risk_factors: typeof loan.risk_factors === 'object' && loan.risk_factors !== null
+          ? loan.risk_factors as Record<string, any>
+          : {}
       }));
     },
     refetchInterval: 30000,
