@@ -159,6 +159,156 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_monthly_summaries: {
+        Row: {
+          account: string
+          average_weekly_amount: number
+          budget_amount: number | null
+          budget_variance: number | null
+          category: string
+          created_at: string | null
+          growth_percentage: number | null
+          id: string
+          month: number
+          month_end_date: string
+          month_start_date: string
+          total_amount: number
+          updated_at: string | null
+          variance_from_previous_month: number | null
+          weekly_summaries_count: number
+          year: number
+        }
+        Insert: {
+          account: string
+          average_weekly_amount?: number
+          budget_amount?: number | null
+          budget_variance?: number | null
+          category: string
+          created_at?: string | null
+          growth_percentage?: number | null
+          id?: string
+          month: number
+          month_end_date: string
+          month_start_date: string
+          total_amount?: number
+          updated_at?: string | null
+          variance_from_previous_month?: number | null
+          weekly_summaries_count?: number
+          year: number
+        }
+        Update: {
+          account?: string
+          average_weekly_amount?: number
+          budget_amount?: number | null
+          budget_variance?: number | null
+          category?: string
+          created_at?: string | null
+          growth_percentage?: number | null
+          id?: string
+          month?: number
+          month_end_date?: string
+          month_start_date?: string
+          total_amount?: number
+          updated_at?: string | null
+          variance_from_previous_month?: number | null
+          weekly_summaries_count?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      expense_smart_calculations: {
+        Row: {
+          account: string | null
+          calculation_data: Json
+          calculation_type: string
+          category: string | null
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          insights: string[] | null
+          month: number
+          recommendations: string[] | null
+          year: number
+        }
+        Insert: {
+          account?: string | null
+          calculation_data?: Json
+          calculation_type: string
+          category?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          insights?: string[] | null
+          month: number
+          recommendations?: string[] | null
+          year: number
+        }
+        Update: {
+          account?: string | null
+          calculation_data?: Json
+          calculation_type?: string
+          category?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          insights?: string[] | null
+          month?: number
+          recommendations?: string[] | null
+          year?: number
+        }
+        Relationships: []
+      }
+      expense_weekly_summaries: {
+        Row: {
+          account: string
+          average_amount: number
+          category: string
+          created_at: string | null
+          id: string
+          max_amount: number
+          min_amount: number
+          total_amount: number
+          transaction_count: number
+          updated_at: string | null
+          week_end_date: string
+          week_number: number
+          week_start_date: string
+          year: number
+        }
+        Insert: {
+          account: string
+          average_amount?: number
+          category: string
+          created_at?: string | null
+          id?: string
+          max_amount?: number
+          min_amount?: number
+          total_amount?: number
+          transaction_count?: number
+          updated_at?: string | null
+          week_end_date: string
+          week_number: number
+          week_start_date: string
+          year: number
+        }
+        Update: {
+          account?: string
+          average_amount?: number
+          category?: string
+          created_at?: string | null
+          id?: string
+          max_amount?: number
+          min_amount?: number
+          total_amount?: number
+          transaction_count?: number
+          updated_at?: string | null
+          week_end_date?: string
+          week_number?: number
+          week_start_date?: string
+          year?: number
+        }
+        Relationships: []
+      }
       Expenses: {
         Row: {
           account_2: string | null
@@ -1476,6 +1626,14 @@ export type Database = {
         Args: { application_id: number }
         Returns: Json
       }
+      cluster_expenses_monthly: {
+        Args: { target_month?: number; target_year?: number }
+        Returns: undefined
+      }
+      cluster_expenses_weekly: {
+        Args: { target_week_start?: string }
+        Returns: undefined
+      }
       get_loan_workflow: {
         Args: { application_id: string }
         Returns: {
@@ -1500,9 +1658,22 @@ export type Database = {
         Args: { user_id: string }
         Returns: string
       }
+      get_week_boundaries: {
+        Args: { input_date: string }
+        Returns: {
+          week_start: string
+          week_end: string
+          week_number: number
+          year: number
+        }[]
+      }
       is_director_caleb: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      smart_end_of_month_analysis: {
+        Args: { target_month?: number; target_year?: number }
+        Returns: undefined
       }
       update_financial_summary: {
         Args: Record<PropertyKey, never>
