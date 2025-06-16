@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthSession, AuthUser } from '@supabase/supabase-js';
@@ -140,11 +141,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw new Error('Password must be at least 6 characters');
       }
 
+      // SECURITY FIX: Add emailRedirectTo to prevent authentication issues
+      const redirectUrl = `${window.location.origin}/`;
+
       // Sign up with Supabase
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             full_name: metadata?.fullName || '',
             phone: metadata?.phone || null,

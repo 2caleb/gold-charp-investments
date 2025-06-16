@@ -1,25 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useSmartLoanCalculations } from '@/hooks/use-smart-loan-calculations';
-import { 
-  Search, 
-  Filter, 
-  Download, 
-  Eye, 
-  EyeOff,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-  ChevronDown,
-  ChevronRight
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
-interface DynamicLoanBookTableProps {
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Download, RefreshCw, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { formatCurrency } from '@/utils/formatCurrency';
+
+export interface DynamicLoanBookTableProps {
   loanData: any[];
   isLoading: boolean;
   onExport: () => void;
@@ -32,130 +20,60 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
   onExport,
   isExporting
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  
-  // Updated to include all 12 payment columns with exact database names
-  const [visibleColumns, setVisibleColumns] = useState({
-    amount_paid_1: true,
-    amount_paid_2: true,
-    amount_paid_3: true,
-    amount_paid_4: true,
-    amount_paid_5: true,
-    Amount_paid_6: true,
-    Amount_paid_7: true,
-    Amount_Paid_8: true,
-    Amount_Paid_9: true,
-    Amount_Paid_10: true,
-    Amount_Paid_11: true,
-    Amount_Paid_12: true,
-  });
+  const [sortField, setSortField] = useState<string>('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  // Add new visible risk columns
-  const [showRiskScore, setShowRiskScore] = useState(true);
-  const [showRiskLevel, setShowRiskLevel] = useState(true);
-  const [showDefaultProb, setShowDefaultProb] = useState(false);
-
-  // Apply smart calculations to the loan data
-  const { smartLoanData, portfolioMetrics } = useSmartLoanCalculations(loanData || []);
-
-  // Filter data based on search term
-  const filteredData = useMemo(() => {
-    return smartLoanData.filter(loan => 
-      loan.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) || ''
-    );
-  }, [smartLoanData, searchTerm]);
-
-  // Create a mapping for user-friendly column labels
-  const getColumnLabel = (columnName: string) => {
-    const columnMap: { [key: string]: string } = {
-      amount_paid_1: 'Payment 1',
-      amount_paid_2: 'Payment 2',
-      amount_paid_3: 'Payment 3',
-      amount_paid_4: 'Payment 4',
-      amount_paid_5: 'Payment 5',
-      Amount_paid_6: 'Payment 6',
-      Amount_paid_7: 'Payment 7',
-      Amount_Paid_8: 'Payment 8',
-      Amount_Paid_9: 'Payment 9',
-      Amount_Paid_10: 'Payment 10',
-      Amount_Paid_11: 'Payment 11',
-      Amount_Paid_12: 'Payment 12',
-    };
-    return columnMap[columnName] || columnName;
-  };
-
-  const formatCurrency = (amount: string | number | null | undefined) => {
-    if (!amount) return 'UGX 0';
-    
-    let numAmount: number;
-    if (typeof amount === 'string') {
-      numAmount = parseFloat(amount.replace(/,/g, ''));
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      numAmount = amount;
+      setSortField(field);
+      setSortDirection('asc');
     }
+  };
+
+  const sortedData = React.useMemo(() => {
+    if (!sortField) return loanData;
     
-    if (isNaN(numAmount)) return 'UGX 0';
-    
-    return new Intl.NumberFormat('en-UG', {
-      style: 'currency',
-      currency: 'UGX',
-      minimumFractionDigits: 0,
-    }).format(numAmount);
-  };
-
-  const toggleColumnVisibility = (column: keyof typeof visibleColumns) => {
-    setVisibleColumns(prev => ({
-      ...prev,
-      [column]: !prev[column]
-    }));
-  };
-
-  const toggleRowExpansion = (loanId: string) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(loanId)) {
-      newExpanded.delete(loanId);
-    } else {
-      newExpanded.add(loanId);
-    }
-    setExpandedRows(newExpanded);
-  };
-
-  const getDataQualityColor = (score: number) => {
-    if (score >= 90) return 'text-green-600 bg-green-50';
-    if (score >= 75) return 'text-yellow-600 bg-yellow-50';
-    return 'text-red-600 bg-red-50';
-  };
-
-  const getPaymentPatternIcon = (pattern: string) => {
-    switch (pattern) {
-      case 'accelerating': return <TrendingUp className="h-3 w-3 text-green-600" />;
-      case 'declining': return <AlertTriangle className="h-3 w-3 text-red-600" />;
-      case 'regular': return <CheckCircle className="h-3 w-3 text-blue-600" />;
-      default: return <AlertTriangle className="h-3 w-3 text-gray-600" />;
-    }
-  };
-
-  // Calculate which payment columns have data - updated for all 12 columns
-  const activePaymentColumns = useMemo(() => {
-    const columns = Object.keys(visibleColumns);
-    return columns.filter(col => {
-      const hasData = smartLoanData.some(loan => (loan as any)[col] > 0);
-      return hasData && visibleColumns[col as keyof typeof visibleColumns];
+    return [...loanData].sort((a, b) => {
+      const aValue = a[sortField];
+      const bValue = b[sortField];
+      
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      }
+      
+      const aStr = String(aValue || '').toLowerCase();
+      const bStr = String(bValue || '').toLowerCase();
+      
+      if (sortDirection === 'asc') {
+        return aStr.localeCompare(bStr);
+      } else {
+        return bStr.localeCompare(aStr);
+      }
     });
-  }, [smartLoanData, visibleColumns]);
+  }, [loanData, sortField, sortDirection]);
+
+  const getRiskBadgeColor = (riskLevel: string) => {
+    switch (riskLevel?.toLowerCase()) {
+      case 'low': return 'default';
+      case 'medium': return 'secondary';
+      case 'high': return 'destructive';
+      case 'critical': return 'destructive';
+      default: return 'default';
+    }
+  };
 
   if (isLoading) {
     return (
-      <Card className="shadow-lg">
+      <Card>
         <CardHeader>
-          <CardTitle>Loading Dynamic Loan Book...</CardTitle>
+          <CardTitle>Live Loan Book</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-12 bg-gray-200 rounded"></div>
-            ))}
+          <div className="flex items-center justify-center py-8">
+            <RefreshCw className="h-6 w-6 animate-spin" />
+            <span className="ml-2">Loading loan data...</span>
           </div>
         </CardContent>
       </Card>
@@ -163,334 +81,95 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
   }
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <span className="flex items-center text-lg">
-            <TrendingUp className="mr-3 h-5 w-5" />
-            Smart Dynamic Loan Book ({filteredData.length} records)
-            <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700">
-              Real-time • All 12 Payment Columns
-            </Badge>
-          </span>
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="outline" size="sm">
-              <Filter className="mr-2 h-4 w-4" />
-              Column Controls
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onExport}
-              disabled={isExporting}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              {isExporting ? 'Exporting...' : 'Export All Columns'}
-            </Button>
-          </div>
-        </CardTitle>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center">
+            Live Loan Book Management
+          </CardTitle>
+          <Button onClick={onExport} disabled={isExporting} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            {isExporting ? 'Exporting...' : 'Export Data'}
+          </Button>
+        </div>
       </CardHeader>
-
       <CardContent>
-        {/* Search and Column Controls */}
-        <div className="mb-4 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search by client name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-10"
-            />
-          </div>
-
-          {/* Column Visibility Controls - Updated for all 12 columns */}
-          <div className="flex flex-wrap gap-2">
-            <span className="text-sm font-medium text-gray-600">Show Payment Columns:</span>
-            {Object.entries(visibleColumns).map(([column, visible]) => (
-              <Button
-                key={column}
-                variant="outline"
-                size="sm"
-                onClick={() => toggleColumnVisibility(column as keyof typeof visibleColumns)}
-                className={`h-8 ${visible ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}
-              >
-                {visible ? <Eye className="mr-1 h-3 w-3" /> : <EyeOff className="mr-1 h-3 w-3" />}
-                {getColumnLabel(column)}
-              </Button>
-            ))}
-          </div>
-
-          {/* Risk Column Toggles */}
-          <div className="flex gap-2">
-            <Button
-              variant={showRiskScore ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setShowRiskScore((s) => !s)}
-            >
-              Risk Score
-            </Button>
-            <Button
-              variant={showRiskLevel ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setShowRiskLevel((s) => !s)}
-            >
-              Risk Level
-            </Button>
-            <Button
-              variant={showDefaultProb ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setShowDefaultProb((s) => !s)}
-            >
-              Default Probability
-            </Button>
-          </div>
-        </div>
-
-        {/* Smart Portfolio Summary */}
-        <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div className="text-center">
-              <p className="font-semibold text-blue-900">{formatCurrency(portfolioMetrics.reliable_total_portfolio)}</p>
-              <p className="text-blue-700">Total Portfolio</p>
-            </div>
-            <div className="text-center">
-              <p className="font-semibold text-green-900">{formatCurrency(portfolioMetrics.reliable_total_paid)}</p>
-              <p className="text-green-700">Total Collected</p>
-            </div>
-            <div className="text-center">
-              <p className="font-semibold text-orange-900">{formatCurrency(portfolioMetrics.reliable_total_remaining)}</p>
-              <p className="text-orange-700">Outstanding</p>
-            </div>
-            <div className="text-center">
-              <p className="font-semibold text-purple-900">{portfolioMetrics.reliable_collection_rate.toFixed(1)}%</p>
-              <p className="text-purple-700">Collection Rate</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Dynamic Table */}
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-8"></TableHead>
-                <TableHead>Client Name</TableHead>
-                <TableHead>Amount Returnable</TableHead>
-                {activePaymentColumns.map(column => (
-                  <TableHead key={column} className="text-center">
-                    {getColumnLabel(column)}
-                  </TableHead>
-                ))}
-                <TableHead>Smart Balance</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Pattern</TableHead>
-                <TableHead>Quality</TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleSort('client_name')}
+                >
+                  Client Name
+                  {sortField === 'client_name' && (
+                    sortDirection === 'asc' ? <TrendingUp className="h-4 w-4 inline ml-1" /> : <TrendingDown className="h-4 w-4 inline ml-1" />
+                  )}
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleSort('amount_returnable')}
+                >
+                  Loan Amount
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleSort('remaining_balance')}
+                >
+                  Remaining Balance
+                </TableHead>
+                <TableHead>Risk Level</TableHead>
                 <TableHead>Status</TableHead>
-                {showRiskScore && <TableHead>Risk Score</TableHead>}
-                {showRiskLevel && <TableHead>Risk Level</TableHead>}
-                {showDefaultProb && <TableHead>Prob. Default</TableHead>}
+                <TableHead>Payment Progress</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              <AnimatePresence>
-                {filteredData.length > 0 ? (
-                  filteredData.map((loan) => (
-                    <React.Fragment key={loan.id}>
-                      <motion.tr
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className={`hover:bg-gray-50 transition-colors ${
-                          loan.recentlyUpdated ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                        }`}
-                      >
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleRowExpansion(loan.id)}
-                            className="h-6 w-6 p-0"
-                          >
-                            {expandedRows.has(loan.id) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {loan.client_name}
-                          {loan.recentlyUpdated && (
-                            <Badge variant="outline" className="ml-2 text-xs bg-blue-100 text-blue-800">
-                              Updated
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-blue-600 font-semibold">
-                          {formatCurrency(loan.amount_returnable)}
-                        </TableCell>
-                        {activePaymentColumns.map(column => (
-                          <TableCell key={column} className="text-center">
-                            <span className={`${(loan as any)[column] > 0 ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
-                              {formatCurrency((loan as any)[column])}
-                            </span>
-                          </TableCell>
-                        ))}
-                        <TableCell className="font-semibold">
-                          <div className="flex items-center gap-2">
-                            <span className="text-red-600">{formatCurrency(loan.calculated_remaining_balance)}</span>
-                            {loan.has_calculation_errors && (
-                              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300"
-                                style={{ width: `${Math.min(loan.calculated_progress, 100)}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-medium">{loan.calculated_progress.toFixed(1)}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            {getPaymentPatternIcon(loan.payment_pattern)}
-                            <span className="text-xs capitalize">{loan.payment_pattern}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className={`${getDataQualityColor(loan.data_quality_score)}`}
-                          >
-                            {loan.data_quality_score.toFixed(0)}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={loan.status === 'active' ? 'default' : 'secondary'}
-                            className={loan.status === 'active' ? 'bg-green-100 text-green-800' : ''}
-                          >
-                            {loan.status}
-                          </Badge>
-                        </TableCell>
-                        {showRiskScore && (
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={
-                                loan.risk_level === "low"
-                                  ? "bg-green-50 text-green-700"
-                                  : loan.risk_level === "medium"
-                                  ? "bg-yellow-50 text-yellow-700"
-                                  : loan.risk_level === "high"
-                                  ? "bg-orange-50 text-orange-700"
-                                  : "bg-red-100 text-red-800"
-                              }
-                            >
-                              {loan.risk_score}
-                            </Badge>
-                          </TableCell>
-                        )}
-                        {showRiskLevel && (
-                          <TableCell className="capitalize">
-                            <Badge
-                              variant="outline"
-                              className={
-                                loan.risk_level === "low"
-                                  ? "bg-green-50 text-green-700"
-                                  : loan.risk_level === "medium"
-                                  ? "bg-yellow-50 text-yellow-700"
-                                  : loan.risk_level === "high"
-                                  ? "bg-orange-50 text-orange-700"
-                                  : "bg-red-100 text-red-800"
-                              }
-                            >
-                              {loan.risk_level}
-                            </Badge>
-                          </TableCell>
-                        )}
-                        {showDefaultProb && (
-                          <TableCell>
-                            {(loan.default_probability * 100).toFixed(0)}%
-                          </TableCell>
-                        )}
-                      </motion.tr>
+              {sortedData.map((loan) => {
+                const totalPaid = (loan.amount_paid_1 || 0) + (loan.amount_paid_2 || 0) + 
+                                 (loan.amount_paid_3 || 0) + (loan.amount_paid_4 || 0);
+                const paymentProgress = loan.amount_returnable > 0 ? 
+                  (totalPaid / loan.amount_returnable) * 100 : 0;
 
-                      {/* Expanded Row Details */}
-                      {expandedRows.has(loan.id) && (
-                        <motion.tr
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="bg-gray-50"
-                        >
-                          <TableCell colSpan={activePaymentColumns.length + 8}>
-                            <div className="p-4 space-y-3">
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                <div>
-                                  <p className="font-medium text-gray-700">Collection Efficiency</p>
-                                  <p className="text-lg font-semibold text-purple-600">
-                                    {loan.collection_efficiency.toFixed(1)}%
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-700">Active Payments</p>
-                                  <p className="text-lg font-semibold text-blue-600">
-                                    {loan.activePayments.length} of 12
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-700">Estimated Completion</p>
-                                  <p className="text-lg font-semibold text-green-600">
-                                    {loan.estimated_completion_date || 'N/A'}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-700">Confidence Level</p>
-                                  <Badge variant="outline" className={
-                                    loan.confidence_level === 'high' ? 'text-green-700 bg-green-50' :
-                                    loan.confidence_level === 'medium' ? 'text-yellow-700 bg-yellow-50' :
-                                    'text-red-700 bg-red-50'
-                                  }>
-                                    {loan.confidence_level}
-                                  </Badge>
-                                </div>
-                              </div>
-                              
-                              {loan.discrepancies.length > 0 && (
-                                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                                  <p className="font-medium text-yellow-800 mb-2">Data Discrepancies:</p>
-                                  <ul className="text-sm text-yellow-700 space-y-1">
-                                    {loan.discrepancies.map((discrepancy, index) => (
-                                      <li key={index}>• {discrepancy}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                        </motion.tr>
-                      )}
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={activePaymentColumns.length + 9} className="text-center py-8">
-                      <div className="flex flex-col items-center gap-2">
-                        <AlertTriangle className="h-8 w-8 text-gray-400" />
-                        <p className="text-gray-500">
-                          {loanData && loanData.length === 0 ? 'No loan records available' : 'No records match your search'}
-                        </p>
+                return (
+                  <TableRow key={loan.id}>
+                    <TableCell className="font-medium">{loan.client_name}</TableCell>
+                    <TableCell>{formatCurrency(loan.amount_returnable)}</TableCell>
+                    <TableCell>{formatCurrency(loan.remaining_balance)}</TableCell>
+                    <TableCell>
+                      <Badge variant={getRiskBadgeColor(loan.risk_level)}>
+                        {loan.risk_level || 'Low'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={loan.status === 'active' ? 'default' : 'secondary'}>
+                        {loan.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-500 h-2 rounded-full"
+                            style={{ width: `${Math.min(paymentProgress, 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-600">
+                          {paymentProgress.toFixed(1)}%
+                        </span>
                       </div>
                     </TableCell>
                   </TableRow>
-                )}
-              </AnimatePresence>
+                );
+              })}
+              {sortedData.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <AlertTriangle className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-gray-500">No loan data available</p>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

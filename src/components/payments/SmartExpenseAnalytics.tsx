@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TrendingUp, TrendingDown, Calendar, BarChart3, Lightbulb, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useExpenseWeeklySummaries, useExpenseMonthlySummaries, useExpenseSmartCalculations, triggerExpenseClustering } from '@/hooks/use-expense-clustering';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/utils/loanUtils';
+import { formatCurrency } from '@/utils/formatCurrency';
 
 const SmartExpenseAnalytics = () => {
   const { toast } = useToast();

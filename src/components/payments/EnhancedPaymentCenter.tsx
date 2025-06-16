@@ -5,8 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, BarChart3, Calculator, Database } from 'lucide-react';
 import DynamicLoanBookTable from './DynamicLoanBookTable';
 import SmartExpenseAnalytics from './SmartExpenseAnalytics';
+import { useLiveLoanData } from '@/hooks/use-live-loan-data';
 
 const EnhancedPaymentCenter = () => {
+  const { data: loanData = [], isLoading } = useLiveLoanData();
+
+  const handleExport = () => {
+    console.log('Exporting loan data...');
+    // Export functionality will be implemented later
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -43,7 +51,12 @@ const EnhancedPaymentCenter = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <DynamicLoanBookTable />
+              <DynamicLoanBookTable 
+                loanData={loanData}
+                isLoading={isLoading}
+                onExport={handleExport}
+                isExporting={false}
+              />
             </CardContent>
           </Card>
         </TabsContent>

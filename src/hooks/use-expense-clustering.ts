@@ -179,7 +179,14 @@ export const useExpenseSmartCalculations = (targetMonth?: number, targetYear?: n
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match our interface
+      return (data || []).map(calc => ({
+        ...calc,
+        calculation_data: typeof calc.calculation_data === 'string' 
+          ? JSON.parse(calc.calculation_data) 
+          : (calc.calculation_data || {})
+      }));
     },
     refetchInterval: 30000,
   });
