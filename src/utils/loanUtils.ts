@@ -110,16 +110,3 @@ export function generateDownsizingReason(
   
   return `The requested loan amount of UGX ${originalAmount} has been adjusted to UGX ${approvedAmount} (a ${reductionPercentage}% reduction) to align with our lending policies. This adjustment ensures a more sustainable debt-to-income ratio of ${(approvedRatio * 100).toFixed(1)}% compared to the original ${(originalRatio * 100).toFixed(1)}%, improving the likelihood of successful repayment.`;
 }
-
-/**
- * Format currency values with proper separators
- * @param amount The amount to format
- * @param currency The currency code (default: UGX)
- * @returns Formatted currency string
- */
-export function formatCurrency(amount: number, currency: string = 'UGX'): string {
-  return amount.toLocaleString('en-UG', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-}

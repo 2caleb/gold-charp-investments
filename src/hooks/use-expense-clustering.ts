@@ -1,22 +1,8 @@
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-export interface ExpenseDailySummary {
-  id: string;
-  expense_date: string;
-  day_of_week: number;
-  category: string;
-  account: string;
-  total_amount: number;
-  transaction_count: number;
-  average_amount: number;
-  min_amount: number;
-  max_amount: number;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface ExpenseWeeklySummary {
   id: string;
@@ -61,68 +47,12 @@ export interface ExpenseSmartCalculation {
   year: number;
   category?: string;
   account?: string;
-  calculation_data: any; // Changed from Record<string, any> to any to match Json type
+  calculation_data: Record<string, any>;
   insights: string[];
   recommendations: string[];
   confidence_score: number;
   created_at: string;
 }
-
-export const useExpenseDailySummaries = (targetDate?: string) => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['expense-daily-summaries', targetDate],
-    queryFn: async (): Promise<ExpenseDailySummary[]> => {
-      let query = supabase
-        .from('expense_daily_summaries')
-        .select('*');
-
-      if (targetDate) {
-        query = query.eq('expense_date', targetDate);
-      }
-
-      const { data, error } = await query
-        .order('expense_date', { ascending: false })
-        .limit(30); // Last 30 days by default
-
-      if (error) throw error;
-      return data || [];
-    },
-    refetchInterval: 30000,
-  });
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('expense-daily-updates')
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'expense_daily_summaries'
-        },
-        () => {
-          queryClient.invalidateQueries({ 
-            queryKey: ['expense-daily-summaries'] 
-          });
-          toast({
-            title: 'Daily Analysis Updated',
-            description: 'Daily expense summaries have been updated',
-            duration: 3000,
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient, toast]);
-
-  return { data, isLoading, error };
-};
 
 export const useExpenseWeeklySummaries = () => {
   const queryClient = useQueryClient();
@@ -231,9 +161,9 @@ export const useExpenseMonthlySummaries = (targetMonth?: number, targetYear?: nu
   return { data, isLoading, error };
 };
 
-export const useExpenseSmartCalculations = (targetMonth?: number, targetYear?: number, calculationType?: string) => {
+export const useExpenseSmartCalculations = (targetMonth?: number, targetYear?: number) => {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['expense-smart-calculations', targetMonth, targetYear, calculationType],
+    queryKey: ['expense-smart-calculations', targetMonth, targetYear],
     queryFn: async (): Promise<ExpenseSmartCalculation[]> => {
       let query = supabase
         .from('expense_smart_calculations')
@@ -243,10 +173,6 @@ export const useExpenseSmartCalculations = (targetMonth?: number, targetYear?: n
         query = query
           .eq('month', targetMonth)
           .eq('year', targetYear);
-      }
-
-      if (calculationType) {
-        query = query.eq('calculation_type', calculationType);
       }
 
       const { data, error } = await query
@@ -261,16 +187,9 @@ export const useExpenseSmartCalculations = (targetMonth?: number, targetYear?: n
   return { data, isLoading, error };
 };
 
-// Helper function to trigger manual clustering (updated to include daily)
+// Helper function to trigger manual clustering
 export const triggerExpenseClustering = async (targetDate?: string) => {
   try {
-    // Trigger daily clustering
-    const { error: dailyError } = await supabase.rpc('cluster_expenses_daily', {
-      target_date: targetDate || null
-    });
-    
-    if (dailyError) throw dailyError;
-
     const { error: weeklyError } = await supabase.rpc('cluster_expenses_weekly', {
       target_week_start: targetDate || null
     });
@@ -284,13 +203,6 @@ export const triggerExpenseClustering = async (targetDate?: string) => {
     const { error: analysisError } = await supabase.rpc('smart_end_of_month_analysis');
     
     if (analysisError) throw analysisError;
-
-    // Trigger daily analysis
-    const { error: dailyAnalysisError } = await supabase.rpc('smart_end_of_day_analysis', {
-      target_date: targetDate || null
-    });
-    
-    if (dailyAnalysisError) throw dailyAnalysisError;
 
     return { success: true };
   } catch (error) {
