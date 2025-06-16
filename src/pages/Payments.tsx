@@ -1,13 +1,13 @@
 
 import React from 'react';
 import SecurityGuard from '@/components/security/SecurityGuard';
-import EnhancedPaymentCenter from '@/components/payments/EnhancedPaymentCenter';
+import SimplePaymentCenter from '@/components/payments/SimplePaymentCenter';
 
 const Payments = () => {
   return (
     <SecurityGuard action="canViewFinancials">
       <div className="container mx-auto px-4 py-8">
-        <EnhancedPaymentCenter />
+        <SimplePaymentCenter />
       </div>
     </SecurityGuard>
   );
