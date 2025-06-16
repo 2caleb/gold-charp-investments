@@ -1,3 +1,4 @@
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,8 +11,7 @@ function validateLoanBookRecordSchema(obj: any): LoanBookLiveRecord | null {
     'id', 'client_name', 'amount_returnable', 'amount_paid_1', 'amount_paid_2', 'amount_paid_3',
     'amount_paid_4', 'amount_paid_5', 'Amount_paid_6', 'Amount_paid_7', 'Amount_Paid_8',
     'Amount_Paid_9', 'Amount_Paid_10', 'Amount_Paid_11', 'Amount_Paid_12', 'remaining_balance',
-    'loan_date', 'status', 'payment_mode', 'created_at', 'updated_at',
-    'risk_score', 'default_probability', 'risk_level', 'risk_factors',
+    'loan_date', 'status', 'payment_mode', 'created_at', 'updated_at'
   ];
   let ok = true;
   requiredFields.forEach(f => {
@@ -40,31 +40,9 @@ export const useLiveLoanPerformance = (clientName: string) => {
 
       if (error) throw error;
 
-      // Helper to validate that risk_level is allowed, fallback to "low"
-      const isAllowedRiskLevel = (level: any): level is LoanBookLiveRecord['risk_level'] =>
-        ['low', 'medium', 'high', 'critical'].includes(level);
-
+      // Ensure all records are valid types, fallback missing payments to 0
       const mapped = (data || []).map(loan => {
-        // Defensive: parse risk_factors and risk_level safely
-        let safeRiskLevel: LoanBookLiveRecord['risk_level'] = 'low';
-        if (isAllowedRiskLevel(loan.risk_level)) {
-          safeRiskLevel = loan.risk_level;
-        }
-
-        let safeRiskFactors: Record<string, any> = {};
-        if (typeof loan.risk_factors === 'object' && loan.risk_factors !== null) {
-          safeRiskFactors = loan.risk_factors;
-        } else if (typeof loan.risk_factors === 'string') {
-          try { 
-            safeRiskFactors = JSON.parse(loan.risk_factors);
-            if (typeof safeRiskFactors !== 'object' || safeRiskFactors === null) {
-              safeRiskFactors = {};
-            }
-          } catch {
-            safeRiskFactors = {};
-          }
-        }
-
+        // Defensive: apply 0 default for any missing Number fields
         const record: LoanBookLiveRecord = {
           id: loan.id,
           client_name: loan.client_name,
@@ -88,10 +66,6 @@ export const useLiveLoanPerformance = (clientName: string) => {
           created_at: String(loan.created_at || ""),
           updated_at: String(loan.updated_at || ""),
           user_id: loan.user_id ?? null,
-          risk_score: loan.risk_score ?? 0,
-          default_probability: loan.default_probability ?? 0,
-          risk_level: safeRiskLevel,
-          risk_factors: safeRiskFactors,
         };
         validateLoanBookRecordSchema(record);
         return record;

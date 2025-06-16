@@ -42,7 +42,7 @@ interface SmartLoanData {
   Amount_paid_6: number;
   Amount_paid_7: number;
   risk_score: number;
-  risk_level: 'low' | 'medium' | 'high' | 'critical'; // <-- add 'critical'
+  risk_level: 'low' | 'medium' | 'high';
   default_probability: number;
 }
 
@@ -171,8 +171,6 @@ const EnhancedLoanCard: React.FC<EnhancedLoanCardProps> = ({ loan, expandedLoanI
                 ? "bg-yellow-50 text-yellow-700"
                 : loan.risk_level === "high"
                 ? "bg-orange-50 text-orange-700"
-                : loan.risk_level === "critical"
-                ? "bg-red-50 text-red-700"
                 : "bg-red-100 text-red-800"
             }
           >
@@ -190,8 +188,6 @@ const EnhancedLoanCard: React.FC<EnhancedLoanCardProps> = ({ loan, expandedLoanI
                 ? "bg-yellow-50 text-yellow-700"
                 : loan.risk_level === "high"
                 ? "bg-orange-50 text-orange-700"
-                : loan.risk_level === "critical"
-                ? "bg-red-50 text-red-700"
                 : "bg-red-100 text-red-800"
             }
           >

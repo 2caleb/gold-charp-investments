@@ -155,8 +155,8 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
               risk_score,
               default_probability,
               model_version: "rule-based-v1",
-              model_input: JSON.parse(JSON.stringify(loan)),
-              model_output: JSON.parse(JSON.stringify({ risk_score, default_probability, risk_level, risk_factors })),
+              model_input: loan,
+              model_output: { risk_score, default_probability, risk_level, risk_factors },
             });
           } catch (err) {
             console.warn("Risk log insert failed:", err);
