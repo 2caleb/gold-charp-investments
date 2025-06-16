@@ -13,7 +13,14 @@ export const useLiveLoanData = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to ensure risk_level is typed correctly
+      return (data || []).map(loan => ({
+        ...loan,
+        risk_level: ['low', 'medium', 'high', 'critical'].includes(loan.risk_level) 
+          ? loan.risk_level as 'low' | 'medium' | 'high' | 'critical'
+          : 'low'
+      }));
     },
     refetchInterval: 30000,
   });

@@ -30,6 +30,10 @@ const EnhancedLoanBookTable = () => {
     return matchesSearch && matchesRisk && matchesStatus;
   });
 
+  const handleRefresh = () => {
+    refetchLoans();
+  };
+
   const handleExport = () => {
     const csvContent = [
       ['Client Name', 'Loan Amount', 'Total Paid', 'Remaining Balance', 'Risk Level', 'Status'],
@@ -87,7 +91,7 @@ const EnhancedLoanBookTable = () => {
             Enhanced Loan Portfolio ({filteredLoans.length} loans)
           </span>
           <div className="flex items-center space-x-2">
-            <Button onClick={refetchLoans} variant="outline" size="sm">
+            <Button onClick={handleRefresh} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-1" />
               Refresh
             </Button>
