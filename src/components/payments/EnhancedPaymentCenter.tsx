@@ -7,6 +7,12 @@ import DynamicLoanBookTable from './DynamicLoanBookTable';
 import SmartExpenseAnalytics from './SmartExpenseAnalytics';
 
 const EnhancedPaymentCenter = () => {
+  // Mock data for DynamicLoanBookTable props
+  const mockLoanData = [];
+  const mockIsLoading = false;
+  const mockOnExport = () => console.log('Export clicked');
+  const mockIsExporting = false;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -43,7 +49,12 @@ const EnhancedPaymentCenter = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <DynamicLoanBookTable />
+              <DynamicLoanBookTable 
+                loanData={mockLoanData}
+                isLoading={mockIsLoading}
+                onExport={mockOnExport}
+                isExporting={mockIsExporting}
+              />
             </CardContent>
           </Card>
         </TabsContent>

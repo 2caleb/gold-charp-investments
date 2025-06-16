@@ -47,7 +47,7 @@ export interface ExpenseSmartCalculation {
   year: number;
   category?: string;
   account?: string;
-  calculation_data: Record<string, any>;
+  calculation_data: any; // Changed from Record<string, any> to any to match Json type
   insights: string[];
   recommendations: string[];
   confidence_score: number;
