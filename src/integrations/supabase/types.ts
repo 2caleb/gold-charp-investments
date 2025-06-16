@@ -159,6 +159,51 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_daily_summaries: {
+        Row: {
+          account: string
+          average_amount: number
+          category: string
+          created_at: string | null
+          day_of_week: number
+          expense_date: string
+          id: string
+          max_amount: number
+          min_amount: number
+          total_amount: number
+          transaction_count: number
+          updated_at: string | null
+        }
+        Insert: {
+          account: string
+          average_amount?: number
+          category: string
+          created_at?: string | null
+          day_of_week: number
+          expense_date: string
+          id?: string
+          max_amount?: number
+          min_amount?: number
+          total_amount?: number
+          transaction_count?: number
+          updated_at?: string | null
+        }
+        Update: {
+          account?: string
+          average_amount?: number
+          category?: string
+          created_at?: string | null
+          day_of_week?: number
+          expense_date?: string
+          id?: string
+          max_amount?: number
+          min_amount?: number
+          total_amount?: number
+          transaction_count?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       expense_monthly_summaries: {
         Row: {
           account: string
@@ -1626,6 +1671,10 @@ export type Database = {
         Args: { application_id: number }
         Returns: Json
       }
+      cluster_expenses_daily: {
+        Args: { target_date?: string }
+        Returns: undefined
+      }
       cluster_expenses_monthly: {
         Args: { target_month?: number; target_year?: number }
         Returns: undefined
@@ -1670,6 +1719,10 @@ export type Database = {
       is_director_caleb: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      smart_end_of_day_analysis: {
+        Args: { target_date?: string }
+        Returns: undefined
       }
       smart_end_of_month_analysis: {
         Args: { target_month?: number; target_year?: number }

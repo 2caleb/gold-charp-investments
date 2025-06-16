@@ -5,10 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, TrendingDown, Calendar, BarChart3, Lightbulb, AlertTriangle, CheckCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, BarChart3, Lightbulb, AlertTriangle, CheckCircle, Sun } from 'lucide-react';
 import { useExpenseWeeklySummaries, useExpenseMonthlySummaries, useExpenseSmartCalculations, triggerExpenseClustering } from '@/hooks/use-expense-clustering';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/utils/loanUtils';
+import DailyExpenseAnalytics from './DailyExpenseAnalytics';
 
 const SmartExpenseAnalytics = () => {
   const { toast } = useToast();
@@ -181,13 +182,18 @@ const SmartExpenseAnalytics = () => {
       </div>
 
       {/* Detailed Analytics Tabs */}
-      <Tabs defaultValue="monthly" className="space-y-4">
+      <Tabs defaultValue="daily" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="daily">Daily Analysis</TabsTrigger>
           <TabsTrigger value="monthly">Monthly Analysis</TabsTrigger>
           <TabsTrigger value="weekly">Weekly Trends</TabsTrigger>
           <TabsTrigger value="insights">Smart Insights</TabsTrigger>
           <TabsTrigger value="categories">Category Breakdown</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="daily" className="space-y-6">
+          <DailyExpenseAnalytics />
+        </TabsContent>
 
         <TabsContent value="monthly" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
