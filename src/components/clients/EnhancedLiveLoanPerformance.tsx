@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useLiveLoanPerformance } from '@/hooks/use-live-loan-performance';
-import { useSmartLoanCalculations, SmartLoanData } from '@/hooks/use-smart-loan-calculations';
+import { useSmartLoanCalculations, type SmartLoanData } from '@/hooks/use-smart-loan-calculations';
 import { TrendingUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 
