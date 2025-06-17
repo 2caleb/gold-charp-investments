@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useLiveLoanPerformance } from '@/hooks/use-live-loan-performance';
-import { useSmartLoanCalculations } from '@/hooks/use-smart-loan-calculations';
+import { useSmartLoanCalculations, SmartLoanData } from '@/hooks/use-smart-loan-calculations';
 import { TrendingUp } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 
@@ -111,7 +112,7 @@ const EnhancedLiveLoanPerformance: React.FC<EnhancedLiveLoanPerformanceProps> = 
         <CardContent>
           <AnimatePresence>
             <div className="space-y-4">
-              {displayLoans.map((loan) => (
+              {displayLoans.map((loan: SmartLoanData) => (
                 <EnhancedLoanCard
                   key={loan.id}
                   loan={loan}
