@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { LoanBookLiveRecord } from '@/types/loan-book-live-record';
 
@@ -43,7 +44,7 @@ export interface SmartLoanData extends LoanBookLiveRecord {
   data_quality_score: number;
   has_calculation_errors: boolean;
   payment_pattern: 'regular' | 'irregular' | 'declining' | 'accelerating';
-  activePayments: number;
+  activePayments: number[]; // Changed from number to number[] to match expected type
   estimated_completion_date: string | null;
   confidence_level: 'high' | 'medium' | 'low';
   discrepancies: string[];
@@ -186,6 +187,9 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
         discrepancies.push('Overpayment detected');
       }
 
+      // Create activePayments array - representing the actual payment amounts that are > 0
+      const activePayments = Object.values(legacyPayments).filter(payment => payment > 0);
+
       return {
         ...loan,
         ...legacyPayments,
@@ -206,7 +210,7 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
         data_quality_score: dataQualityScore,
         has_calculation_errors: hasDataQualityIssues,
         payment_pattern: paymentPattern,
-        activePayments: paymentCount,
+        activePayments, // Now correctly an array of numbers
         estimated_completion_date: estimatedCompletionDate,
         confidence_level: confidenceLevel,
         discrepancies,
