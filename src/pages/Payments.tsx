@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
@@ -23,6 +22,7 @@ import { useFinancialSummaryQuery } from '@/hooks/use-financial-summary-query';
 import DynamicLoanBookTable from '@/components/payments/DynamicLoanBookTable';
 import { adaptLoanRecordToLegacy } from '@/types/loan-book-adapter';
 import { usePaymentHandlers } from '@/hooks/usePaymentHandlers';
+import { formatCurrency } from '@/utils/currencyUtils';
 
 const Payments = () => {
   const [expenseSearchTerm, setExpenseSearchTerm] = useState('');

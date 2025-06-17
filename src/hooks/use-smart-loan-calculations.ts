@@ -26,6 +26,7 @@ export interface SmartLoanData extends LoanBookLiveRecord {
   // Smart calculation fields
   totalPaid: number;
   collectionEfficiency: number;
+  collection_efficiency: number; // Added for compatibility
   isCompleted: boolean;
   recentlyUpdated: boolean;
   hasDataQualityIssues: boolean;
@@ -34,6 +35,18 @@ export interface SmartLoanData extends LoanBookLiveRecord {
   lastPaymentDate: string | null;
   daysOverdue: number;
   riskTrend: 'improving' | 'stable' | 'deteriorating';
+  
+  // Additional calculated fields for DynamicLoanBookTable
+  calculated_total_paid: number;
+  calculated_remaining_balance: number;
+  calculated_progress: number;
+  data_quality_score: number;
+  has_calculation_errors: boolean;
+  payment_pattern: 'regular' | 'irregular' | 'none';
+  activePayments: number;
+  estimated_completion_date: string | null;
+  confidence_level: 'high' | 'medium' | 'low';
+  discrepancies: string[];
 }
 
 export interface PortfolioMetrics {
@@ -135,11 +148,45 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       if (collectionEfficiency > 80) riskTrend = 'improving';
       else if (collectionEfficiency < 30) riskTrend = 'deteriorating';
 
+      // Calculate additional fields for DynamicLoanBookTable
+      const calculatedRemainingBalance = Math.max(0, loan.amount_returnable - totalPaid);
+      const calculatedProgress = loan.amount_returnable > 0 ? (totalPaid / loan.amount_returnable) * 100 : 0;
+      const dataQualityScore = hasDataQualityIssues ? 0 : 100;
+      
+      // Determine payment pattern
+      let paymentPattern: 'regular' | 'irregular' | 'none' = 'none';
+      if (paymentCount > 3) paymentPattern = 'regular';
+      else if (paymentCount > 0) paymentPattern = 'irregular';
+      
+      // Calculate estimated completion date
+      let estimatedCompletionDate: string | null = null;
+      if (averagePaymentAmount > 0 && calculatedRemainingBalance > 0) {
+        const monthsToComplete = Math.ceil(calculatedRemainingBalance / averagePaymentAmount);
+        const completionDate = new Date();
+        completionDate.setMonth(completionDate.getMonth() + monthsToComplete);
+        estimatedCompletionDate = completionDate.toISOString().split('T')[0];
+      }
+      
+      // Determine confidence level
+      let confidenceLevel: 'high' | 'medium' | 'low' = 'low';
+      if (paymentCount > 5 && collectionEfficiency > 60) confidenceLevel = 'high';
+      else if (paymentCount > 2 && collectionEfficiency > 30) confidenceLevel = 'medium';
+      
+      // Calculate discrepancies
+      const discrepancies: string[] = [];
+      if (Math.abs(loan.remaining_balance - calculatedRemainingBalance) > 1) {
+        discrepancies.push('Balance mismatch');
+      }
+      if (totalPaid > loan.amount_returnable) {
+        discrepancies.push('Overpayment detected');
+      }
+
       return {
         ...loan,
         ...legacyPayments,
         totalPaid,
         collectionEfficiency,
+        collection_efficiency: collectionEfficiency, // Added for compatibility
         isCompleted,
         recentlyUpdated,
         hasDataQualityIssues,
@@ -148,6 +195,16 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
         lastPaymentDate,
         daysOverdue,
         riskTrend,
+        calculated_total_paid: totalPaid,
+        calculated_remaining_balance: calculatedRemainingBalance,
+        calculated_progress: calculatedProgress,
+        data_quality_score: dataQualityScore,
+        has_calculation_errors: hasDataQualityIssues,
+        payment_pattern: paymentPattern,
+        activePayments: paymentCount,
+        estimated_completion_date: estimatedCompletionDate,
+        confidence_level: confidenceLevel,
+        discrepancies,
       };
     });
 
