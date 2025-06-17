@@ -1,18 +1,26 @@
 
 /**
  * Utility function: Accepts an object,
- * validates presence/naming/values of all 12 payment columns,
+ * validates presence/naming/values of date-based payment columns,
  * logs a warning if anything is missing or misnamed.
  */
 export function validatePaymentColumns(obj: any) {
-  const cols = [
-    'amount_paid_1', 'amount_paid_2', 'amount_paid_3', 'amount_paid_4', 'amount_paid_5',
-    'Amount_paid_6', 'Amount_paid_7',
-    'Amount_Paid_8', 'Amount_Paid_9', 'Amount_Paid_10', 'Amount_Paid_11', 'Amount_Paid_12'
+  const dateCols = [
+    "30-05-2025", "31-05-2025", "02-06-2025", "04-06-2025", "05-06-2025",
+    "07-06-2025", "10-06-2025", "11-06-2025", "12-06-2025", "13-06-2025", 
+    "14-06-2025", "16-06-2025"
   ];
-  cols.forEach(col => {
-    if (!(col in obj)) {
+  
+  let foundColumns = 0;
+  dateCols.forEach(col => {
+    if (col in obj) {
+      foundColumns++;
+    } else {
       console.warn(`Missing payment column in record: ${col}`, obj);
     }
   });
+  
+  if (foundColumns === 0) {
+    console.warn('No date-based payment columns found in record', obj);
+  }
 }

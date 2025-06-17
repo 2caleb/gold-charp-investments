@@ -5,22 +5,34 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { LoanBookLiveRecord } from '@/types/loan-book-live-record';
 
-// Utility to validate payment columns at runtime (will log if anything is missing/wrong)
+// Utility to validate payment columns at runtime
 function validateLoanBookRecordSchema(obj: any): LoanBookLiveRecord | null {
   const requiredFields = [
-    'id', 'client_name', 'amount_returnable', 'amount_paid_1', 'amount_paid_2', 'amount_paid_3',
-    'amount_paid_4', 'amount_paid_5', 'Amount_paid_6', 'Amount_paid_7', 'Amount_Paid_8',
-    'Amount_Paid_9', 'Amount_Paid_10', 'Amount_Paid_11', 'Amount_Paid_12', 'remaining_balance',
-    'loan_date', 'status', 'payment_mode', 'created_at', 'updated_at'
+    'id', 'client_name', 'amount_returnable', 'remaining_balance',
+    'loan_date', 'status', 'payment_mode', 'created_at', 'updated_at',
+    'risk_score', 'default_probability', 'risk_level'
   ];
+  
+  const dateBasedColumns = [
+    "30-05-2025", "31-05-2025", "02-06-2025", "04-06-2025", "05-06-2025",
+    "07-06-2025", "10-06-2025", "11-06-2025", "12-06-2025", "13-06-2025",
+    "14-06-2025", "16-06-2025"
+  ];
+  
   let ok = true;
   requiredFields.forEach(f => {
     if (!(f in obj)) {
-      console.warn(`[LoanBookLiveRecord] Missing field: ${f}`, obj);
+      console.warn(`[LoanBookLiveRecord] Missing required field: ${f}`, obj);
       ok = false;
     }
   });
-  // Optionally: Type check specific fields
+  
+  // Check for at least some date-based payment columns
+  const hasDateColumns = dateBasedColumns.some(col => col in obj);
+  if (!hasDateColumns) {
+    console.warn(`[LoanBookLiveRecord] Missing date-based payment columns`, obj);
+  }
+  
   return ok ? obj as LoanBookLiveRecord : null;
 }
 
@@ -28,7 +40,6 @@ export const useLiveLoanPerformance = (clientName: string) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch only: NO transformations, everything as raw as possible with zero calculations.
   const { data: loanData, isLoading, error } = useQuery({
     queryKey: ['live-loan-performance', clientName],
     queryFn: async (): Promise<LoanBookLiveRecord[]> => {
@@ -40,25 +51,25 @@ export const useLiveLoanPerformance = (clientName: string) => {
 
       if (error) throw error;
 
-      // Ensure all records are valid types, fallback missing payments to 0
+      // Map and validate records with proper defaults
       const mapped = (data || []).map(loan => {
-        // Defensive: apply 0 default for any missing Number fields
         const record: LoanBookLiveRecord = {
           id: loan.id,
           client_name: loan.client_name,
           amount_returnable: loan.amount_returnable ?? 0,
-          amount_paid_1: loan.amount_paid_1 ?? 0,
-          amount_paid_2: loan.amount_paid_2 ?? 0,
-          amount_paid_3: loan.amount_paid_3 ?? 0,
-          amount_paid_4: loan.amount_paid_4 ?? 0,
-          amount_paid_5: loan.amount_paid_5 ?? 0,
-          Amount_paid_6: loan.Amount_paid_6 ?? 0,
-          Amount_paid_7: loan.Amount_paid_7 ?? 0,
-          Amount_Paid_8: loan.Amount_Paid_8 ?? 0,
-          Amount_Paid_9: loan.Amount_Paid_9 ?? 0,
-          Amount_Paid_10: loan.Amount_Paid_10 ?? 0,
-          Amount_Paid_11: loan.Amount_Paid_11 ?? 0,
-          Amount_Paid_12: loan.Amount_Paid_12 ?? 0,
+          // Map date-based payment columns with defaults
+          "30-05-2025": loan["30-05-2025"] ?? 0,
+          "31-05-2025": loan["31-05-2025"] ?? 0,
+          "02-06-2025": loan["02-06-2025"] ?? 0,
+          "04-06-2025": loan["04-06-2025"] ?? 0,
+          "05-06-2025": loan["05-06-2025"] ?? 0,
+          "07-06-2025": loan["07-06-2025"] ?? 0,
+          "10-06-2025": loan["10-06-2025"] ?? 0,
+          "11-06-2025": loan["11-06-2025"] ?? 0,
+          "12-06-2025": loan["12-06-2025"] ?? 0,
+          "13-06-2025": loan["13-06-2025"] ?? 0,
+          "14-06-2025": loan["14-06-2025"] ?? 0,
+          "16-06-2025": loan["16-06-2025"] ?? 0,
           remaining_balance: loan.remaining_balance ?? 0,
           loan_date: String(loan.loan_date || ""),
           status: loan.status || "",
@@ -66,6 +77,11 @@ export const useLiveLoanPerformance = (clientName: string) => {
           created_at: String(loan.created_at || ""),
           updated_at: String(loan.updated_at || ""),
           user_id: loan.user_id ?? null,
+          // Risk analytics fields
+          risk_score: loan.risk_score ?? 0,
+          default_probability: loan.default_probability ?? 0,
+          risk_level: loan.risk_level ?? 'low',
+          risk_factors: loan.risk_factors ?? {},
         };
         validateLoanBookRecordSchema(record);
         return record;

@@ -159,6 +159,201 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_daily_summaries: {
+        Row: {
+          account: string
+          average_amount: number
+          category: string
+          created_at: string | null
+          day_of_week: number
+          expense_date: string
+          id: string
+          max_amount: number
+          min_amount: number
+          total_amount: number
+          transaction_count: number
+          updated_at: string | null
+        }
+        Insert: {
+          account: string
+          average_amount?: number
+          category: string
+          created_at?: string | null
+          day_of_week: number
+          expense_date: string
+          id?: string
+          max_amount?: number
+          min_amount?: number
+          total_amount?: number
+          transaction_count?: number
+          updated_at?: string | null
+        }
+        Update: {
+          account?: string
+          average_amount?: number
+          category?: string
+          created_at?: string | null
+          day_of_week?: number
+          expense_date?: string
+          id?: string
+          max_amount?: number
+          min_amount?: number
+          total_amount?: number
+          transaction_count?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      expense_monthly_summaries: {
+        Row: {
+          account: string
+          average_weekly_amount: number
+          budget_amount: number | null
+          budget_variance: number | null
+          category: string
+          created_at: string | null
+          growth_percentage: number | null
+          id: string
+          month: number
+          month_end_date: string
+          month_start_date: string
+          total_amount: number
+          updated_at: string | null
+          variance_from_previous_month: number | null
+          weekly_summaries_count: number
+          year: number
+        }
+        Insert: {
+          account: string
+          average_weekly_amount?: number
+          budget_amount?: number | null
+          budget_variance?: number | null
+          category: string
+          created_at?: string | null
+          growth_percentage?: number | null
+          id?: string
+          month: number
+          month_end_date: string
+          month_start_date: string
+          total_amount?: number
+          updated_at?: string | null
+          variance_from_previous_month?: number | null
+          weekly_summaries_count?: number
+          year: number
+        }
+        Update: {
+          account?: string
+          average_weekly_amount?: number
+          budget_amount?: number | null
+          budget_variance?: number | null
+          category?: string
+          created_at?: string | null
+          growth_percentage?: number | null
+          id?: string
+          month?: number
+          month_end_date?: string
+          month_start_date?: string
+          total_amount?: number
+          updated_at?: string | null
+          variance_from_previous_month?: number | null
+          weekly_summaries_count?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      expense_smart_calculations: {
+        Row: {
+          account: string | null
+          calculation_data: Json
+          calculation_type: string
+          category: string | null
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          insights: string[] | null
+          month: number
+          recommendations: string[] | null
+          year: number
+        }
+        Insert: {
+          account?: string | null
+          calculation_data?: Json
+          calculation_type: string
+          category?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          insights?: string[] | null
+          month: number
+          recommendations?: string[] | null
+          year: number
+        }
+        Update: {
+          account?: string | null
+          calculation_data?: Json
+          calculation_type?: string
+          category?: string | null
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          insights?: string[] | null
+          month?: number
+          recommendations?: string[] | null
+          year?: number
+        }
+        Relationships: []
+      }
+      expense_weekly_summaries: {
+        Row: {
+          account: string
+          average_amount: number
+          category: string
+          created_at: string | null
+          id: string
+          max_amount: number
+          min_amount: number
+          total_amount: number
+          transaction_count: number
+          updated_at: string | null
+          week_end_date: string
+          week_number: number
+          week_start_date: string
+          year: number
+        }
+        Insert: {
+          account: string
+          average_amount?: number
+          category: string
+          created_at?: string | null
+          id?: string
+          max_amount?: number
+          min_amount?: number
+          total_amount?: number
+          transaction_count?: number
+          updated_at?: string | null
+          week_end_date: string
+          week_number: number
+          week_start_date: string
+          year: number
+        }
+        Update: {
+          account?: string
+          average_amount?: number
+          category?: string
+          created_at?: string | null
+          id?: string
+          max_amount?: number
+          min_amount?: number
+          total_amount?: number
+          transaction_count?: number
+          updated_at?: string | null
+          week_end_date?: string
+          week_number?: number
+          week_start_date?: string
+          year?: number
+        }
+        Relationships: []
+      }
       Expenses: {
         Row: {
           account_2: string | null
@@ -669,18 +864,18 @@ export type Database = {
       }
       loan_book_live: {
         Row: {
-          amount_paid_1: number | null
-          Amount_Paid_10: number | null
-          Amount_Paid_11: number | null
-          Amount_Paid_12: number | null
-          amount_paid_2: number | null
-          amount_paid_3: number | null
-          amount_paid_4: number | null
-          amount_paid_5: number | null
-          Amount_paid_6: number | null
-          Amount_paid_7: number | null
-          Amount_Paid_8: number | null
-          Amount_Paid_9: number | null
+          "02-06-2025": number | null
+          "04-06-2025": number | null
+          "05-06-2025": number | null
+          "07-06-2025": number | null
+          "10-06-2025": number | null
+          "11-06-2025": number | null
+          "12-06-2025": number | null
+          "13-06-2025": number | null
+          "14-06-2025": number | null
+          "16-06-2025": number | null
+          "30-05-2025": number | null
+          "31-05-2025": number | null
           amount_returnable: number
           client_name: string
           created_at: string | null
@@ -697,18 +892,18 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
-          amount_paid_1?: number | null
-          Amount_Paid_10?: number | null
-          Amount_Paid_11?: number | null
-          Amount_Paid_12?: number | null
-          amount_paid_2?: number | null
-          amount_paid_3?: number | null
-          amount_paid_4?: number | null
-          amount_paid_5?: number | null
-          Amount_paid_6?: number | null
-          Amount_paid_7?: number | null
-          Amount_Paid_8?: number | null
-          Amount_Paid_9?: number | null
+          "02-06-2025"?: number | null
+          "04-06-2025"?: number | null
+          "05-06-2025"?: number | null
+          "07-06-2025"?: number | null
+          "10-06-2025"?: number | null
+          "11-06-2025"?: number | null
+          "12-06-2025"?: number | null
+          "13-06-2025"?: number | null
+          "14-06-2025"?: number | null
+          "16-06-2025"?: number | null
+          "30-05-2025"?: number | null
+          "31-05-2025"?: number | null
           amount_returnable?: number
           client_name: string
           created_at?: string | null
@@ -725,18 +920,18 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
-          amount_paid_1?: number | null
-          Amount_Paid_10?: number | null
-          Amount_Paid_11?: number | null
-          Amount_Paid_12?: number | null
-          amount_paid_2?: number | null
-          amount_paid_3?: number | null
-          amount_paid_4?: number | null
-          amount_paid_5?: number | null
-          Amount_paid_6?: number | null
-          Amount_paid_7?: number | null
-          Amount_Paid_8?: number | null
-          Amount_Paid_9?: number | null
+          "02-06-2025"?: number | null
+          "04-06-2025"?: number | null
+          "05-06-2025"?: number | null
+          "07-06-2025"?: number | null
+          "10-06-2025"?: number | null
+          "11-06-2025"?: number | null
+          "12-06-2025"?: number | null
+          "13-06-2025"?: number | null
+          "14-06-2025"?: number | null
+          "16-06-2025"?: number | null
+          "30-05-2025"?: number | null
+          "31-05-2025"?: number | null
           amount_returnable?: number
           client_name?: string
           created_at?: string | null
@@ -1476,6 +1671,18 @@ export type Database = {
         Args: { application_id: number }
         Returns: Json
       }
+      cluster_expenses_daily: {
+        Args: { target_date?: string }
+        Returns: undefined
+      }
+      cluster_expenses_monthly: {
+        Args: { target_month?: number; target_year?: number }
+        Returns: undefined
+      }
+      cluster_expenses_weekly: {
+        Args: { target_week_start?: string }
+        Returns: undefined
+      }
       get_loan_workflow: {
         Args: { application_id: string }
         Returns: {
@@ -1500,9 +1707,26 @@ export type Database = {
         Args: { user_id: string }
         Returns: string
       }
+      get_week_boundaries: {
+        Args: { input_date: string }
+        Returns: {
+          week_start: string
+          week_end: string
+          week_number: number
+          year: number
+        }[]
+      }
       is_director_caleb: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      smart_end_of_day_analysis: {
+        Args: { target_date?: string }
+        Returns: undefined
+      }
+      smart_end_of_month_analysis: {
+        Args: { target_month?: number; target_year?: number }
+        Returns: undefined
       }
       update_financial_summary: {
         Args: Record<PropertyKey, never>

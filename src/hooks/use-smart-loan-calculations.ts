@@ -1,9 +1,9 @@
+
 import { useMemo } from 'react';
 import { LoanBookLiveRecord } from '@/types/loan-book-live-record';
 import { scoreLoanRisk } from './riskScoringUtils';
 import { supabase } from '@/integrations/supabase/client';
 
-// Use explicitly LoanBookLiveRecord as input
 export interface SmartLoanData extends LoanBookLiveRecord {
   // Smart calculated fields
   calculated_total_paid: number;
@@ -25,44 +25,35 @@ export interface SmartLoanData extends LoanBookLiveRecord {
   activePayments: number[];
   recentlyUpdated: boolean;
   isCompleted: boolean;
-
-  // === risk columns (for components/UI) ===
-  risk_score: number;
-  default_probability: number;
-  risk_level: 'low' | 'medium' | 'high' | 'critical';
-  risk_factors?: Record<string, any>;
 }
 
 export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
-  // Accepts only valid LoanBookLiveRecords. No DB interaction here.
-
   const smartCalculatedData = useMemo(() => {
     return rawLoanData.map((loan): SmartLoanData => {
-      // Defensive: all 12 payment slots - must match the LoanBookLiveRecord
+      // Extract payment amounts from date-based columns
       const paymentAmounts = [
-        loan.amount_paid_1 || 0,
-        loan.amount_paid_2 || 0,
-        loan.amount_paid_3 || 0,
-        loan.amount_paid_4 || 0,
-        loan.amount_paid_5 || 0,
-        loan.Amount_paid_6 || 0,
-        loan.Amount_paid_7 || 0,
-        loan.Amount_Paid_8 || 0,
-        loan.Amount_Paid_9 || 0,
-        loan.Amount_Paid_10 || 0,
-        loan.Amount_Paid_11 || 0,
-        loan.Amount_Paid_12 || 0,
+        loan["30-05-2025"] || 0,
+        loan["31-05-2025"] || 0,
+        loan["02-06-2025"] || 0,
+        loan["04-06-2025"] || 0,
+        loan["05-06-2025"] || 0,
+        loan["07-06-2025"] || 0,
+        loan["10-06-2025"] || 0,
+        loan["11-06-2025"] || 0,
+        loan["12-06-2025"] || 0,
+        loan["13-06-2025"] || 0,
+        loan["14-06-2025"] || 0,
+        loan["16-06-2025"] || 0,
       ];
 
       const calculated_total_paid = paymentAmounts.reduce((sum, amount) => sum + amount, 0);
       const calculated_remaining_balance = Math.max(0, loan.amount_returnable - calculated_total_paid);
       const calculated_progress = loan.amount_returnable > 0 ? (calculated_total_paid / loan.amount_returnable) * 100 : 0;
 
-      // Data quality validation, financial metrics, pattern analysis...
+      // Data quality validation
       const discrepancies: string[] = [];
       let data_quality_score = 100;
 
-      // Check for calculation errors and discrepancies
       const stored_remaining_diff = Math.abs((loan.remaining_balance || 0) - calculated_remaining_balance);
       if (stored_remaining_diff > 1) {
         discrepancies.push(`Remaining balance mismatch: stored ${loan.remaining_balance}, calculated ${calculated_remaining_balance}`);
@@ -77,13 +68,8 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
         discrepancies.push('Contains negative payment amounts');
         data_quality_score -= 25;
       }
-      const nonZeroPayments = paymentAmounts.filter(amount => amount > 0);
-      const hasDuplicates = nonZeroPayments.length !== new Set(nonZeroPayments).size;
-      if (hasDuplicates && nonZeroPayments.length > 1) {
-        discrepancies.push('Possible duplicate payment amounts detected');
-        data_quality_score -= 15;
-      }
-      // Pattern
+
+      // Pattern analysis
       const activePayments = paymentAmounts
         .map((amount, index) => ({ amount, index: index + 1 }))
         .filter(payment => payment.amount > 0)
@@ -109,7 +95,8 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
       // Estimated completion
       let estimated_completion_date: string | null = null;
       if (calculated_progress < 100 && activePayments.length >= 2) {
-        const recentPayments = nonZeroPayments.slice(-2);
+        const nonZeroAmounts = paymentAmounts.filter(amount => amount > 0);
+        const recentPayments = nonZeroAmounts.slice(-2);
         const avgPayment = recentPayments.reduce((sum, amt) => sum + amt, 0) / recentPayments.length;
         if (avgPayment > 0) {
           const remainingAmount = calculated_remaining_balance;
@@ -120,7 +107,7 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
         }
       }
 
-      // Confidence
+      // Confidence level
       let confidence_level: 'high' | 'medium' | 'low' = 'high';
       if (data_quality_score < 70) confidence_level = 'low';
       else if (data_quality_score < 85) confidence_level = 'medium';
@@ -134,7 +121,7 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
       };
       const isCompleted = calculated_progress >= 100 || loan.status === 'completed';
 
-      // === RISK SCORING ENRICHMENT ===
+      // Risk scoring enrichment (use existing values or calculate new ones)
       const {
         risk_score,
         default_probability,
@@ -142,7 +129,7 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
         risk_factors,
       } = scoreLoanRisk(loan);
 
-      // Log risk if different or new (best effort, async fire-and-forget)
+      // Log risk changes (with proper JSON serialization)
       if (
         loan.risk_score !== risk_score ||
         loan.default_probability !== default_probability ||
@@ -150,12 +137,15 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
       ) {
         (async () => {
           try {
+            // Convert loan object to plain JSON for database storage
+            const loanForJson = JSON.parse(JSON.stringify(loan));
+            
             await supabase.from("loan_risk_prediction_log").insert({
               loan_id: loan.id,
               risk_score,
               default_probability,
               model_version: "rule-based-v1",
-              model_input: loan,
+              model_input: loanForJson,
               model_output: { risk_score, default_probability, risk_level, risk_factors },
             });
           } catch (err) {
@@ -166,7 +156,6 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
 
       return {
         ...loan,
-        // ... calculated fields as before ...
         calculated_total_paid,
         calculated_remaining_balance,
         calculated_progress: Math.min(calculated_progress, 100),
@@ -180,7 +169,7 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]) => {
         activePayments,
         recentlyUpdated: recentlyUpdated(),
         isCompleted,
-        // === risk columns (for components/UI) ===
+        // Use calculated or existing risk values
         risk_score,
         default_probability,
         risk_level,
