@@ -1,4 +1,3 @@
-
 import { useMemo } from 'react';
 import { LoanBookLiveRecord } from '@/types/loan-book-live-record';
 
@@ -44,9 +43,9 @@ export interface SmartLoanData extends LoanBookLiveRecord {
   data_quality_score: number;
   has_calculation_errors: boolean;
   payment_pattern: 'regular' | 'irregular' | 'declining' | 'accelerating';
-  activePayments: number[]; // Changed from number to number[] to match expected type
+  activePayments: number[]; // Array of payment amounts that are > 0
   estimated_completion_date: string | null;
-  confidence_level: 'high' | 'medium' | 'low';
+  confidence_level: 'high' | 'medium' | 'low' | 'critical'; // Updated to match risk_level type
   discrepancies: string[];
 }
 
@@ -173,10 +172,11 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
         estimatedCompletionDate = completionDate.toISOString().split('T')[0];
       }
       
-      // Determine confidence level
-      let confidenceLevel: 'high' | 'medium' | 'low' = 'low';
+      // Determine confidence level - updated to match risk_level type
+      let confidenceLevel: 'high' | 'medium' | 'low' | 'critical' = 'low';
       if (paymentCount > 5 && collectionEfficiency > 60) confidenceLevel = 'high';
       else if (paymentCount > 2 && collectionEfficiency > 30) confidenceLevel = 'medium';
+      else if (collectionEfficiency < 10) confidenceLevel = 'critical';
       
       // Calculate discrepancies
       const discrepancies: string[] = [];
