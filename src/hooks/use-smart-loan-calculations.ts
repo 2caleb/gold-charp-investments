@@ -42,7 +42,7 @@ export interface SmartLoanData extends LoanBookLiveRecord {
   calculated_progress: number;
   data_quality_score: number;
   has_calculation_errors: boolean;
-  payment_pattern: 'regular' | 'irregular' | 'none';
+  payment_pattern: 'regular' | 'irregular' | 'declining' | 'accelerating';
   activePayments: number;
   estimated_completion_date: string | null;
   confidence_level: 'high' | 'medium' | 'low';
@@ -153,10 +153,15 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       const calculatedProgress = loan.amount_returnable > 0 ? (totalPaid / loan.amount_returnable) * 100 : 0;
       const dataQualityScore = hasDataQualityIssues ? 0 : 100;
       
-      // Determine payment pattern
-      let paymentPattern: 'regular' | 'irregular' | 'none' = 'none';
-      if (paymentCount > 3) paymentPattern = 'regular';
-      else if (paymentCount > 0) paymentPattern = 'irregular';
+      // Determine payment pattern with correct type
+      let paymentPattern: 'regular' | 'irregular' | 'declining' | 'accelerating' = 'irregular';
+      if (paymentCount > 3) {
+        if (collectionEfficiency > 80) paymentPattern = 'accelerating';
+        else paymentPattern = 'regular';
+      } else if (paymentCount > 0) {
+        if (collectionEfficiency < 30) paymentPattern = 'declining';
+        else paymentPattern = 'irregular';
+      }
       
       // Calculate estimated completion date
       let estimatedCompletionDate: string | null = null;

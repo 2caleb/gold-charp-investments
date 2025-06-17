@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useSmartLoanCalculations } from '@/hooks/use-smart-loan-calculations';
+import { formatCurrency } from '@/utils/currencyUtils';
 import { 
   Search, 
   Filter, 
@@ -35,20 +37,20 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
-  // Updated to include all 12 payment columns with exact database names
+  // Updated to map to actual database date columns with real dates
   const [visibleColumns, setVisibleColumns] = useState({
-    amount_paid_1: true,
-    amount_paid_2: true,
-    amount_paid_3: true,
-    amount_paid_4: true,
-    amount_paid_5: true,
-    Amount_paid_6: true,
-    Amount_paid_7: true,
-    Amount_Paid_8: true,
-    Amount_Paid_9: true,
-    Amount_Paid_10: true,
-    Amount_Paid_11: true,
-    Amount_Paid_12: true,
+    "30-05-2025": true,
+    "31-05-2025": true,
+    "02-06-2025": true,
+    "04-06-2025": true,
+    "05-06-2025": true,
+    "07-06-2025": true,
+    "10-06-2025": true,
+    "11-06-2025": true,
+    "12-06-2025": true,
+    "13-06-2025": true,
+    "14-06-2025": true,
+    "16-06-2025": true,
   });
 
   // Add new visible risk columns
@@ -66,42 +68,23 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
     );
   }, [smartLoanData, searchTerm]);
 
-  // Create a mapping for user-friendly column labels
+  // Create a mapping for user-friendly column labels with actual dates
   const getColumnLabel = (columnName: string) => {
     const columnMap: { [key: string]: string } = {
-      amount_paid_1: 'Payment 1',
-      amount_paid_2: 'Payment 2',
-      amount_paid_3: 'Payment 3',
-      amount_paid_4: 'Payment 4',
-      amount_paid_5: 'Payment 5',
-      Amount_paid_6: 'Payment 6',
-      Amount_paid_7: 'Payment 7',
-      Amount_Paid_8: 'Payment 8',
-      Amount_Paid_9: 'Payment 9',
-      Amount_Paid_10: 'Payment 10',
-      Amount_Paid_11: 'Payment 11',
-      Amount_Paid_12: 'Payment 12',
+      "30-05-2025": "May 30, 2025",
+      "31-05-2025": "May 31, 2025",
+      "02-06-2025": "Jun 2, 2025",
+      "04-06-2025": "Jun 4, 2025",
+      "05-06-2025": "Jun 5, 2025",
+      "07-06-2025": "Jun 7, 2025",
+      "10-06-2025": "Jun 10, 2025",
+      "11-06-2025": "Jun 11, 2025",
+      "12-06-2025": "Jun 12, 2025",
+      "13-06-2025": "Jun 13, 2025",
+      "14-06-2025": "Jun 14, 2025",
+      "16-06-2025": "Jun 16, 2025",
     };
     return columnMap[columnName] || columnName;
-  };
-
-  const formatCurrency = (amount: string | number | null | undefined) => {
-    if (!amount) return 'UGX 0';
-    
-    let numAmount: number;
-    if (typeof amount === 'string') {
-      numAmount = parseFloat(amount.replace(/,/g, ''));
-    } else {
-      numAmount = amount;
-    }
-    
-    if (isNaN(numAmount)) return 'UGX 0';
-    
-    return new Intl.NumberFormat('en-UG', {
-      style: 'currency',
-      currency: 'UGX',
-      minimumFractionDigits: 0,
-    }).format(numAmount);
   };
 
   const toggleColumnVisibility = (column: keyof typeof visibleColumns) => {
@@ -136,7 +119,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
     }
   };
 
-  // Calculate which payment columns have data - updated for all 12 columns
+  // Calculate which payment columns have data - updated for actual date columns
   const activePaymentColumns = useMemo(() => {
     const columns = Object.keys(visibleColumns);
     return columns.filter(col => {
@@ -170,7 +153,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
             <TrendingUp className="mr-3 h-5 w-5" />
             Smart Dynamic Loan Book ({filteredData.length} records)
             <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700">
-              Real-time • All 12 Payment Columns
+              Real-time • Date-based Payments
             </Badge>
           </span>
           <div className="flex gap-2 flex-wrap">
@@ -204,9 +187,9 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
             />
           </div>
 
-          {/* Column Visibility Controls - Updated for all 12 columns */}
+          {/* Column Visibility Controls - Updated for actual date columns */}
           <div className="flex flex-wrap gap-2">
-            <span className="text-sm font-medium text-gray-600">Show Payment Columns:</span>
+            <span className="text-sm font-medium text-gray-600">Show Payment Dates:</span>
             {Object.entries(visibleColumns).map(([column, visible]) => (
               <Button
                 key={column}
@@ -441,7 +424,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                                 <div>
                                   <p className="font-medium text-gray-700">Active Payments</p>
                                   <p className="text-lg font-semibold text-blue-600">
-                                    {loan.activePayments.length} of 12
+                                    {loan.activePayments} of 12
                                   </p>
                                 </div>
                                 <div>

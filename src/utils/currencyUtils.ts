@@ -1,6 +1,6 @@
 
 export const formatCurrency = (amount: number | string | null | undefined): string => {
-  if (!amount) return '₦0';
+  if (!amount) return 'UGX 0';
   
   let numAmount: number;
   if (typeof amount === 'string') {
@@ -9,11 +9,11 @@ export const formatCurrency = (amount: number | string | null | undefined): stri
     numAmount = amount;
   }
   
-  if (isNaN(numAmount)) return '₦0';
+  if (isNaN(numAmount)) return 'UGX 0';
   
-  return new Intl.NumberFormat('en-NG', {
+  return new Intl.NumberFormat('en-UG', {
     style: 'currency',
-    currency: 'NGN',
+    currency: 'UGX',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(numAmount);
