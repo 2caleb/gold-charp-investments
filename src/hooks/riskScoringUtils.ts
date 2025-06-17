@@ -18,19 +18,21 @@ export function scoreLoanRisk(loan: LoanBookLiveRecord) {
     1,
     Math.floor(daysSinceLoan / 30)
   );
+
+  // Calculate total paid from date-based payment columns
   const totalPaid =
-    (loan.amount_paid_1 || 0) +
-    (loan.amount_paid_2 || 0) +
-    (loan.amount_paid_3 || 0) +
-    (loan.amount_paid_4 || 0) +
-    (loan.amount_paid_5 || 0) +
-    (loan.Amount_paid_6 || 0) +
-    (loan.Amount_paid_7 || 0) +
-    (loan.Amount_Paid_8 || 0) +
-    (loan.Amount_Paid_9 || 0) +
-    (loan.Amount_Paid_10 || 0) +
-    (loan.Amount_Paid_11 || 0) +
-    (loan.Amount_Paid_12 || 0);
+    (loan["30-05-2025"] || 0) +
+    (loan["31-05-2025"] || 0) +
+    (loan["02-06-2025"] || 0) +
+    (loan["04-06-2025"] || 0) +
+    (loan["05-06-2025"] || 0) +
+    (loan["07-06-2025"] || 0) +
+    (loan["10-06-2025"] || 0) +
+    (loan["11-06-2025"] || 0) +
+    (loan["12-06-2025"] || 0) +
+    (loan["13-06-2025"] || 0) +
+    (loan["14-06-2025"] || 0) +
+    (loan["16-06-2025"] || 0);
 
   const payment_ratio =
     loan.amount_returnable > 0
@@ -64,12 +66,16 @@ export function scoreLoanRisk(loan: LoanBookLiveRecord) {
     score -= 25;
     risk_factors["overdue"] = true;
   }
-  // Negative payment anomaly
-  [
-    loan.amount_paid_1, loan.amount_paid_2, loan.amount_paid_3, loan.amount_paid_4, loan.amount_paid_5,
-    loan.Amount_paid_6, loan.Amount_paid_7, loan.Amount_Paid_8, loan.Amount_Paid_9, loan.Amount_Paid_10,
-    loan.Amount_Paid_11, loan.Amount_Paid_12
-  ].forEach((amt, idx) => {
+
+  // Negative payment anomaly - check date-based columns
+  const dateBasedPayments = [
+    loan["30-05-2025"], loan["31-05-2025"], loan["02-06-2025"], 
+    loan["04-06-2025"], loan["05-06-2025"], loan["07-06-2025"],
+    loan["10-06-2025"], loan["11-06-2025"], loan["12-06-2025"],
+    loan["13-06-2025"], loan["14-06-2025"], loan["16-06-2025"]
+  ];
+
+  dateBasedPayments.forEach((amt, idx) => {
     if ((amt || 0) < 0) {
       score -= 10;
       risk_factors[`negative_payment_${idx + 1}`] = true;
@@ -77,20 +83,7 @@ export function scoreLoanRisk(loan: LoanBookLiveRecord) {
   });
 
   // Payment frequency anomaly
-  const nonZeroPaymentsCount = [
-    loan.amount_paid_1,
-    loan.amount_paid_2,
-    loan.amount_paid_3,
-    loan.amount_paid_4,
-    loan.amount_paid_5,
-    loan.Amount_paid_6,
-    loan.Amount_paid_7,
-    loan.Amount_Paid_8,
-    loan.Amount_Paid_9,
-    loan.Amount_Paid_10,
-    loan.Amount_Paid_11,
-    loan.Amount_Paid_12,
-  ].filter((amt) => (amt || 0) > 0).length;
+  const nonZeroPaymentsCount = dateBasedPayments.filter((amt) => (amt || 0) > 0).length;
 
   if (monthsSinceLoan > 0 && nonZeroPaymentsCount / monthsSinceLoan < 0.5) {
     score -= 10;

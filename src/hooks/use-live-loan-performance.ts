@@ -77,11 +77,12 @@ export const useLiveLoanPerformance = (clientName: string) => {
           created_at: String(loan.created_at || ""),
           updated_at: String(loan.updated_at || ""),
           user_id: loan.user_id ?? null,
-          // Risk analytics fields
+          // Risk analytics fields with proper type conversion
           risk_score: loan.risk_score ?? 0,
           default_probability: loan.default_probability ?? 0,
-          risk_level: loan.risk_level ?? 'low',
-          risk_factors: loan.risk_factors ?? {},
+          risk_level: (loan.risk_level as 'low' | 'medium' | 'high' | 'critical') ?? 'low',
+          risk_factors: (typeof loan.risk_factors === 'string' ? 
+            JSON.parse(loan.risk_factors) : loan.risk_factors) ?? {},
         };
         validateLoanBookRecordSchema(record);
         return record;

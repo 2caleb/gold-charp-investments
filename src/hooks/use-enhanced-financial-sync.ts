@@ -73,11 +73,17 @@ export const useEnhancedFinancialSync = () => {
           console.error('Error fetching adjustments data:', adjustmentsError);
         }
 
-        // Calculate real-time metrics
+        // Calculate real-time metrics using date-based payment columns
         const realTimeActiveLoanHolders = loanBookData?.length || 0;
         const totalPortfolio = loanBookData?.reduce((sum, loan) => sum + (loan.amount_returnable || 0), 0) || 0;
         const totalRepaid = loanBookData?.reduce((sum, loan) => 
-          sum + (loan.amount_paid_1 || 0) + (loan.amount_paid_2 || 0) + (loan.amount_paid_3 || 0) + (loan.amount_paid_4 || 0), 0) || 0;
+          sum + 
+          (loan["30-05-2025"] || 0) + (loan["31-05-2025"] || 0) + 
+          (loan["02-06-2025"] || 0) + (loan["04-06-2025"] || 0) + 
+          (loan["05-06-2025"] || 0) + (loan["07-06-2025"] || 0) + 
+          (loan["10-06-2025"] || 0) + (loan["11-06-2025"] || 0) + 
+          (loan["12-06-2025"] || 0) + (loan["13-06-2025"] || 0) + 
+          (loan["14-06-2025"] || 0) + (loan["16-06-2025"] || 0), 0) || 0;
         
         const realTimeCollectionRate = totalPortfolio > 0 ? (totalRepaid / totalPortfolio) * 100 : 0;
 

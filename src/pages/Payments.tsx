@@ -30,6 +30,7 @@ import {
 import { useFinancialSummaryQuery } from '@/hooks/use-financial-summary-query';
 import { exportLoanBookToExcel, exportExpensesToExcel } from '@/utils/excelExportUtils';
 import DynamicLoanBookTable from '@/components/payments/DynamicLoanBookTable';
+import { adaptLoanRecordToLegacy } from '@/types/loan-book-adapter';
 
 const Payments = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,7 +43,7 @@ const Payments = () => {
   const { data: financialSummary, isLoading: summaryLoading, refetch: refetchSummary } = useFinancialSummaryQuery();
 
   // Fetch loan book live data
-  const { data: loanBookData, isLoading: loanBookLoading, refetch: refetchLoanBook } = useQuery({
+  const { data: rawLoanBookData, isLoading: loanBookLoading, refetch: refetchLoanBook } = useQuery({
     queryKey: ['loan-book-live'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -105,66 +106,42 @@ const Payments = () => {
     };
   }, [refetchLoanBook, refetchExpenses, refetchSummary]);
 
-  const handleExportLoanBook = async () => {
-    setIsExportingLoanBook(true);
-    try {
-      console.log('Exporting loan book to Excel...');
-      await exportLoanBookToExcel(filteredLoanBook);
-      toast({
-        title: 'Export Successful',
-        description: 'Loan book exported to Excel successfully',
-      });
-    } catch (error: any) {
-      console.error('Error exporting loan book:', error);
-      toast({
-        title: 'Export Failed',
-        description: 'Failed to export loan book to Excel',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsExportingLoanBook(false);
-    }
-  };
-
-  const handleExportExpenses = async () => {
-    setIsExportingExpenses(true);
-    try {
-      console.log('Exporting expenses to Excel...');
-      await exportExpensesToExcel(filteredExpenses);
-      toast({
-        title: 'Export Successful',
-        description: 'Expenses exported to Excel successfully',
-      });
-    } catch (error: any) {
-      console.error('Error exporting expenses:', error);
-      toast({
-        title: 'Export Failed',
-        description: 'Failed to export expenses to Excel',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsExportingExpenses(false);
-    }
-  };
-
-  const formatCurrency = (amount: string | number | null | undefined) => {
-    if (!amount) return 'UGX 0';
+  // Convert raw loan book data to legacy format for compatibility
+  const loanBookData = rawLoanBookData?.map(loan => {
+    // Create a proper LoanBookLiveRecord first
+    const loanRecord = {
+      id: loan.id,
+      client_name: loan.client_name,
+      amount_returnable: loan.amount_returnable ?? 0,
+      "30-05-2025": loan["30-05-2025"] ?? 0,
+      "31-05-2025": loan["31-05-2025"] ?? 0,
+      "02-06-2025": loan["02-06-2025"] ?? 0,
+      "04-06-2025": loan["04-06-2025"] ?? 0,
+      "05-06-2025": loan["05-06-2025"] ?? 0,
+      "07-06-2025": loan["07-06-2025"] ?? 0,
+      "10-06-2025": loan["10-06-2025"] ?? 0,
+      "11-06-2025": loan["11-06-2025"] ?? 0,
+      "12-06-2025": loan["12-06-2025"] ?? 0,
+      "13-06-2025": loan["13-06-2025"] ?? 0,
+      "14-06-2025": loan["14-06-2025"] ?? 0,
+      "16-06-2025": loan["16-06-2025"] ?? 0,
+      remaining_balance: loan.remaining_balance ?? 0,
+      loan_date: String(loan.loan_date || ""),
+      status: loan.status || "",
+      payment_mode: loan.payment_mode || "",
+      created_at: String(loan.created_at || ""),
+      updated_at: String(loan.updated_at || ""),
+      user_id: loan.user_id ?? null,
+      risk_score: loan.risk_score ?? 0,
+      default_probability: loan.default_probability ?? 0,
+      risk_level: (loan.risk_level as 'low' | 'medium' | 'high' | 'critical') ?? 'low',
+      risk_factors: (typeof loan.risk_factors === 'string' ? 
+        JSON.parse(loan.risk_factors) : loan.risk_factors) ?? {},
+    };
     
-    let numAmount: number;
-    if (typeof amount === 'string') {
-      numAmount = parseFloat(amount.replace(/,/g, ''));
-    } else {
-      numAmount = amount;
-    }
-    
-    if (isNaN(numAmount)) return 'UGX 0';
-    
-    return new Intl.NumberFormat('en-UG', {
-      style: 'currency',
-      currency: 'UGX',
-      minimumFractionDigits: 0,
-    }).format(numAmount);
-  };
+    // Then adapt it to legacy format
+    return adaptLoanRecordToLegacy(loanRecord);
+  }) || [];
 
   const filteredLoanBook = loanBookData?.filter(loan => 
     loan.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) || ''
