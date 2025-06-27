@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { LoanBookLiveRecord } from '@/types/loan-book-live-record';
+import { LoanBookLiveRecord, getPaymentDateColumns, getDateLabel } from '@/types/loan-book-live-record';
 
 export interface SmartLoanCalculationsResult {
   smartLoanData: SmartLoanData[];
@@ -43,7 +43,7 @@ export interface SmartLoanData extends LoanBookLiveRecord {
   data_quality_score: number;
   has_calculation_errors: boolean;
   payment_pattern: 'regular' | 'irregular' | 'declining' | 'accelerating';
-  activePayments: number[]; // Array of payment amounts that are > 0
+  activePayments: Array<{date: string, amount: number, label: string}>; // Updated to show actual dates
   estimated_completion_date: string | null;
   confidence_level: 'high' | 'medium' | 'low' | 'critical'; // Updated to match risk_level type
   discrepancies: string[];
@@ -80,37 +80,27 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       };
     }
 
+    const paymentDateColumns = getPaymentDateColumns();
     const smartLoans: SmartLoanData[] = rawLoanData.map((loan) => {
-      // Calculate total paid using date-based columns
-      const totalPaid = (
-        (loan["30-05-2025"] || 0) +
-        (loan["31-05-2025"] || 0) +
-        (loan["02-06-2025"] || 0) +
-        (loan["04-06-2025"] || 0) +
-        (loan["05-06-2025"] || 0) +
-        (loan["07-06-2025"] || 0) +
-        (loan["10-06-2025"] || 0) +
-        (loan["11-06-2025"] || 0) +
-        (loan["12-06-2025"] || 0) +
-        (loan["13-06-2025"] || 0) +
-        (loan["14-06-2025"] || 0) +
-        (loan["16-06-2025"] || 0)
-      );
+      // Calculate total paid using ALL date-based columns dynamically
+      const totalPaid = paymentDateColumns.reduce((sum, dateCol) => {
+        return sum + ((loan as any)[dateCol] || 0);
+      }, 0);
 
-      // Map date-based payments to legacy numbered format
+      // Map first 12 date-based payments to legacy numbered format for compatibility
       const legacyPayments = {
-        amount_paid_1: loan["30-05-2025"] || 0,
-        amount_paid_2: loan["31-05-2025"] || 0,
-        amount_paid_3: loan["02-06-2025"] || 0,
-        amount_paid_4: loan["04-06-2025"] || 0,
-        amount_paid_5: loan["05-06-2025"] || 0,
-        Amount_paid_6: loan["07-06-2025"] || 0,
-        Amount_paid_7: loan["10-06-2025"] || 0,
-        Amount_Paid_8: loan["11-06-2025"] || 0,
-        Amount_Paid_9: loan["12-06-2025"] || 0,
-        Amount_Paid_10: loan["13-06-2025"] || 0,
-        Amount_Paid_11: loan["14-06-2025"] || 0,
-        Amount_Paid_12: loan["16-06-2025"] || 0,
+        amount_paid_1: (loan as any)[paymentDateColumns[0]] || 0,
+        amount_paid_2: (loan as any)[paymentDateColumns[1]] || 0,
+        amount_paid_3: (loan as any)[paymentDateColumns[2]] || 0,
+        amount_paid_4: (loan as any)[paymentDateColumns[3]] || 0,
+        amount_paid_5: (loan as any)[paymentDateColumns[4]] || 0,
+        Amount_paid_6: (loan as any)[paymentDateColumns[5]] || 0,
+        Amount_paid_7: (loan as any)[paymentDateColumns[6]] || 0,
+        Amount_Paid_8: (loan as any)[paymentDateColumns[7]] || 0,
+        Amount_Paid_9: (loan as any)[paymentDateColumns[8]] || 0,
+        Amount_Paid_10: (loan as any)[paymentDateColumns[9]] || 0,
+        Amount_Paid_11: (loan as any)[paymentDateColumns[10]] || 0,
+        Amount_Paid_12: (loan as any)[paymentDateColumns[11]] || 0,
       };
 
       const collectionEfficiency = loan.amount_returnable > 0 ? (totalPaid / loan.amount_returnable) * 100 : 0;
@@ -120,28 +110,22 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       const daysSinceLoan = Math.floor((new Date().getTime() - loanDate.getTime()) / (1000 * 60 * 60 * 24));
       const recentlyUpdated = Math.floor((new Date().getTime() - new Date(loan.updated_at).getTime()) / (1000 * 60 * 60 * 24)) <= 1;
       
-      const paymentCount = Object.values(legacyPayments).filter(payment => payment > 0).length;
+      // Create activePayments array with actual dates and amounts
+      const activePayments = paymentDateColumns
+        .map(dateCol => ({
+          date: dateCol,
+          amount: (loan as any)[dateCol] || 0,
+          label: getDateLabel(dateCol)
+        }))
+        .filter(payment => payment.amount > 0);
+      
+      const paymentCount = activePayments.length;
       const hasDataQualityIssues = loan.amount_returnable <= 0 || totalPaid < 0 || paymentCount === 0;
       
       const paymentFrequency = daysSinceLoan > 0 ? (paymentCount / Math.max(daysSinceLoan / 30, 1)) : 0;
       const averagePaymentAmount = paymentCount > 0 ? totalPaid / paymentCount : 0;
       
-      const paymentDates = [
-        { date: "30-05-2025", amount: loan["30-05-2025"] },
-        { date: "31-05-2025", amount: loan["31-05-2025"] },
-        { date: "02-06-2025", amount: loan["02-06-2025"] },
-        { date: "04-06-2025", amount: loan["04-06-2025"] },
-        { date: "05-06-2025", amount: loan["05-06-2025"] },
-        { date: "07-06-2025", amount: loan["07-06-2025"] },
-        { date: "10-06-2025", amount: loan["10-06-2025"] },
-        { date: "11-06-2025", amount: loan["11-06-2025"] },
-        { date: "12-06-2025", amount: loan["12-06-2025"] },
-        { date: "13-06-2025", amount: loan["13-06-2025"] },
-        { date: "14-06-2025", amount: loan["14-06-2025"] },
-        { date: "16-06-2025", amount: loan["16-06-2025"] },
-      ].filter(p => (p.amount || 0) > 0);
-      
-      const lastPaymentDate = paymentDates.length > 0 ? paymentDates[paymentDates.length - 1].date : null;
+      const lastPaymentDate = activePayments.length > 0 ? activePayments[activePayments.length - 1].date : null;
       const daysOverdue = loan.status === 'overdue' ? daysSinceLoan : 0;
       
       let riskTrend: 'improving' | 'stable' | 'deteriorating' = 'stable';
@@ -187,9 +171,6 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
         discrepancies.push('Overpayment detected');
       }
 
-      // Create activePayments array - representing the actual payment amounts that are > 0
-      const activePayments = Object.values(legacyPayments).filter(payment => payment > 0);
-
       return {
         ...loan,
         ...legacyPayments,
@@ -210,7 +191,7 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
         data_quality_score: dataQualityScore,
         has_calculation_errors: hasDataQualityIssues,
         payment_pattern: paymentPattern,
-        activePayments, // Now correctly an array of numbers
+        activePayments, // Now contains actual payment dates and amounts
         estimated_completion_date: estimatedCompletionDate,
         confidence_level: confidenceLevel,
         discrepancies,

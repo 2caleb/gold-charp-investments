@@ -874,6 +874,20 @@ export type Database = {
           "13-06-2025": number | null
           "14-06-2025": number | null
           "16-06-2025": number | null
+          "17-06-2025": number | null
+          "18-06-2025": number | null
+          "19-05-2025": number | null
+          "19-06-2025": number | null
+          "20-06-2025": number | null
+          "22-05-2025": number | null
+          "23-06-2025": number | null
+          "24-06-2025": number | null
+          "25-06-2025": number | null
+          "26-05-2025": number | null
+          "26-06-2025": number | null
+          "27-05-2025": number | null
+          "27-06-2025": number | null
+          "28-05-2025": number | null
           "30-05-2025": number | null
           "31-05-2025": number | null
           amount_returnable: number
@@ -902,6 +916,20 @@ export type Database = {
           "13-06-2025"?: number | null
           "14-06-2025"?: number | null
           "16-06-2025"?: number | null
+          "17-06-2025"?: number | null
+          "18-06-2025"?: number | null
+          "19-05-2025"?: number | null
+          "19-06-2025"?: number | null
+          "20-06-2025"?: number | null
+          "22-05-2025"?: number | null
+          "23-06-2025"?: number | null
+          "24-06-2025"?: number | null
+          "25-06-2025"?: number | null
+          "26-05-2025"?: number | null
+          "26-06-2025"?: number | null
+          "27-05-2025"?: number | null
+          "27-06-2025"?: number | null
+          "28-05-2025"?: number | null
           "30-05-2025"?: number | null
           "31-05-2025"?: number | null
           amount_returnable?: number
@@ -930,6 +958,20 @@ export type Database = {
           "13-06-2025"?: number | null
           "14-06-2025"?: number | null
           "16-06-2025"?: number | null
+          "17-06-2025"?: number | null
+          "18-06-2025"?: number | null
+          "19-05-2025"?: number | null
+          "19-06-2025"?: number | null
+          "20-06-2025"?: number | null
+          "22-05-2025"?: number | null
+          "23-06-2025"?: number | null
+          "24-06-2025"?: number | null
+          "25-06-2025"?: number | null
+          "26-05-2025"?: number | null
+          "26-06-2025"?: number | null
+          "27-05-2025"?: number | null
+          "27-06-2025"?: number | null
+          "28-05-2025"?: number | null
           "30-05-2025"?: number | null
           "31-05-2025"?: number | null
           amount_returnable?: number

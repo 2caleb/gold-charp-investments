@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { formatCurrency } from '@/utils/currencyUtils';
 import { 
   CheckCircle,
   Clock,
@@ -24,25 +26,18 @@ interface SmartLoanData {
   data_quality_score: number;
   has_calculation_errors: boolean;
   discrepancies: string[];
-  confidence_level: 'high' | 'medium' | 'low';
+  confidence_level: 'high' | 'medium' | 'low' | 'critical';
   payment_pattern: 'regular' | 'irregular' | 'declining' | 'accelerating';
   estimated_completion_date: string | null;
   collection_efficiency: number;
-  activePayments: number[];
+  activePayments: Array<{date: string, amount: number, label: string}>;
   recentlyUpdated: boolean;
   isCompleted: boolean;
   loan_date: string;
   status: string;
   payment_mode: string;
-  amount_paid_1: number;
-  amount_paid_2: number;
-  amount_paid_3: number;
-  amount_paid_4: number;
-  amount_paid_5: number;
-  Amount_paid_6: number;
-  Amount_paid_7: number;
   risk_score: number;
-  risk_level: 'low' | 'medium' | 'high';
+  risk_level: 'low' | 'medium' | 'high' | 'critical';
   default_probability: number;
 }
 
@@ -53,10 +48,6 @@ interface EnhancedLoanCardProps {
 }
 
 const EnhancedLoanCard: React.FC<EnhancedLoanCardProps> = ({ loan, expandedLoanId, onToggleExpand }) => {
-  const formatCurrency = (amount: number): string => {
-    return `UGX ${amount.toLocaleString()}`;
-  };
-
   const getStatusIcon = (loan: SmartLoanData) => {
     if (loan.recentlyUpdated) return <Zap className="h-4 w-4 text-yellow-500 animate-pulse" />;
     if (loan.has_calculation_errors) return <AlertTriangle className="h-4 w-4 text-red-500" />;
@@ -68,7 +59,8 @@ const EnhancedLoanCard: React.FC<EnhancedLoanCardProps> = ({ loan, expandedLoanI
     switch (confidence) {
       case 'high': return 'bg-green-100 text-green-800 border-green-300';
       case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'low': return 'bg-red-100 text-red-800 border-red-300';
+      case 'low': return 'bg-orange-100 text-orange-800 border-orange-300';
+      case 'critical': return 'bg-red-100 text-red-800 border-red-300';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -221,11 +213,13 @@ const EnhancedLoanCard: React.FC<EnhancedLoanCardProps> = ({ loan, expandedLoanI
         )}
       </div>
 
-      {/* Enhanced Payment Breakdown */}
+      {/* Enhanced Payment Breakdown - Now shows actual dates */}
       {loan.activePayments.length > 0 && (
         <div className="pt-2 border-t">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Payment History</span>
+            <span className="text-sm font-medium text-gray-600">
+              Payment History ({loan.activePayments.length} payments)
+            </span>
             <div className="flex items-center space-x-2">
               <Badge variant="outline" className="text-xs">
                 Quality: {loan.data_quality_score.toFixed(0)}%
@@ -246,21 +240,14 @@ const EnhancedLoanCard: React.FC<EnhancedLoanCardProps> = ({ loan, expandedLoanI
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="grid grid-cols-2 md:grid-cols-4 gap-2"
+                className="grid grid-cols-2 md:grid-cols-3 gap-2"
               >
-                {loan.activePayments.map((paymentIndex) => {
-                  const paymentKey = `amount_paid_${paymentIndex}` as keyof typeof loan;
-                  const amount = paymentIndex === 6 ? loan.Amount_paid_6 : 
-                               paymentIndex === 7 ? loan.Amount_paid_7 : 
-                               loan[paymentKey] as number;
-                  
-                  return (
-                    <div key={paymentIndex} className="text-center p-2 bg-gray-50 rounded">
-                      <p className="text-xs text-gray-500">Payment {paymentIndex}</p>
-                      <p className="text-sm font-medium">{formatCurrency(amount || 0)}</p>
-                    </div>
-                  );
-                })}
+                {loan.activePayments.map((payment, index) => (
+                  <div key={index} className="text-center p-2 bg-green-50 border border-green-200 rounded">
+                    <p className="text-xs text-green-700 font-medium">{payment.label}</p>
+                    <p className="text-sm font-semibold text-green-800">{formatCurrency(payment.amount)}</p>
+                  </div>
+                ))}
               </motion.div>
             )}
           </AnimatePresence>

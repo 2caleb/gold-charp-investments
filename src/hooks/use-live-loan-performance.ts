@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { LoanBookLiveRecord } from '@/types/loan-book-live-record';
+import { LoanBookLiveRecord, getPaymentDateColumns } from '@/types/loan-book-live-record';
 
 // Utility to validate payment columns at runtime
 function validateLoanBookRecordSchema(obj: any): LoanBookLiveRecord | null {
@@ -13,11 +13,7 @@ function validateLoanBookRecordSchema(obj: any): LoanBookLiveRecord | null {
     'risk_score', 'default_probability', 'risk_level'
   ];
   
-  const dateBasedColumns = [
-    "30-05-2025", "31-05-2025", "02-06-2025", "04-06-2025", "05-06-2025",
-    "07-06-2025", "10-06-2025", "11-06-2025", "12-06-2025", "13-06-2025",
-    "14-06-2025", "16-06-2025"
-  ];
+  const dateBasedColumns = getPaymentDateColumns();
   
   let ok = true;
   requiredFields.forEach(f => {
@@ -51,13 +47,18 @@ export const useLiveLoanPerformance = (clientName: string) => {
 
       if (error) throw error;
 
-      // Map and validate records with proper defaults
+      // Map and validate records with proper defaults for ALL date columns
       const mapped = (data || []).map(loan => {
         const record: LoanBookLiveRecord = {
           id: loan.id,
           client_name: loan.client_name,
           amount_returnable: loan.amount_returnable ?? 0,
-          // Map date-based payment columns with defaults
+          // Map ALL date-based payment columns with defaults
+          "19-05-2025": loan["19-05-2025"] ?? 0,
+          "22-05-2025": loan["22-05-2025"] ?? 0,
+          "26-05-2025": loan["26-05-2025"] ?? 0,
+          "27-05-2025": loan["27-05-2025"] ?? 0,
+          "28-05-2025": loan["28-05-2025"] ?? 0,
           "30-05-2025": loan["30-05-2025"] ?? 0,
           "31-05-2025": loan["31-05-2025"] ?? 0,
           "02-06-2025": loan["02-06-2025"] ?? 0,
@@ -70,6 +71,15 @@ export const useLiveLoanPerformance = (clientName: string) => {
           "13-06-2025": loan["13-06-2025"] ?? 0,
           "14-06-2025": loan["14-06-2025"] ?? 0,
           "16-06-2025": loan["16-06-2025"] ?? 0,
+          "17-06-2025": loan["17-06-2025"] ?? 0,
+          "18-06-2025": loan["18-06-2025"] ?? 0,
+          "19-06-2025": loan["19-06-2025"] ?? 0,
+          "20-06-2025": loan["20-06-2025"] ?? 0,
+          "23-06-2025": loan["23-06-2025"] ?? 0,
+          "24-06-2025": loan["24-06-2025"] ?? 0,
+          "25-06-2025": loan["25-06-2025"] ?? 0,
+          "26-06-2025": loan["26-06-2025"] ?? 0,
+          "27-06-2025": loan["27-06-2025"] ?? 0,
           remaining_balance: loan.remaining_balance ?? 0,
           loan_date: String(loan.loan_date || ""),
           status: loan.status || "",

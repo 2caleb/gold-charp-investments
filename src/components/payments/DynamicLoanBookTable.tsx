@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useSmartLoanCalculations } from '@/hooks/use-smart-loan-calculations';
 import { formatCurrency } from '@/utils/currencyUtils';
+import { getPaymentDateColumns, getDateLabel } from '@/types/loan-book-live-record';
 import { 
   Search, 
   Filter, 
@@ -37,20 +38,16 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
-  // Updated to map to actual database date columns with real dates
-  const [visibleColumns, setVisibleColumns] = useState({
-    "30-05-2025": true,
-    "31-05-2025": true,
-    "02-06-2025": true,
-    "04-06-2025": true,
-    "05-06-2025": true,
-    "07-06-2025": true,
-    "10-06-2025": true,
-    "11-06-2025": true,
-    "12-06-2025": true,
-    "13-06-2025": true,
-    "14-06-2025": true,
-    "16-06-2025": true,
+  // Get all available payment date columns dynamically
+  const paymentDateColumns = getPaymentDateColumns();
+  
+  // Initialize visibility state for all date columns
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    const initialState: { [key: string]: boolean } = {};
+    paymentDateColumns.forEach(col => {
+      initialState[col] = true; // Show all columns by default
+    });
+    return initialState;
   });
 
   // Add new visible risk columns
@@ -68,26 +65,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
     );
   }, [smartLoanData, searchTerm]);
 
-  // Create a mapping for user-friendly column labels with actual dates
-  const getColumnLabel = (columnName: string) => {
-    const columnMap: { [key: string]: string } = {
-      "30-05-2025": "May 30, 2025",
-      "31-05-2025": "May 31, 2025",
-      "02-06-2025": "Jun 2, 2025",
-      "04-06-2025": "Jun 4, 2025",
-      "05-06-2025": "Jun 5, 2025",
-      "07-06-2025": "Jun 7, 2025",
-      "10-06-2025": "Jun 10, 2025",
-      "11-06-2025": "Jun 11, 2025",
-      "12-06-2025": "Jun 12, 2025",
-      "13-06-2025": "Jun 13, 2025",
-      "14-06-2025": "Jun 14, 2025",
-      "16-06-2025": "Jun 16, 2025",
-    };
-    return columnMap[columnName] || columnName;
-  };
-
-  const toggleColumnVisibility = (column: keyof typeof visibleColumns) => {
+  const toggleColumnVisibility = (column: string) => {
     setVisibleColumns(prev => ({
       ...prev,
       [column]: !prev[column]
@@ -119,14 +97,13 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
     }
   };
 
-  // Calculate which payment columns have data - updated for actual date columns
+  // Calculate which payment columns have data
   const activePaymentColumns = useMemo(() => {
-    const columns = Object.keys(visibleColumns);
-    return columns.filter(col => {
+    return paymentDateColumns.filter(col => {
       const hasData = smartLoanData.some(loan => (loan as any)[col] > 0);
-      return hasData && visibleColumns[col as keyof typeof visibleColumns];
+      return hasData && visibleColumns[col];
     });
-  }, [smartLoanData, visibleColumns]);
+  }, [smartLoanData, visibleColumns, paymentDateColumns]);
 
   if (isLoading) {
     return (
@@ -153,7 +130,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
             <TrendingUp className="mr-3 h-5 w-5" />
             Smart Dynamic Loan Book ({filteredData.length} records)
             <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700">
-              Real-time • Date-based Payments
+              Real-time • {paymentDateColumns.length} Payment Dates
             </Badge>
           </span>
           <div className="flex gap-2 flex-wrap">
@@ -187,19 +164,19 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
             />
           </div>
 
-          {/* Column Visibility Controls - Updated for actual date columns */}
+          {/* Column Visibility Controls - Now shows all actual payment dates */}
           <div className="flex flex-wrap gap-2">
             <span className="text-sm font-medium text-gray-600">Show Payment Dates:</span>
-            {Object.entries(visibleColumns).map(([column, visible]) => (
+            {paymentDateColumns.map((column) => (
               <Button
                 key={column}
                 variant="outline"
                 size="sm"
-                onClick={() => toggleColumnVisibility(column as keyof typeof visibleColumns)}
-                className={`h-8 ${visible ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}
+                onClick={() => toggleColumnVisibility(column)}
+                className={`h-8 ${visibleColumns[column] ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}
               >
-                {visible ? <Eye className="mr-1 h-3 w-3" /> : <EyeOff className="mr-1 h-3 w-3" />}
-                {getColumnLabel(column)}
+                {visibleColumns[column] ? <Eye className="mr-1 h-3 w-3" /> : <EyeOff className="mr-1 h-3 w-3" />}
+                {getDateLabel(column)}
               </Button>
             ))}
           </div>
@@ -262,7 +239,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                 <TableHead>Amount Returnable</TableHead>
                 {activePaymentColumns.map(column => (
                   <TableHead key={column} className="text-center">
-                    {getColumnLabel(column)}
+                    {getDateLabel(column)}
                   </TableHead>
                 ))}
                 <TableHead>Smart Balance</TableHead>
@@ -424,7 +401,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                                 <div>
                                   <p className="font-medium text-gray-700">Active Payments</p>
                                   <p className="text-lg font-semibold text-blue-600">
-                                    {loan.activePayments} of 12
+                                    {loan.activePayments.length} of {paymentDateColumns.length}
                                   </p>
                                 </div>
                                 <div>
@@ -438,12 +415,28 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                                   <Badge variant="outline" className={
                                     loan.confidence_level === 'high' ? 'text-green-700 bg-green-50' :
                                     loan.confidence_level === 'medium' ? 'text-yellow-700 bg-yellow-50' :
-                                    'text-red-700 bg-red-50'
+                                    loan.confidence_level === 'critical' ? 'text-red-700 bg-red-50' :
+                                    'text-orange-700 bg-orange-50'
                                   }>
                                     {loan.confidence_level}
                                   </Badge>
                                 </div>
                               </div>
+
+                              {/* Show actual payment dates and amounts */}
+                              {loan.activePayments.length > 0 && (
+                                <div className="mt-4">
+                                  <p className="font-medium text-gray-700 mb-2">Payment History ({loan.activePayments.length} payments):</p>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {loan.activePayments.map((payment, index) => (
+                                      <div key={index} className="text-center p-2 bg-green-50 border border-green-200 rounded">
+                                        <p className="text-xs text-green-700 font-medium">{payment.label}</p>
+                                        <p className="text-sm font-semibold text-green-800">{formatCurrency(payment.amount)}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                               
                               {loan.discrepancies.length > 0 && (
                                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
