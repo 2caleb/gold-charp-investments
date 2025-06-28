@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
@@ -103,40 +102,40 @@ const Payments = () => {
     };
   }, [refetchLoanBook, refetchExpenses, refetchSummary]);
 
-  // Convert raw loan book data to proper LoanBookLiveRecord format
+  // Convert raw loan book data to proper LoanBookLiveRecord format with improved null handling
   const loanBookData = rawLoanBookData?.map(loan => {
-    // Create a complete LoanBookLiveRecord with all required date columns
+    // Create a complete LoanBookLiveRecord with all required date columns and proper null handling
     const loanRecord: LoanBookLiveRecord = {
       id: loan.id,
       client_name: loan.client_name,
       amount_returnable: loan.amount_returnable ?? 0,
-      // Map ALL date columns with proper defaults
-      "19-05-2025": loan["19-05-2025"] ?? 0,
-      "22-05-2025": loan["22-05-2025"] ?? 0,
-      "26-05-2025": loan["26-05-2025"] ?? 0,
-      "27-05-2025": loan["27-05-2025"] ?? 0,
-      "28-05-2025": loan["28-05-2025"] ?? 0,
-      "30-05-2025": loan["30-05-2025"] ?? 0,
-      "31-05-2025": loan["31-05-2025"] ?? 0,
-      "02-06-2025": loan["02-06-2025"] ?? 0,
-      "04-06-2025": loan["04-06-2025"] ?? 0,
-      "05-06-2025": loan["05-06-2025"] ?? 0,
-      "07-06-2025": loan["07-06-2025"] ?? 0,
-      "10-06-2025": loan["10-06-2025"] ?? 0,
-      "11-06-2025": loan["11-06-2025"] ?? 0,
-      "12-06-2025": loan["12-06-2025"] ?? 0,
-      "13-06-2025": loan["13-06-2025"] ?? 0,
-      "14-06-2025": loan["14-06-2025"] ?? 0,
-      "16-06-2025": loan["16-06-2025"] ?? 0,
-      "17-06-2025": loan["17-06-2025"] ?? 0,
-      "18-06-2025": loan["18-06-2025"] ?? 0,
-      "19-06-2025": loan["19-06-2025"] ?? 0,
-      "20-06-2025": loan["20-06-2025"] ?? 0,
-      "23-06-2025": loan["23-06-2025"] ?? 0,
-      "24-06-2025": loan["24-06-2025"] ?? 0,
-      "25-06-2025": loan["25-06-2025"] ?? 0,
-      "26-06-2025": loan["26-06-2025"] ?? 0,
-      "27-06-2025": loan["27-06-2025"] ?? 0,
+      // Map ALL date columns with proper null handling (preserve nulls, don't convert to 0)
+      "19-05-2025": loan["19-05-2025"] ?? null,
+      "22-05-2025": loan["22-05-2025"] ?? null,
+      "26-05-2025": loan["26-05-2025"] ?? null,
+      "27-05-2025": loan["27-05-2025"] ?? null,
+      "28-05-2025": loan["28-05-2025"] ?? null,
+      "30-05-2025": loan["30-05-2025"] ?? null,
+      "31-05-2025": loan["31-05-2025"] ?? null,
+      "02-06-2025": loan["02-06-2025"] ?? null,
+      "04-06-2025": loan["04-06-2025"] ?? null,
+      "05-06-2025": loan["05-06-2025"] ?? null,
+      "07-06-2025": loan["07-06-2025"] ?? null,
+      "10-06-2025": loan["10-06-2025"] ?? null,
+      "11-06-2025": loan["11-06-2025"] ?? null,
+      "12-06-2025": loan["12-06-2025"] ?? null,
+      "13-06-2025": loan["13-06-2025"] ?? null,
+      "14-06-2025": loan["14-06-2025"] ?? null,
+      "16-06-2025": loan["16-06-2025"] ?? null,
+      "17-06-2025": loan["17-06-2025"] ?? null,
+      "18-06-2025": loan["18-06-2025"] ?? null,
+      "19-06-2025": loan["19-06-2025"] ?? null,
+      "20-06-2025": loan["20-06-2025"] ?? null,
+      "23-06-2025": loan["23-06-2025"] ?? null,
+      "24-06-2025": loan["24-06-2025"] ?? null,
+      "25-06-2025": loan["25-06-2025"] ?? null,
+      "26-06-2025": loan["26-06-2025"] ?? null,
+      "27-06-2025": loan["27-06-2025"] ?? null,
       remaining_balance: loan.remaining_balance ?? 0,
       loan_date: String(loan.loan_date || ""),
       status: loan.status || "",

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { LoanBookLiveRecord, getPaymentDateColumns, getDateLabel } from '@/types/loan-book-live-record';
+import { LoanBookLiveRecord, getPaymentDateColumns, getDateLabel, isValidDateColumn } from '@/types/loan-book-live-record';
 
 export interface SmartLoanCalculationsResult {
   smartLoanData: SmartLoanData[];
@@ -82,9 +82,11 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
 
     const paymentDateColumns = getPaymentDateColumns();
     const smartLoans: SmartLoanData[] = rawLoanData.map((loan) => {
-      // Calculate total paid using ALL date-based columns dynamically
+      // Calculate total paid using ALL date-based columns dynamically with proper null handling
       const totalPaid = paymentDateColumns.reduce((sum, dateCol) => {
-        return sum + ((loan as any)[dateCol] || 0);
+        const paymentAmount = (loan as any)[dateCol];
+        // Only add to sum if the value is a valid number (not null/undefined/NaN)
+        return sum + (typeof paymentAmount === 'number' && !isNaN(paymentAmount) ? paymentAmount : 0);
       }, 0);
 
       // Map first 12 date-based payments to legacy numbered format for compatibility
@@ -110,14 +112,21 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       const daysSinceLoan = Math.floor((new Date().getTime() - loanDate.getTime()) / (1000 * 60 * 60 * 24));
       const recentlyUpdated = Math.floor((new Date().getTime() - new Date(loan.updated_at).getTime()) / (1000 * 60 * 60 * 24)) <= 1;
       
-      // Create activePayments array with actual dates and amounts
+      // Create activePayments array with proper date handling and validation
       const activePayments = paymentDateColumns
-        .map(dateCol => ({
-          date: dateCol,
-          amount: (loan as any)[dateCol] || 0,
-          label: getDateLabel(dateCol)
-        }))
-        .filter(payment => payment.amount > 0);
+        .map(dateCol => {
+          const paymentAmount = (loan as any)[dateCol];
+          // Only include payments with valid amounts and valid date columns
+          if (typeof paymentAmount === 'number' && paymentAmount > 0 && isValidDateColumn(dateCol)) {
+            return {
+              date: dateCol,
+              amount: paymentAmount,
+              label: getDateLabel(dateCol)
+            };
+          }
+          return null;
+        })
+        .filter((payment): payment is { date: string; amount: number; label: string } => payment !== null);
       
       const paymentCount = activePayments.length;
       const hasDataQualityIssues = loan.amount_returnable <= 0 || totalPaid < 0 || paymentCount === 0;
@@ -170,6 +179,9 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       if (totalPaid > loan.amount_returnable) {
         discrepancies.push('Overpayment detected');
       }
+      if (activePayments.some(p => p.label === p.date)) {
+        discrepancies.push('Date formatting issues');
+      }
 
       return {
         ...loan,
@@ -191,7 +203,7 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
         data_quality_score: dataQualityScore,
         has_calculation_errors: hasDataQualityIssues,
         payment_pattern: paymentPattern,
-        activePayments, // Now contains actual payment dates and amounts
+        activePayments, // Now contains properly formatted dates
         estimated_completion_date: estimatedCompletionDate,
         confidence_level: confidenceLevel,
         discrepancies,

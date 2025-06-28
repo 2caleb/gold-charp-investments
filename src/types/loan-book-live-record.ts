@@ -63,13 +63,54 @@ export const getPaymentDateColumns = (): string[] => {
 };
 
 /**
- * Utility function to get user-friendly date labels
+ * Helper function to parse DD-MM-YYYY date format safely
+ */
+export const parseDateFromColumn = (columnName: string): Date | null => {
+  try {
+    // Extract DD-MM-YYYY from column name
+    const parts = columnName.split('-');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // JavaScript months are 0-indexed
+      const year = parseInt(parts[2], 10);
+      
+      // Validate the date parts
+      if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 2020) {
+        const date = new Date(year, month, day);
+        // Verify the date is valid (handles cases like Feb 30th)
+        if (date.getDate() === day && date.getMonth() === month && date.getFullYear() === year) {
+          return date;
+        }
+      }
+    }
+    return null;
+  } catch (error) {
+    console.warn(`Failed to parse date from column: ${columnName}`, error);
+    return null;
+  }
+};
+
+/**
+ * Utility function to get user-friendly date labels with proper error handling
  */
 export const getDateLabel = (columnName: string): string => {
-  const date = new Date(columnName);
-  return date.toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
-  });
+  const parsedDate = parseDateFromColumn(columnName);
+  
+  if (parsedDate) {
+    return parsedDate.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  }
+  
+  // Fallback to raw column name if parsing fails
+  return columnName;
+};
+
+/**
+ * Validate if a column name represents a valid date
+ */
+export const isValidDateColumn = (columnName: string): boolean => {
+  return parseDateFromColumn(columnName) !== null;
 };
