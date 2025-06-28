@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -97,11 +96,15 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
     }
   };
 
-  // Calculate which payment columns have data
+  // Calculate which payment columns should be shown (show all columns that have ANY data across ALL clients)
   const activePaymentColumns = useMemo(() => {
     return paymentDateColumns.filter(col => {
-      const hasData = smartLoanData.some(loan => (loan as any)[col] > 0);
-      return hasData && visibleColumns[col];
+      // Show column if ANY client has a payment for this date OR if the column is set to visible
+      const hasAnyPayment = smartLoanData.some(loan => {
+        const paymentAmount = (loan as any)[col];
+        return typeof paymentAmount === 'number' && paymentAmount > 0;
+      });
+      return hasAnyPayment && visibleColumns[col];
     });
   }, [smartLoanData, visibleColumns, paymentDateColumns]);
 
@@ -290,13 +293,17 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                         <TableCell className="text-blue-600 font-semibold">
                           {formatCurrency(loan.amount_returnable)}
                         </TableCell>
-                        {activePaymentColumns.map(column => (
-                          <TableCell key={column} className="text-center">
-                            <span className={`${(loan as any)[column] > 0 ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
-                              {formatCurrency((loan as any)[column])}
-                            </span>
-                          </TableCell>
-                        ))}
+                        {activePaymentColumns.map(column => {
+                          const paymentAmount = (loan as any)[column];
+                          const hasPayment = typeof paymentAmount === 'number' && paymentAmount > 0;
+                          return (
+                            <TableCell key={column} className="text-center">
+                              <span className={`${hasPayment ? 'text-green-600 font-medium' : 'text-gray-300'}`}>
+                                {hasPayment ? formatCurrency(paymentAmount) : '-'}
+                              </span>
+                            </TableCell>
+                          );
+                        })}
                         <TableCell className="font-semibold">
                           <div className="flex items-center gap-2">
                             <span className="text-red-600">{formatCurrency(loan.calculated_remaining_balance)}</span>
@@ -423,13 +430,15 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                                 </div>
                               </div>
 
-                              {/* Show actual payment dates and amounts */}
+                              {/* Show actual payment dates and amounts - only for this specific client */}
                               {loan.activePayments.length > 0 && (
                                 <div className="mt-4">
-                                  <p className="font-medium text-gray-700 mb-2">Payment History ({loan.activePayments.length} payments):</p>
+                                  <p className="font-medium text-gray-700 mb-2">
+                                    Payment History for {loan.client_name} ({loan.activePayments.length} payments):
+                                  </p>
                                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                                     {loan.activePayments.map((payment, index) => (
-                                      <div key={index} className="text-center p-2 bg-green-50 border border-green-200 rounded">
+                                      <div key={`${payment.date}-${index}`} className="text-center p-2 bg-green-50 border border-green-200 rounded">
                                         <p className="text-xs text-green-700 font-medium">{payment.label}</p>
                                         <p className="text-sm font-semibold text-green-800">{formatCurrency(payment.amount)}</p>
                                       </div>
@@ -437,7 +446,17 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                                   </div>
                                 </div>
                               )}
+
+                              {/* Show message if no payments */}
+                              {loan.activePayments.length === 0 && (
+                                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                                  <p className="text-yellow-800 text-sm">
+                                    No payments recorded for {loan.client_name}
+                                  </p>
+                                </div>
+                              )}
                               
+                              {/* Show data discrepancies */}
                               {loan.discrepancies.length > 0 && (
                                 <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                                   <p className="font-medium text-yellow-800 mb-2">Data Discrepancies:</p>
