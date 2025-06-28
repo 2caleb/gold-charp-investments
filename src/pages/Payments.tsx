@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection';
@@ -51,6 +52,7 @@ const Payments = () => {
         console.error('Error fetching loan book live:', error);
         return [];
       }
+      console.log('Raw loan book data from database:', data);
       return data || [];
     },
   });
@@ -102,40 +104,42 @@ const Payments = () => {
     };
   }, [refetchLoanBook, refetchExpenses, refetchSummary]);
 
-  // Convert raw loan book data to proper LoanBookLiveRecord format with improved null handling
+  // Convert raw loan book data to proper LoanBookLiveRecord format with strict null preservation
   const loanBookData = rawLoanBookData?.map(loan => {
-    // Create a complete LoanBookLiveRecord with all required date columns and proper null handling
+    console.log('Processing loan record:', loan.client_name, loan);
+    
+    // Create a complete LoanBookLiveRecord with strict null preservation
     const loanRecord: LoanBookLiveRecord = {
       id: loan.id,
       client_name: loan.client_name,
       amount_returnable: loan.amount_returnable ?? 0,
-      // Map ALL date columns with proper null handling (preserve nulls for no payments, only convert valid numbers)
-      "19-05-2025": typeof loan["19-05-2025"] === 'number' ? loan["19-05-2025"] : null,
-      "22-05-2025": typeof loan["22-05-2025"] === 'number' ? loan["22-05-2025"] : null,
-      "26-05-2025": typeof loan["26-05-2025"] === 'number' ? loan["26-05-2025"] : null,
-      "27-05-2025": typeof loan["27-05-2025"] === 'number' ? loan["27-05-2025"] : null,
-      "28-05-2025": typeof loan["28-05-2025"] === 'number' ? loan["28-05-2025"] : null,
-      "30-05-2025": typeof loan["30-05-2025"] === 'number' ? loan["30-05-2025"] : null,
-      "31-05-2025": typeof loan["31-05-2025"] === 'number' ? loan["31-05-2025"] : null,
-      "02-06-2025": typeof loan["02-06-2025"] === 'number' ? loan["02-06-2025"] : null,
-      "04-06-2025": typeof loan["04-06-2025"] === 'number' ? loan["04-06-2025"] : null,
-      "05-06-2025": typeof loan["05-06-2025"] === 'number' ? loan["05-06-2025"] : null,
-      "07-06-2025": typeof loan["07-06-2025"] === 'number' ? loan["07-06-2025"] : null,
-      "10-06-2025": typeof loan["10-06-2025"] === 'number' ? loan["10-06-2025"] : null,
-      "11-06-2025": typeof loan["11-06-2025"] === 'number' ? loan["11-06-2025"] : null,
-      "12-06-2025": typeof loan["12-06-2025"] === 'number' ? loan["12-06-2025"] : null,
-      "13-06-2025": typeof loan["13-06-2025"] === 'number' ? loan["13-06-2025"] : null,
-      "14-06-2025": typeof loan["14-06-2025"] === 'number' ? loan["14-06-2025"] : null,
-      "16-06-2025": typeof loan["16-06-2025"] === 'number' ? loan["16-06-2025"] : null,
-      "17-06-2025": typeof loan["17-06-2025"] === 'number' ? loan["17-06-2025"] : null,
-      "18-06-2025": typeof loan["18-06-2025"] === 'number' ? loan["18-06-2025"] : null,
-      "19-06-2025": typeof loan["19-06-2025"] === 'number' ? loan["19-06-2025"] : null,
-      "20-06-2025": typeof loan["20-06-2025"] === 'number' ? loan["20-06-2025"] : null,
-      "23-06-2025": typeof loan["23-06-2025"] === 'number' ? loan["23-06-2025"] : null,
-      "24-06-2025": typeof loan["24-06-2025"] === 'number' ? loan["24-06-2025"] : null,
-      "25-06-2025": typeof loan["25-06-2025"] === 'number' ? loan["25-06-2025"] : null,
-      "26-06-2025": typeof loan["26-06-2025"] === 'number' ? loan["26-06-2025"] : null,
-      "27-06-2025": typeof loan["27-06-2025"] === 'number' ? loan["27-06-2025"] : null,
+      // Preserve exact database values - only convert if value is actually a number
+      "19-05-2025": (typeof loan["19-05-2025"] === 'number' && loan["19-05-2025"] !== null) ? loan["19-05-2025"] : null,
+      "22-05-2025": (typeof loan["22-05-2025"] === 'number' && loan["22-05-2025"] !== null) ? loan["22-05-2025"] : null,
+      "26-05-2025": (typeof loan["26-05-2025"] === 'number' && loan["26-05-2025"] !== null) ? loan["26-05-2025"] : null,
+      "27-05-2025": (typeof loan["27-05-2025"] === 'number' && loan["27-05-2025"] !== null) ? loan["27-05-2025"] : null,
+      "28-05-2025": (typeof loan["28-05-2025"] === 'number' && loan["28-05-2025"] !== null) ? loan["28-05-2025"] : null,
+      "30-05-2025": (typeof loan["30-05-2025"] === 'number' && loan["30-05-2025"] !== null) ? loan["30-05-2025"] : null,
+      "31-05-2025": (typeof loan["31-05-2025"] === 'number' && loan["31-05-2025"] !== null) ? loan["31-05-2025"] : null,
+      "02-06-2025": (typeof loan["02-06-2025"] === 'number' && loan["02-06-2025"] !== null) ? loan["02-06-2025"] : null,
+      "04-06-2025": (typeof loan["04-06-2025"] === 'number' && loan["04-06-2025"] !== null) ? loan["04-06-2025"] : null,
+      "05-06-2025": (typeof loan["05-06-2025"] === 'number' && loan["05-06-2025"] !== null) ? loan["05-06-2025"] : null,
+      "07-06-2025": (typeof loan["07-06-2025"] === 'number' && loan["07-06-2025"] !== null) ? loan["07-06-2025"] : null,
+      "10-06-2025": (typeof loan["10-06-2025"] === 'number' && loan["10-06-2025"] !== null) ? loan["10-06-2025"] : null,
+      "11-06-2025": (typeof loan["11-06-2025"] === 'number' && loan["11-06-2025"] !== null) ? loan["11-06-2025"] : null,
+      "12-06-2025": (typeof loan["12-06-2025"] === 'number' && loan["12-06-2025"] !== null) ? loan["12-06-2025"] : null,
+      "13-06-2025": (typeof loan["13-06-2025"] === 'number' && loan["13-06-2025"] !== null) ? loan["13-06-2025"] : null,
+      "14-06-2025": (typeof loan["14-06-2025"] === 'number' && loan["14-06-2025"] !== null) ? loan["14-06-2025"] : null,
+      "16-06-2025": (typeof loan["16-06-2025"] === 'number' && loan["16-06-2025"] !== null) ? loan["16-06-2025"] : null,
+      "17-06-2025": (typeof loan["17-06-2025"] === 'number' && loan["17-06-2025"] !== null) ? loan["17-06-2025"] : null,
+      "18-06-2025": (typeof loan["18-06-2025"] === 'number' && loan["18-06-2025"] !== null) ? loan["18-06-2025"] : null,
+      "19-06-2025": (typeof loan["19-06-2025"] === 'number' && loan["19-06-2025"] !== null) ? loan["19-06-2025"] : null,
+      "20-06-2025": (typeof loan["20-06-2025"] === 'number' && loan["20-06-2025"] !== null) ? loan["20-06-2025"] : null,
+      "23-06-2025": (typeof loan["23-06-2025"] === 'number' && loan["23-06-2025"] !== null) ? loan["23-06-2025"] : null,
+      "24-06-2025": (typeof loan["24-06-2025"] === 'number' && loan["24-06-2025"] !== null) ? loan["24-06-2025"] : null,
+      "25-06-2025": (typeof loan["25-06-2025"] === 'number' && loan["25-06-2025"] !== null) ? loan["25-06-2025"] : null,
+      "26-06-2025": (typeof loan["26-06-2025"] === 'number' && loan["26-06-2025"] !== null) ? loan["26-06-2025"] : null,
+      "27-06-2025": (typeof loan["27-06-2025"] === 'number' && loan["27-06-2025"] !== null) ? loan["27-06-2025"] : null,
       remaining_balance: loan.remaining_balance ?? 0,
       loan_date: String(loan.loan_date || ""),
       status: loan.status || "",
@@ -149,6 +153,12 @@ const Payments = () => {
       risk_factors: (typeof loan.risk_factors === 'string' ? 
         JSON.parse(loan.risk_factors) : loan.risk_factors) ?? {},
     };
+    
+    console.log('Processed loan record with payments:', loanRecord.client_name, {
+      "19-05-2025": loanRecord["19-05-2025"],
+      "22-05-2025": loanRecord["22-05-2025"],
+      "26-05-2025": loanRecord["26-05-2025"],
+    });
     
     // Then adapt it to legacy format for backward compatibility
     return adaptLoanRecordToLegacy(loanRecord);
@@ -177,6 +187,8 @@ const Payments = () => {
       </Layout>
     );
   }
+
+  console.log('Final loan book data being passed to table:', loanBookData?.length, loanBookData?.[0]);
 
   return (
     <Layout>

@@ -632,7 +632,6 @@ export type Database = {
           date: string
           description: string
           id: string
-          loan_application_id: string | null
           payment_method: string | null
           reference_number: string | null
           status: Database["public"]["Enums"]["transaction_status"]
@@ -646,8 +645,7 @@ export type Database = {
           created_by: string
           date?: string
           description: string
-          id?: string
-          loan_application_id?: string | null
+          id: string
           payment_method?: string | null
           reference_number?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
@@ -662,7 +660,6 @@ export type Database = {
           date?: string
           description?: string
           id?: string
-          loan_application_id?: string | null
           payment_method?: string | null
           reference_number?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]

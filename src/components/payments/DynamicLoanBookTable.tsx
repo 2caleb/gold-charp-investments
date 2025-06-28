@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,8 +55,12 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
   const [showRiskLevel, setShowRiskLevel] = useState(true);
   const [showDefaultProb, setShowDefaultProb] = useState(false);
 
+  console.log('DynamicLoanBookTable received loan data:', loanData?.length, loanData?.[0]);
+
   // Apply smart calculations to the loan data
   const { smartLoanData, portfolioMetrics } = useSmartLoanCalculations(loanData || []);
+
+  console.log('Smart loan data after calculations:', smartLoanData?.length, smartLoanData?.[0]);
 
   // Filter data based on search term
   const filteredData = useMemo(() => {
@@ -96,17 +101,12 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
     }
   };
 
-  // Calculate which payment columns should be shown (show all columns that have ANY data across ALL clients)
+  // Show all visible columns - let users decide what to see
   const activePaymentColumns = useMemo(() => {
-    return paymentDateColumns.filter(col => {
-      // Show column if ANY client has a payment for this date OR if the column is set to visible
-      const hasAnyPayment = smartLoanData.some(loan => {
-        const paymentAmount = (loan as any)[col];
-        return typeof paymentAmount === 'number' && paymentAmount > 0;
-      });
-      return hasAnyPayment && visibleColumns[col];
-    });
-  }, [smartLoanData, visibleColumns, paymentDateColumns]);
+    return paymentDateColumns.filter(col => visibleColumns[col]);
+  }, [visibleColumns, paymentDateColumns]);
+
+  console.log('Active payment columns to display:', activePaymentColumns);
 
   if (isLoading) {
     return (
@@ -167,7 +167,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
             />
           </div>
 
-          {/* Column Visibility Controls - Now shows all actual payment dates */}
+          {/* Column Visibility Controls - Shows all payment dates */}
           <div className="flex flex-wrap gap-2">
             <span className="text-sm font-medium text-gray-600">Show Payment Dates:</span>
             {paymentDateColumns.map((column) => (
@@ -258,7 +258,9 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
             <TableBody>
               <AnimatePresence>
                 {filteredData.length > 0 ? (
-                  filteredData.map((loan) => (
+                  filteredData.map((loan) => {
+                    console.log('Rendering loan row for:', loan.client_name, loan);
+                    return (
                     <React.Fragment key={loan.id}>
                       <motion.tr
                         initial={{ opacity: 0 }}
@@ -295,7 +297,8 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                         </TableCell>
                         {activePaymentColumns.map(column => {
                           const paymentAmount = (loan as any)[column];
-                          const hasPayment = typeof paymentAmount === 'number' && paymentAmount > 0;
+                          const hasPayment = typeof paymentAmount === 'number' && paymentAmount !== null && paymentAmount > 0;
+                          console.log(`Payment for ${loan.client_name} on ${column}:`, paymentAmount, 'hasPayment:', hasPayment);
                           return (
                             <TableCell key={column} className="text-center">
                               <span className={`${hasPayment ? 'text-green-600 font-medium' : 'text-gray-300'}`}>
@@ -396,7 +399,7 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                           exit={{ opacity: 0, height: 0 }}
                           className="bg-gray-50"
                         >
-                          <TableCell colSpan={activePaymentColumns.length + 8}>
+                          <TableCell colSpan={activePaymentColumns.length + 8 + (showRiskScore ? 1 : 0) + (showRiskLevel ? 1 : 0) + (showDefaultProb ? 1 : 0)}>
                             <div className="p-4 space-y-3">
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                 <div>
@@ -472,10 +475,10 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                         </motion.tr>
                       )}
                     </React.Fragment>
-                  ))
+                  )})
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={activePaymentColumns.length + 9} className="text-center py-8">
+                    <TableCell colSpan={activePaymentColumns.length + 8 + (showRiskScore ? 1 : 0) + (showRiskLevel ? 1 : 0) + (showDefaultProb ? 1 : 0)} className="text-center py-8">
                       <div className="flex flex-col items-center gap-2">
                         <AlertTriangle className="h-8 w-8 text-gray-400" />
                         <p className="text-gray-500">
