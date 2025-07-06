@@ -628,12 +628,10 @@ export type Database = {
           amount: number
           category: string
           created_at: string
-          created_by: string
           date: string
           description: string
           id: string
           payment_method: string | null
-          reference_number: string | null
           status: Database["public"]["Enums"]["transaction_status"]
           transaction_type: Database["public"]["Enums"]["transaction_type"]
           updated_at: string
@@ -642,12 +640,10 @@ export type Database = {
           amount: number
           category?: string
           created_at?: string
-          created_by: string
           date?: string
           description: string
           id: string
           payment_method?: string | null
-          reference_number?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           transaction_type: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string
@@ -656,12 +652,10 @@ export type Database = {
           amount?: number
           category?: string
           created_at?: string
-          created_by?: string
           date?: string
           description?: string
           id?: string
           payment_method?: string | null
-          reference_number?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           transaction_type?: Database["public"]["Enums"]["transaction_type"]
           updated_at?: string

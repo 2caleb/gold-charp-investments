@@ -87,11 +87,12 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
     const smartLoans: SmartLoanData[] = rawLoanData.map((loan) => {
       console.log('Processing loan in calculations:', loan.client_name, loan);
 
-      // Calculate total paid using ONLY non-null payment values
+      // Calculate total paid using ONLY valid payment values (excluding null and zero)
       const totalPaid = paymentDateColumns.reduce((sum, dateCol) => {
         const paymentAmount = (loan as any)[dateCol];
-        // Only add to sum if the value is a valid number AND not null
-        if (typeof paymentAmount === 'number' && paymentAmount !== null && paymentAmount > 0) {
+        // Only add to sum if the value is a valid positive number
+        if (paymentAmount !== null && paymentAmount !== undefined && 
+            typeof paymentAmount === 'number' && paymentAmount > 0) {
           console.log(`Found payment for ${loan.client_name} on ${dateCol}: ${paymentAmount}`);
           return sum + paymentAmount;
         }
@@ -123,12 +124,14 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       const daysSinceLoan = Math.floor((new Date().getTime() - loanDate.getTime()) / (1000 * 60 * 60 * 24));
       const recentlyUpdated = Math.floor((new Date().getTime() - new Date(loan.updated_at).getTime()) / (1000 * 60 * 60 * 24)) <= 1;
       
-      // Create activePayments array with ONLY actual payments (non-null, non-zero)
+      // Create activePayments array with ONLY actual payments (positive amounts)
       const activePayments = paymentDateColumns
         .map(dateCol => {
           const paymentAmount = (loan as any)[dateCol];
-          // Only include payments with valid amounts > 0 AND not null
-          if (typeof paymentAmount === 'number' && paymentAmount !== null && paymentAmount > 0 && isValidDateColumn(dateCol)) {
+          // Only include payments with valid positive amounts
+          if (paymentAmount !== null && paymentAmount !== undefined && 
+              typeof paymentAmount === 'number' && paymentAmount > 0 && 
+              isValidDateColumn(dateCol)) {
             return {
               date: dateCol,
               amount: paymentAmount,

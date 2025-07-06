@@ -297,7 +297,9 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                         </TableCell>
                         {activePaymentColumns.map(column => {
                           const paymentAmount = (loan as any)[column];
-                          const hasPayment = typeof paymentAmount === 'number' && paymentAmount !== null && paymentAmount > 0;
+                          // Check for valid positive payment amounts
+                          const hasPayment = paymentAmount !== null && paymentAmount !== undefined && 
+                                           typeof paymentAmount === 'number' && paymentAmount > 0;
                           console.log(`Payment for ${loan.client_name} on ${column}:`, paymentAmount, 'hasPayment:', hasPayment);
                           return (
                             <TableCell key={column} className="text-center">

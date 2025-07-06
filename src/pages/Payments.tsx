@@ -104,42 +104,56 @@ const Payments = () => {
     };
   }, [refetchLoanBook, refetchExpenses, refetchSummary]);
 
-  // Convert raw loan book data to proper LoanBookLiveRecord format with strict null preservation
+  // Convert raw loan book data to proper LoanBookLiveRecord format with proper null handling
   const loanBookData = rawLoanBookData?.map(loan => {
     console.log('Processing loan record:', loan.client_name, loan);
     
-    // Create a complete LoanBookLiveRecord with strict null preservation
+    // Helper function to safely process payment values
+    const processPaymentValue = (value: any): number | null => {
+      // Handle various null representations
+      if (value === null || value === undefined || value === '<nil>' || value === '') {
+        return null;
+      }
+      // Convert to number and validate
+      const numValue = Number(value);
+      if (isNaN(numValue) || numValue < 0) {
+        return null;
+      }
+      return numValue;
+    };
+    
+    // Create a complete LoanBookLiveRecord with proper payment processing
     const loanRecord: LoanBookLiveRecord = {
       id: loan.id,
       client_name: loan.client_name,
       amount_returnable: loan.amount_returnable ?? 0,
-      // Preserve exact database values - only convert if value is actually a number
-      "19-05-2025": (typeof loan["19-05-2025"] === 'number' && loan["19-05-2025"] !== null) ? loan["19-05-2025"] : null,
-      "22-05-2025": (typeof loan["22-05-2025"] === 'number' && loan["22-05-2025"] !== null) ? loan["22-05-2025"] : null,
-      "26-05-2025": (typeof loan["26-05-2025"] === 'number' && loan["26-05-2025"] !== null) ? loan["26-05-2025"] : null,
-      "27-05-2025": (typeof loan["27-05-2025"] === 'number' && loan["27-05-2025"] !== null) ? loan["27-05-2025"] : null,
-      "28-05-2025": (typeof loan["28-05-2025"] === 'number' && loan["28-05-2025"] !== null) ? loan["28-05-2025"] : null,
-      "30-05-2025": (typeof loan["30-05-2025"] === 'number' && loan["30-05-2025"] !== null) ? loan["30-05-2025"] : null,
-      "31-05-2025": (typeof loan["31-05-2025"] === 'number' && loan["31-05-2025"] !== null) ? loan["31-05-2025"] : null,
-      "02-06-2025": (typeof loan["02-06-2025"] === 'number' && loan["02-06-2025"] !== null) ? loan["02-06-2025"] : null,
-      "04-06-2025": (typeof loan["04-06-2025"] === 'number' && loan["04-06-2025"] !== null) ? loan["04-06-2025"] : null,
-      "05-06-2025": (typeof loan["05-06-2025"] === 'number' && loan["05-06-2025"] !== null) ? loan["05-06-2025"] : null,
-      "07-06-2025": (typeof loan["07-06-2025"] === 'number' && loan["07-06-2025"] !== null) ? loan["07-06-2025"] : null,
-      "10-06-2025": (typeof loan["10-06-2025"] === 'number' && loan["10-06-2025"] !== null) ? loan["10-06-2025"] : null,
-      "11-06-2025": (typeof loan["11-06-2025"] === 'number' && loan["11-06-2025"] !== null) ? loan["11-06-2025"] : null,
-      "12-06-2025": (typeof loan["12-06-2025"] === 'number' && loan["12-06-2025"] !== null) ? loan["12-06-2025"] : null,
-      "13-06-2025": (typeof loan["13-06-2025"] === 'number' && loan["13-06-2025"] !== null) ? loan["13-06-2025"] : null,
-      "14-06-2025": (typeof loan["14-06-2025"] === 'number' && loan["14-06-2025"] !== null) ? loan["14-06-2025"] : null,
-      "16-06-2025": (typeof loan["16-06-2025"] === 'number' && loan["16-06-2025"] !== null) ? loan["16-06-2025"] : null,
-      "17-06-2025": (typeof loan["17-06-2025"] === 'number' && loan["17-06-2025"] !== null) ? loan["17-06-2025"] : null,
-      "18-06-2025": (typeof loan["18-06-2025"] === 'number' && loan["18-06-2025"] !== null) ? loan["18-06-2025"] : null,
-      "19-06-2025": (typeof loan["19-06-2025"] === 'number' && loan["19-06-2025"] !== null) ? loan["19-06-2025"] : null,
-      "20-06-2025": (typeof loan["20-06-2025"] === 'number' && loan["20-06-2025"] !== null) ? loan["20-06-2025"] : null,
-      "23-06-2025": (typeof loan["23-06-2025"] === 'number' && loan["23-06-2025"] !== null) ? loan["23-06-2025"] : null,
-      "24-06-2025": (typeof loan["24-06-2025"] === 'number' && loan["24-06-2025"] !== null) ? loan["24-06-2025"] : null,
-      "25-06-2025": (typeof loan["25-06-2025"] === 'number' && loan["25-06-2025"] !== null) ? loan["25-06-2025"] : null,
-      "26-06-2025": (typeof loan["26-06-2025"] === 'number' && loan["26-06-2025"] !== null) ? loan["26-06-2025"] : null,
-      "27-06-2025": (typeof loan["27-06-2025"] === 'number' && loan["27-06-2025"] !== null) ? loan["27-06-2025"] : null,
+      // Process each payment column with proper null handling
+      "19-05-2025": processPaymentValue(loan["19-05-2025"]),
+      "22-05-2025": processPaymentValue(loan["22-05-2025"]),
+      "26-05-2025": processPaymentValue(loan["26-05-2025"]),
+      "27-05-2025": processPaymentValue(loan["27-05-2025"]),
+      "28-05-2025": processPaymentValue(loan["28-05-2025"]),
+      "30-05-2025": processPaymentValue(loan["30-05-2025"]),
+      "31-05-2025": processPaymentValue(loan["31-05-2025"]),
+      "02-06-2025": processPaymentValue(loan["02-06-2025"]),
+      "04-06-2025": processPaymentValue(loan["04-06-2025"]),
+      "05-06-2025": processPaymentValue(loan["05-06-2025"]),
+      "07-06-2025": processPaymentValue(loan["07-06-2025"]),
+      "10-06-2025": processPaymentValue(loan["10-06-2025"]),
+      "11-06-2025": processPaymentValue(loan["11-06-2025"]),
+      "12-06-2025": processPaymentValue(loan["12-06-2025"]),
+      "13-06-2025": processPaymentValue(loan["13-06-2025"]),
+      "14-06-2025": processPaymentValue(loan["14-06-2025"]),
+      "16-06-2025": processPaymentValue(loan["16-06-2025"]),
+      "17-06-2025": processPaymentValue(loan["17-06-2025"]),
+      "18-06-2025": processPaymentValue(loan["18-06-2025"]),
+      "19-06-2025": processPaymentValue(loan["19-06-2025"]),
+      "20-06-2025": processPaymentValue(loan["20-06-2025"]),
+      "23-06-2025": processPaymentValue(loan["23-06-2025"]),
+      "24-06-2025": processPaymentValue(loan["24-06-2025"]),
+      "25-06-2025": processPaymentValue(loan["25-06-2025"]),
+      "26-06-2025": processPaymentValue(loan["26-06-2025"]),
+      "27-06-2025": processPaymentValue(loan["27-06-2025"]),
       remaining_balance: loan.remaining_balance ?? 0,
       loan_date: String(loan.loan_date || ""),
       status: loan.status || "",
