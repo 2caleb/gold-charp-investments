@@ -297,14 +297,20 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                         </TableCell>
                         {activePaymentColumns.map(column => {
                           const paymentAmount = (loan as any)[column];
-                          // Check for valid positive payment amounts
-                          const hasPayment = paymentAmount !== null && paymentAmount !== undefined && 
-                                           typeof paymentAmount === 'number' && paymentAmount > 0;
-                          console.log(`Payment for ${loan.client_name} on ${column}:`, paymentAmount, 'hasPayment:', hasPayment);
+                          // Handle both null and <nil> string representations from Supabase
+                          const isValidPayment = paymentAmount !== null && 
+                                               paymentAmount !== undefined && 
+                                               paymentAmount !== '<nil>' &&
+                                               paymentAmount !== 'null' &&
+                                               typeof paymentAmount === 'number' && 
+                                               paymentAmount > 0;
+                          
+                          console.log(`Payment display for ${loan.client_name} on ${column}:`, paymentAmount, 'isValid:', isValidPayment);
+                          
                           return (
                             <TableCell key={column} className="text-center">
-                              <span className={`${hasPayment ? 'text-green-600 font-medium' : 'text-gray-300'}`}>
-                                {hasPayment ? formatCurrency(paymentAmount) : '-'}
+                              <span className={`${isValidPayment ? 'text-green-600 font-medium' : 'text-gray-300'}`}>
+                                {isValidPayment ? formatCurrency(paymentAmount) : '-'}
                               </span>
                             </TableCell>
                           );

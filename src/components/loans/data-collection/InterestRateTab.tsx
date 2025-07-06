@@ -46,7 +46,14 @@ export const InterestRateTab: React.FC<InterestRateTabProps> = ({
           .filter(key => key.includes('-') && key.includes('2025'))
           .reduce((paymentSum, dateKey) => {
             const payment = loan[dateKey];
-            return paymentSum + (payment && payment > 0 ? payment : 0);
+            // Handle both null and <nil> string representations from Supabase
+            const isValidPayment = payment !== null && 
+                                 payment !== undefined && 
+                                 payment !== '<nil>' &&
+                                 payment !== 'null' &&
+                                 typeof payment === 'number' && 
+                                 payment > 0;
+            return paymentSum + (isValidPayment ? payment : 0);
           }, 0);
         
         const collectionRate = loan.amount_returnable > 0 ? (totalPaid / loan.amount_returnable) * 100 : 0;

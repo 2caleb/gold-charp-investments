@@ -110,8 +110,8 @@ const Payments = () => {
     
     // Helper function to safely process payment values
     const processPaymentValue = (value: any): number | null => {
-      // Handle various null representations
-      if (value === null || value === undefined || value === '<nil>' || value === '') {
+      // Handle various null representations including Supabase's <nil>
+      if (value === null || value === undefined || value === '<nil>' || value === '' || value === 'null') {
         return null;
       }
       // Convert to number and validate
