@@ -50,8 +50,33 @@ export interface LoanBookLiveRecord {
 
 /**
  * Utility function to get all date-based payment columns dynamically
+ * This function now detects actual payment columns from the data
  */
-export const getPaymentDateColumns = (): string[] => {
+export const getPaymentDateColumns = (sampleData?: any[]): string[] => {
+  // If we have sample data, extract actual date columns
+  if (sampleData && sampleData.length > 0) {
+    const dateColumns: string[] = [];
+    const sample = sampleData[0];
+    
+    // Find all columns that match the DD-MM-YYYY pattern
+    for (const key in sample) {
+      if (isValidDateColumn(key)) {
+        dateColumns.push(key);
+      }
+    }
+    
+    // Sort by date for consistent ordering
+    return dateColumns.sort((a, b) => {
+      const dateA = parseDateFromColumn(a);
+      const dateB = parseDateFromColumn(b);
+      if (dateA && dateB) {
+        return dateA.getTime() - dateB.getTime();
+      }
+      return a.localeCompare(b);
+    });
+  }
+  
+  // Fallback to all possible date columns from the interface
   return [
     "19-05-2025", "22-05-2025", "26-05-2025", "27-05-2025", "28-05-2025",
     "30-05-2025", "31-05-2025", "02-06-2025", "04-06-2025", "05-06-2025",

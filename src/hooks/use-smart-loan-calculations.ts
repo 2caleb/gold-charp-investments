@@ -83,7 +83,10 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       };
     }
 
-    const paymentDateColumns = getPaymentDateColumns();
+    // Get payment columns dynamically from the actual data
+    const paymentDateColumns = getPaymentDateColumns(rawLoanData);
+    console.log('Dynamic payment columns detected:', paymentDateColumns);
+    
     const smartLoans: SmartLoanData[] = rawLoanData.map((loan) => {
       console.log('Processing loan in calculations:', loan.client_name, loan);
 

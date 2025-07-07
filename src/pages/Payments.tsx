@@ -107,6 +107,7 @@ const Payments = () => {
   // Convert raw loan book data to proper LoanBookLiveRecord format with proper null handling
   const loanBookData = rawLoanBookData?.map(loan => {
     console.log('Processing loan record:', loan.client_name, loan);
+    console.log('Available payment columns in this record:', Object.keys(loan).filter(key => key.includes('-') && key.includes('2025')));
     
     // Helper function to safely process payment values
     const processPaymentValue = (value: any): number | null => {

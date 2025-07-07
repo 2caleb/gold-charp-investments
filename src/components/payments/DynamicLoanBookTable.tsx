@@ -38,8 +38,8 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
-  // Get all available payment date columns dynamically
-  const paymentDateColumns = getPaymentDateColumns();
+  // Get all available payment date columns dynamically from the actual data
+  const paymentDateColumns = getPaymentDateColumns(loanData);
   
   // Initialize visibility state for all date columns
   const [visibleColumns, setVisibleColumns] = useState(() => {
