@@ -43,9 +43,43 @@ const DeliveryManagement: React.FC = () => {
     deleteDelivery(id);
   };
 
-  const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log('Export deliveries:', deliveries);
+  const handleExport = async () => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase.functions.invoke('generate-delivery-report', {
+        body: {
+          format: 'excel',
+          startDate: null,
+          endDate: null,
+          supplier: null,
+          paymentStatus: 'all'
+        }
+      });
+
+      if (error) throw error;
+
+      // Create and download Excel file
+      const { utils, writeFile } = await import('xlsx');
+      const workbook = utils.book_new();
+      const worksheet = utils.aoa_to_sheet(data.data);
+      utils.book_append_sheet(workbook, worksheet, 'Deliveries');
+      writeFile(workbook, data.filename);
+      
+      const { toast } = await import('@/hooks/use-toast');
+      toast({
+        title: 'Success',
+        description: 'Delivery report exported successfully',
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      const { toast } = await import('@/hooks/use-toast');
+      toast({
+        title: 'Error',
+        description: 'Failed to export delivery report',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleCloseForm = () => {
