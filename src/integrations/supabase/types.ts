@@ -647,7 +647,7 @@ export type Database = {
           created_at?: string
           date?: string
           description: string
-          id: string
+          id?: string
           payment_method?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           transaction_type: Database["public"]["Enums"]["transaction_type"]
