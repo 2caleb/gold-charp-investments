@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useSmartLoanCalculations } from '@/hooks/use-smart-loan-calculations';
 import { formatCurrency } from '@/utils/currencyUtils';
-import { getPaymentDateColumns, getDateLabel } from '@/types/loan-book-live-record';
+import { getPaymentDateColumns, getDateLabel, LoanBookLiveRecord } from '@/types/loan-book-live-record';
 import { 
   Search, 
   Filter, 
@@ -23,7 +23,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface DynamicLoanBookTableProps {
-  loanData: any[];
+  loanData: LoanBookLiveRecord[];
   isLoading: boolean;
   onExport: () => void;
   isExporting: boolean;

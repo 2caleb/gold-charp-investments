@@ -110,20 +110,20 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
 
       console.log(`Total paid for ${loan.client_name}: ${totalPaid}`);
 
-      // Map first 12 date-based payments to legacy numbered format - preserve 0s for compatibility
+      // Map first 12 date-based payments to legacy numbered format - use actual values
       const legacyPayments = {
-        amount_paid_1: (loan as any)[paymentDateColumns[0]] || 0,
-        amount_paid_2: (loan as any)[paymentDateColumns[1]] || 0,
-        amount_paid_3: (loan as any)[paymentDateColumns[2]] || 0,
-        amount_paid_4: (loan as any)[paymentDateColumns[3]] || 0,
-        amount_paid_5: (loan as any)[paymentDateColumns[4]] || 0,
-        Amount_paid_6: (loan as any)[paymentDateColumns[5]] || 0,
-        Amount_paid_7: (loan as any)[paymentDateColumns[6]] || 0,
-        Amount_Paid_8: (loan as any)[paymentDateColumns[7]] || 0,
-        Amount_Paid_9: (loan as any)[paymentDateColumns[8]] || 0,
-        Amount_Paid_10: (loan as any)[paymentDateColumns[9]] || 0,
-        Amount_Paid_11: (loan as any)[paymentDateColumns[10]] || 0,
-        Amount_Paid_12: (loan as any)[paymentDateColumns[11]] || 0,
+        amount_paid_1: (loan as any)[paymentDateColumns[0]] ?? 0,
+        amount_paid_2: (loan as any)[paymentDateColumns[1]] ?? 0,
+        amount_paid_3: (loan as any)[paymentDateColumns[2]] ?? 0,
+        amount_paid_4: (loan as any)[paymentDateColumns[3]] ?? 0,
+        amount_paid_5: (loan as any)[paymentDateColumns[4]] ?? 0,
+        Amount_paid_6: (loan as any)[paymentDateColumns[5]] ?? 0,
+        Amount_paid_7: (loan as any)[paymentDateColumns[6]] ?? 0,
+        Amount_Paid_8: (loan as any)[paymentDateColumns[7]] ?? 0,
+        Amount_Paid_9: (loan as any)[paymentDateColumns[8]] ?? 0,
+        Amount_Paid_10: (loan as any)[paymentDateColumns[9]] ?? 0,
+        Amount_Paid_11: (loan as any)[paymentDateColumns[10]] ?? 0,
+        Amount_Paid_12: (loan as any)[paymentDateColumns[11]] ?? 0,
       };
 
       const collectionEfficiency = loan.amount_returnable > 0 ? (totalPaid / loan.amount_returnable) * 100 : 0;

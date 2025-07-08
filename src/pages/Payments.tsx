@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useFinancialSummaryQuery } from '@/hooks/use-financial-summary-query';
 import DynamicLoanBookTable from '@/components/payments/DynamicLoanBookTable';
-import { adaptLoanRecordToLegacy } from '@/types/loan-book-adapter';
+
 import { usePaymentHandlers } from '@/hooks/usePaymentHandlers';
 import { formatCurrency } from '@/utils/currencyUtils';
 import { LoanBookLiveRecord } from '@/types/loan-book-live-record';
@@ -170,13 +170,18 @@ const Payments = () => {
     };
     
     console.log('Processed loan record with payments:', loanRecord.client_name, {
-      "19-05-2025": loanRecord["19-05-2025"],
-      "22-05-2025": loanRecord["22-05-2025"],
-      "26-05-2025": loanRecord["26-05-2025"],
+      "30-05-2025": loanRecord["30-05-2025"],
+      "31-05-2025": loanRecord["31-05-2025"],
+      "02-06-2025": loanRecord["02-06-2025"],
+      "13-06-2025": loanRecord["13-06-2025"],
+      "total_payments": Object.keys(loanRecord).filter(key => key.includes('-2025')).reduce((sum, key) => {
+        const val = loanRecord[key as keyof LoanBookLiveRecord];
+        return sum + (typeof val === 'number' && val > 0 ? val : 0);
+      }, 0)
     });
     
-    // Then adapt it to legacy format for backward compatibility
-    return adaptLoanRecordToLegacy(loanRecord);
+    // Return the original LoanBookLiveRecord format directly - no legacy adapter conversion!
+    return loanRecord;
   }) || [];
 
   const filteredExpenses = expensesData?.filter(expense => 
