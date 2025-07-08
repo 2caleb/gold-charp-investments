@@ -237,22 +237,31 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-8"></TableHead>
-                <TableHead>Client Name</TableHead>
-                <TableHead>Amount Returnable</TableHead>
-                {activePaymentColumns.map(column => (
-                  <TableHead key={column} className="text-center">
-                    {getDateLabel(column)}
+                <TableHead className="w-8 border-r border-border/50"></TableHead>
+                <TableHead className="border-r border-border/50">Client Name</TableHead>
+                <TableHead className="border-r-2 border-blue-200 bg-blue-50/30">Amount Returnable</TableHead>
+                {activePaymentColumns.map((column, index) => (
+                  <TableHead 
+                    key={column} 
+                    className={`text-center bg-green-50/40 hover:bg-green-100/60 transition-colors ${
+                      index === 0 ? 'border-l-2 border-green-300' : 'border-l border-green-200'
+                    } ${
+                      index === activePaymentColumns.length - 1 ? 'border-r-2 border-green-300' : 'border-r border-green-200'
+                    }`}
+                  >
+                    <div className="text-xs font-semibold text-green-800">
+                      {getDateLabel(column)}
+                    </div>
                   </TableHead>
                 ))}
-                <TableHead>Smart Balance</TableHead>
-                <TableHead>Progress</TableHead>
-                <TableHead>Pattern</TableHead>
-                <TableHead>Quality</TableHead>
-                <TableHead>Status</TableHead>
-                {showRiskScore && <TableHead>Risk Score</TableHead>}
-                {showRiskLevel && <TableHead>Risk Level</TableHead>}
-                {showDefaultProb && <TableHead>Prob. Default</TableHead>}
+                <TableHead className="border-l-2 border-purple-200 bg-purple-50/30">Smart Balance</TableHead>
+                <TableHead className="border-l border-border/50 bg-purple-50/30">Progress</TableHead>
+                <TableHead className="border-l border-border/50 bg-purple-50/30">Pattern</TableHead>
+                <TableHead className="border-l border-border/50 bg-purple-50/30">Quality</TableHead>
+                <TableHead className="border-l border-border/50 border-r-2 border-purple-200 bg-purple-50/30">Status</TableHead>
+                {showRiskScore && <TableHead className="border-l-2 border-orange-200 bg-orange-50/30">Risk Score</TableHead>}
+                {showRiskLevel && <TableHead className="border-l border-border/50 bg-orange-50/30">Risk Level</TableHead>}
+                {showDefaultProb && <TableHead className="border-l border-border/50 bg-orange-50/30">Prob. Default</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -269,134 +278,141 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                         className={`hover:bg-gray-50 transition-colors ${
                           loan.recentlyUpdated ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                         }`}
-                      >
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleRowExpansion(loan.id)}
-                            className="h-6 w-6 p-0"
-                          >
-                            {expandedRows.has(loan.id) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {loan.client_name}
-                          {loan.recentlyUpdated && (
-                            <Badge variant="outline" className="ml-2 text-xs bg-blue-100 text-blue-800">
-                              Updated
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-blue-600 font-semibold">
-                          {formatCurrency(loan.amount_returnable)}
-                        </TableCell>
-                        {activePaymentColumns.map(column => {
-                          const paymentAmount = (loan as any)[column];
-                          // Handle both null and <nil> string representations from Supabase
-                          const isValidPayment = paymentAmount !== null && 
-                                               paymentAmount !== undefined && 
-                                               paymentAmount !== '<nil>' &&
-                                               paymentAmount !== 'null' &&
-                                               typeof paymentAmount === 'number' && 
-                                               paymentAmount > 0;
-                          
-                          console.log(`Payment display for ${loan.client_name} on ${column}:`, paymentAmount, 'isValid:', isValidPayment);
-                          
-                          return (
-                            <TableCell key={column} className="text-center">
-                              <span className={`${isValidPayment ? 'text-green-600 font-medium' : 'text-gray-300'}`}>
-                                {isValidPayment ? formatCurrency(paymentAmount) : '-'}
-                              </span>
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell className="font-semibold">
-                          <div className="flex items-center gap-2">
-                            <span className="text-red-600">{formatCurrency(loan.calculated_remaining_balance)}</span>
-                            {loan.has_calculation_errors && (
-                              <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300"
-                                style={{ width: `${Math.min(loan.calculated_progress, 100)}%` }}
-                              />
-                            </div>
-                            <span className="text-xs font-medium">{loan.calculated_progress.toFixed(1)}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            {getPaymentPatternIcon(loan.payment_pattern)}
-                            <span className="text-xs capitalize">{loan.payment_pattern}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant="outline" 
-                            className={`${getDataQualityColor(loan.data_quality_score)}`}
-                          >
-                            {loan.data_quality_score.toFixed(0)}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={loan.status === 'active' ? 'default' : 'secondary'}
-                            className={loan.status === 'active' ? 'bg-green-100 text-green-800' : ''}
-                          >
-                            {loan.status}
-                          </Badge>
-                        </TableCell>
-                        {showRiskScore && (
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={
-                                loan.risk_level === "low"
-                                  ? "bg-green-50 text-green-700"
-                                  : loan.risk_level === "medium"
-                                  ? "bg-yellow-50 text-yellow-700"
-                                  : loan.risk_level === "high"
-                                  ? "bg-orange-50 text-orange-700"
-                                  : "bg-red-100 text-red-800"
-                              }
-                            >
-                              {loan.risk_score}
-                            </Badge>
-                          </TableCell>
-                        )}
-                        {showRiskLevel && (
-                          <TableCell className="capitalize">
-                            <Badge
-                              variant="outline"
-                              className={
-                                loan.risk_level === "low"
-                                  ? "bg-green-50 text-green-700"
-                                  : loan.risk_level === "medium"
-                                  ? "bg-yellow-50 text-yellow-700"
-                                  : loan.risk_level === "high"
-                                  ? "bg-orange-50 text-orange-700"
-                                  : "bg-red-100 text-red-800"
-                              }
-                            >
-                              {loan.risk_level}
-                            </Badge>
-                          </TableCell>
-                        )}
-                        {showDefaultProb && (
-                          <TableCell>
-                            {(loan.default_probability * 100).toFixed(0)}%
-                          </TableCell>
-                        )}
+                       >
+                         <TableCell className="border-r border-border/50">
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={() => toggleRowExpansion(loan.id)}
+                             className="h-6 w-6 p-0"
+                           >
+                             {expandedRows.has(loan.id) ? (
+                               <ChevronDown className="h-4 w-4" />
+                             ) : (
+                               <ChevronRight className="h-4 w-4" />
+                             )}
+                           </Button>
+                         </TableCell>
+                         <TableCell className="font-medium border-r border-border/50">
+                           {loan.client_name}
+                           {loan.recentlyUpdated && (
+                             <Badge variant="outline" className="ml-2 text-xs bg-blue-100 text-blue-800">
+                               Updated
+                             </Badge>
+                           )}
+                         </TableCell>
+                         <TableCell className="text-blue-600 font-semibold border-r-2 border-blue-200 bg-blue-50/10">
+                           {formatCurrency(loan.amount_returnable)}
+                         </TableCell>
+                         {activePaymentColumns.map((column, index) => {
+                           const paymentAmount = (loan as any)[column];
+                           // Handle both null and <nil> string representations from Supabase
+                           const isValidPayment = paymentAmount !== null && 
+                                                paymentAmount !== undefined && 
+                                                paymentAmount !== '<nil>' &&
+                                                paymentAmount !== 'null' &&
+                                                typeof paymentAmount === 'number' && 
+                                                paymentAmount > 0;
+                           
+                           console.log(`Payment display for ${loan.client_name} on ${column}:`, paymentAmount, 'isValid:', isValidPayment);
+                           
+                           return (
+                             <TableCell 
+                               key={column} 
+                               className={`text-center bg-green-50/20 hover:bg-green-100/30 transition-colors ${
+                                 index === 0 ? 'border-l-2 border-green-300' : 'border-l border-green-200'
+                               } ${
+                                 index === activePaymentColumns.length - 1 ? 'border-r-2 border-green-300' : 'border-r border-green-200'
+                               }`}
+                             >
+                               <span className={`${isValidPayment ? 'text-green-700 font-semibold' : 'text-gray-400'}`}>
+                                 {isValidPayment ? formatCurrency(paymentAmount) : '-'}
+                               </span>
+                             </TableCell>
+                           );
+                         })}
+                         <TableCell className="font-semibold border-l-2 border-purple-200 bg-purple-50/10">
+                           <div className="flex items-center gap-2">
+                             <span className="text-red-600">{formatCurrency(loan.calculated_remaining_balance)}</span>
+                             {loan.has_calculation_errors && (
+                               <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                             )}
+                           </div>
+                         </TableCell>
+                         <TableCell className="border-l border-border/50 bg-purple-50/10">
+                           <div className="flex items-center gap-2">
+                             <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                               <div 
+                                 className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-300"
+                                 style={{ width: `${Math.min(loan.calculated_progress, 100)}%` }}
+                               />
+                             </div>
+                             <span className="text-xs font-medium">{loan.calculated_progress.toFixed(1)}%</span>
+                           </div>
+                         </TableCell>
+                         <TableCell className="border-l border-border/50 bg-purple-50/10">
+                           <div className="flex items-center gap-1">
+                             {getPaymentPatternIcon(loan.payment_pattern)}
+                             <span className="text-xs capitalize">{loan.payment_pattern}</span>
+                           </div>
+                         </TableCell>
+                         <TableCell className="border-l border-border/50 bg-purple-50/10">
+                           <Badge 
+                             variant="outline" 
+                             className={`${getDataQualityColor(loan.data_quality_score)}`}
+                           >
+                             {loan.data_quality_score.toFixed(0)}%
+                           </Badge>
+                         </TableCell>
+                         <TableCell className="border-l border-border/50 border-r-2 border-purple-200 bg-purple-50/10">
+                           <Badge 
+                             variant={loan.status === 'active' ? 'default' : 'secondary'}
+                             className={loan.status === 'active' ? 'bg-green-100 text-green-800' : ''}
+                           >
+                             {loan.status}
+                           </Badge>
+                         </TableCell>
+                         {showRiskScore && (
+                           <TableCell className="border-l-2 border-orange-200 bg-orange-50/10">
+                             <Badge
+                               variant="outline"
+                               className={
+                                 loan.risk_level === "low"
+                                   ? "bg-green-50 text-green-700"
+                                   : loan.risk_level === "medium"
+                                   ? "bg-yellow-50 text-yellow-700"
+                                   : loan.risk_level === "high"
+                                   ? "bg-orange-50 text-orange-700"
+                                   : "bg-red-100 text-red-800"
+                               }
+                             >
+                               {loan.risk_score}
+                             </Badge>
+                           </TableCell>
+                         )}
+                         {showRiskLevel && (
+                           <TableCell className="capitalize border-l border-border/50 bg-orange-50/10">
+                             <Badge
+                               variant="outline"
+                               className={
+                                 loan.risk_level === "low"
+                                   ? "bg-green-50 text-green-700"
+                                   : loan.risk_level === "medium"
+                                   ? "bg-yellow-50 text-yellow-700"
+                                   : loan.risk_level === "high"
+                                   ? "bg-orange-50 text-orange-700"
+                                   : "bg-red-100 text-red-800"
+                               }
+                             >
+                               {loan.risk_level}
+                             </Badge>
+                           </TableCell>
+                         )}
+                         {showDefaultProb && (
+                           <TableCell className="border-l border-border/50 bg-orange-50/10">
+                             {(loan.default_probability * 100).toFixed(0)}%
+                           </TableCell>
+                         )}
                       </motion.tr>
 
                       {/* Expanded Row Details */}
