@@ -134,6 +134,54 @@ export type Database = {
         }
         Relationships: []
       }
+      egg_deliveries: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          delivery_date: string
+          delivery_location: string | null
+          id: string
+          notes: string | null
+          payment_status: string
+          phone_number: string | null
+          price_per_tray: number
+          supplier_name: string
+          total_amount: number
+          trays: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          delivery_date: string
+          delivery_location?: string | null
+          id?: string
+          notes?: string | null
+          payment_status?: string
+          phone_number?: string | null
+          price_per_tray: number
+          supplier_name: string
+          total_amount: number
+          trays: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          delivery_date?: string
+          delivery_location?: string | null
+          id?: string
+          notes?: string | null
+          payment_status?: string
+          phone_number?: string | null
+          price_per_tray?: number
+          supplier_name?: string
+          total_amount?: number
+          trays?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       exchange_rates: {
         Row: {
           created_at: string | null

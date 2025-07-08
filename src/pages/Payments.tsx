@@ -17,10 +17,12 @@ import {
   TrendingDown, 
   DollarSign, 
   Plus,
-  BarChart3
+  BarChart3,
+  Package
 } from 'lucide-react';
 import { useFinancialSummaryQuery } from '@/hooks/use-financial-summary-query';
 import DynamicLoanBookTable from '@/components/payments/DynamicLoanBookTable';
+import DeliveryManagement from '@/components/deliveries/DeliveryManagement';
 
 import { usePaymentHandlers } from '@/hooks/usePaymentHandlers';
 import { formatCurrency } from '@/utils/currencyUtils';
@@ -261,7 +263,7 @@ const Payments = () => {
           transition={{ delay: 0.5 }}
         >
           <Tabs defaultValue="transactions" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 h-12">
+            <TabsList className="grid w-full grid-cols-5 h-12">
               <TabsTrigger value="transactions" className="text-sm">
                 <CreditCard className="mr-2 h-4 w-4" />
                 Transaction Editor
@@ -269,6 +271,10 @@ const Payments = () => {
               <TabsTrigger value="loan-book" className="text-sm">
                 <DollarSign className="mr-2 h-4 w-4" />
                 Smart Loan Book
+              </TabsTrigger>
+              <TabsTrigger value="deliveries" className="text-sm">
+                <Package className="mr-2 h-4 w-4" />
+                Egg Deliveries
               </TabsTrigger>
               <TabsTrigger value="expenses" className="text-sm">
                 <TrendingDown className="mr-2 h-4 w-4" />
@@ -291,6 +297,10 @@ const Payments = () => {
                 onExport={() => handleExportLoanBook(loanBookData)}
                 isExporting={isExportingLoanBook}
               />
+            </TabsContent>
+
+            <TabsContent value="deliveries" className="space-y-6 mt-6">
+              <DeliveryManagement />
             </TabsContent>
 
             <TabsContent value="expenses" className="space-y-4 mt-4">
