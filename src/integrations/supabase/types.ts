@@ -1444,10 +1444,12 @@ export type Database = {
       }
       sticky_notes: {
         Row: {
+          author_name: string | null
           color: string | null
           content: string
           created_at: string
           id: string
+          note_type: string
           payment_id: string | null
           position_x: number | null
           position_y: number | null
@@ -1458,10 +1460,12 @@ export type Database = {
           user_role: string
         }
         Insert: {
+          author_name?: string | null
           color?: string | null
           content?: string
           created_at?: string
           id?: string
+          note_type?: string
           payment_id?: string | null
           position_x?: number | null
           position_y?: number | null
@@ -1472,10 +1476,12 @@ export type Database = {
           user_role: string
         }
         Update: {
+          author_name?: string | null
           color?: string | null
           content?: string
           created_at?: string
           id?: string
+          note_type?: string
           payment_id?: string | null
           position_x?: number | null
           position_y?: number | null
