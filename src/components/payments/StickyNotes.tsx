@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRolePermissions } from '@/hooks/use-role-permissions';
+import { useDirectorCaleb } from '@/hooks/use-director-caleb';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
@@ -32,11 +32,8 @@ const StickyNotes: React.FC<StickyNotesProps> = ({ recordType, recordId, classNa
   const [notes, setNotes] = useState<StickyNote[]>([]);
   const [isVisible, setIsVisible] = useState(false);
   const { user } = useAuth();
-  const { hasPermission, userRole } = useRolePermissions();
+  const { isDirectorCaleb, isLoading } = useDirectorCaleb();
   const { toast } = useToast();
-
-  const allowedRoles = ['ceo', 'director', 'chairperson', 'manager'];
-  const canAddNotes = hasPermission('manager');
 
   useEffect(() => {
     if (user && recordId) {
@@ -66,10 +63,10 @@ const StickyNotes: React.FC<StickyNotesProps> = ({ recordType, recordId, classNa
   };
 
   const addNote = async () => {
-    if (!canAddNotes || !user) {
+    if (!isDirectorCaleb || !user) {
       toast({
         title: "Not Authorized",
-        description: "You don't have permission to add notes",
+        description: "Only Director Caleb can add notes",
         variant: "destructive",
       });
       return;
@@ -78,7 +75,7 @@ const StickyNotes: React.FC<StickyNotesProps> = ({ recordType, recordId, classNa
     try {
       const newNote = {
         user_id: user.id,
-        user_role: userRole || 'user',
+        user_role: 'director',
         record_type: recordType,
         record_id: recordId,
         content: '',
@@ -178,7 +175,7 @@ const StickyNotes: React.FC<StickyNotesProps> = ({ recordType, recordId, classNa
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-sm">Notes</h3>
               <div className="flex gap-2">
-                {canAddNotes && (
+                {isDirectorCaleb && !isLoading && (
                   <Button size="sm" onClick={addNote} variant="outline">
                     Add Note
                   </Button>
@@ -205,7 +202,7 @@ const StickyNotes: React.FC<StickyNotesProps> = ({ recordType, recordId, classNa
                       <span className="text-xs text-muted-foreground font-medium">
                         {note.user_role} • {new Date(note.created_at).toLocaleDateString()}
                       </span>
-                      {note.user_id === user.id && (
+                      {isDirectorCaleb && (
                         <Button
                           size="sm"
                           variant="ghost"
