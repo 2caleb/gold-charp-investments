@@ -23,6 +23,7 @@ import {
 import { useFinancialSummaryQuery } from '@/hooks/use-financial-summary-query';
 import DynamicLoanBookTable from '@/components/payments/DynamicLoanBookTable';
 import DeliveryManagement from '@/components/deliveries/DeliveryManagement';
+import StickyNotes from '@/components/payments/StickyNotes';
 
 import { usePaymentHandlers } from '@/hooks/usePaymentHandlers';
 import { formatCurrency } from '@/utils/currencyUtils';
@@ -287,34 +288,59 @@ const Payments = () => {
             </TabsList>
 
             <TabsContent value="transactions" className="space-y-6 mt-6">
-              <TransactionEditor />
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <TransactionEditor />
+                </div>
+                <StickyNotes recordType="payment" recordId="transactions" className="ml-4" />
+              </div>
             </TabsContent>
 
             <TabsContent value="loan-book" className="space-y-6 mt-6">
-              <DynamicLoanBookTable
-                loanData={loanBookData}
-                isLoading={loanBookLoading}
-                onExport={() => handleExportLoanBook(loanBookData)}
-                isExporting={isExportingLoanBook}
-              />
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <DynamicLoanBookTable
+                    loanData={loanBookData}
+                    isLoading={loanBookLoading}
+                    onExport={() => handleExportLoanBook(loanBookData)}
+                    isExporting={isExportingLoanBook}
+                  />
+                </div>
+                <StickyNotes recordType="loan" recordId="loan-book" className="ml-4" />
+              </div>
             </TabsContent>
 
             <TabsContent value="deliveries" className="space-y-6 mt-6">
-              <DeliveryManagement />
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <DeliveryManagement />
+                </div>
+                <StickyNotes recordType="delivery" recordId="deliveries" className="ml-4" />
+              </div>
             </TabsContent>
 
             <TabsContent value="expenses" className="space-y-4 mt-4">
-              <ExpensesTable
-                filteredExpenses={filteredExpenses}
-                expenseSearchTerm={expenseSearchTerm}
-                setExpenseSearchTerm={setExpenseSearchTerm}
-                onExport={() => handleExportExpenses(filteredExpenses)}
-                isExporting={isExportingExpenses}
-              />
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <ExpensesTable
+                    filteredExpenses={filteredExpenses}
+                    expenseSearchTerm={expenseSearchTerm}
+                    setExpenseSearchTerm={setExpenseSearchTerm}
+                    onExport={() => handleExportExpenses(filteredExpenses)}
+                    isExporting={isExportingExpenses}
+                  />
+                </div>
+                <StickyNotes recordType="expense" recordId="expenses" className="ml-4" />
+              </div>
             </TabsContent>
 
             <TabsContent value="summary" className="space-y-6 mt-6">
-              <SummaryTab financialSummary={financialSummary} />
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <SummaryTab financialSummary={financialSummary} />
+                </div>
+                <StickyNotes recordType="payment" recordId="summary" className="ml-4" />
+              </div>
             </TabsContent>
           </Tabs>
         </motion.div>

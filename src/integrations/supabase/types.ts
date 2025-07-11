@@ -1442,6 +1442,51 @@ export type Database = {
         }
         Relationships: []
       }
+      sticky_notes: {
+        Row: {
+          color: string | null
+          content: string
+          created_at: string
+          id: string
+          payment_id: string | null
+          position_x: number | null
+          position_y: number | null
+          record_id: string
+          record_type: string
+          updated_at: string
+          user_id: string
+          user_role: string
+        }
+        Insert: {
+          color?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          payment_id?: string | null
+          position_x?: number | null
+          position_y?: number | null
+          record_id: string
+          record_type?: string
+          updated_at?: string
+          user_id: string
+          user_role: string
+        }
+        Update: {
+          color?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          payment_id?: string | null
+          position_x?: number | null
+          position_y?: number | null
+          record_id?: string
+          record_type?: string
+          updated_at?: string
+          user_id?: string
+          user_role?: string
+        }
+        Relationships: []
+      }
       transaction_audit_log: {
         Row: {
           action: string
