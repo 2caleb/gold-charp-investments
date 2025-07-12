@@ -273,21 +273,21 @@ const AgentLocator = () => {
       >
         <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 text-center">
               <div>
-                <div className="text-3xl font-bold text-blue-600 mb-2">1</div>
-                <p className="text-gray-700 font-medium">Agent Location</p>
-                <p className="text-sm text-gray-600">Nansana Heights</p>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">1</div>
+                <p className="text-gray-700 font-medium text-sm sm:text-base">Agent Location</p>
+                <p className="text-xs sm:text-sm text-gray-600">Nansana Heights</p>
               </div>
               <div>
-                <div className="text-3xl font-bold text-purple-600 mb-2">3</div>
-                <p className="text-gray-700 font-medium">Countries Served</p>
-                <p className="text-sm text-gray-600">Uganda, USA, South Africa</p>
+                <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-2">3</div>
+                <p className="text-gray-700 font-medium text-sm sm:text-base">Countries Served</p>
+                <p className="text-xs sm:text-sm text-gray-600">Uganda, USA, South Africa</p>
               </div>
               <div>
-                <div className="text-3xl font-bold text-green-600 mb-2">24/7</div>
-                <p className="text-gray-700 font-medium">Customer Support</p>
-                <p className="text-sm text-gray-600">Always here to help</p>
+                <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">24/7</div>
+                <p className="text-gray-700 font-medium text-sm sm:text-base">Customer Support</p>
+                <p className="text-xs sm:text-sm text-gray-600">Always here to help</p>
               </div>
             </div>
           </CardContent>

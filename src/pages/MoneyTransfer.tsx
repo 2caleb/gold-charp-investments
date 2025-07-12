@@ -173,18 +173,18 @@ const MoneyTransfer = () => {
         >
           <div className="text-center space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">Why Choose Gold Charp Money Transfer?</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2">3</div>
-                <p className="text-gray-600">Countries Served</p>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">3</div>
+                <p className="text-gray-600 text-sm sm:text-base">Countries Served</p>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 mb-2">99.9%</div>
-                <p className="text-gray-600">Success Rate</p>
+                <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">99.9%</div>
+                <p className="text-gray-600 text-sm sm:text-base">Success Rate</p>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600 mb-2">24/7</div>
-                <p className="text-gray-600">Customer Support</p>
+                <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-2">24/7</div>
+                <p className="text-gray-600 text-sm sm:text-base">Customer Support</p>
               </div>
             </div>
           </div>

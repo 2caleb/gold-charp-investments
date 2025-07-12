@@ -492,26 +492,26 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates = [] }) => 
                 Transfer Summary
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-4">
+            <CardContent className="p-4 sm:p-6 space-y-4">
               <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">Send Amount:</span>
-                <span className="font-semibold">{calculationResult.sendAmount.toLocaleString()} {formData.sendCurrency}</span>
+                <span className="text-gray-600 text-sm sm:text-base">Send Amount:</span>
+                <span className="font-semibold text-sm sm:text-base break-words text-right min-w-0">{calculationResult.sendAmount.toLocaleString()} {formData.sendCurrency}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">Transfer Fee:</span>
-                <span className="font-semibold">{calculationResult.transferFee.toLocaleString()} {formData.sendCurrency}</span>
+                <span className="text-gray-600 text-sm sm:text-base">Transfer Fee:</span>
+                <span className="font-semibold text-sm sm:text-base break-words text-right min-w-0">{calculationResult.transferFee.toLocaleString()} {formData.sendCurrency}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">Total Amount:</span>
-                <span className="font-bold text-lg">{calculationResult.totalAmount.toLocaleString()} {formData.sendCurrency}</span>
+                <span className="text-gray-600 text-sm sm:text-base">Total Amount:</span>
+                <span className="font-bold text-base sm:text-lg break-words text-right min-w-0">{calculationResult.totalAmount.toLocaleString()} {formData.sendCurrency}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">Exchange Rate:</span>
-                <span className="font-semibold">1 {formData.sendCurrency} = {calculationResult.exchangeRate} {formData.receiveCurrency}</span>
+                <span className="text-gray-600 text-sm sm:text-base">Exchange Rate:</span>
+                <span className="font-semibold text-xs sm:text-sm break-words text-right min-w-0">1 {formData.sendCurrency} = {calculationResult.exchangeRate} {formData.receiveCurrency}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b">
-                <span className="text-gray-600">Recipient Gets:</span>
-                <span className="font-bold text-lg text-green-600">{calculationResult.receiveAmount.toLocaleString()} {formData.receiveCurrency}</span>
+                <span className="text-gray-600 text-sm sm:text-base">Recipient Gets:</span>
+                <span className="font-bold text-base sm:text-lg text-green-600 break-words text-right min-w-0">{calculationResult.receiveAmount.toLocaleString()} {formData.receiveCurrency}</span>
               </div>
               <div className="flex justify-between items-center py-2">
                 <span className="text-gray-600 flex items-center">
@@ -573,7 +573,7 @@ const SendMoneyForm: React.FC<SendMoneyFormProps> = ({ exchangeRates = [] }) => 
               <div className="pt-2 border-t">
                 <p className="text-sm text-gray-600">📞 Phone: +256-393103974, +256-790501202, +256-200943073</p>
                 <p className="text-sm text-gray-600">📧 Email: info@goldcharpinvestments.com</p>
-                <p className="text-sm text-gray-600">🌐 Website: www.goldcharp.com</p>
+                <p className="text-sm text-gray-600">🌐 Website: www.goldcharpinvestments.com</p>
               </div>
             </div>
           </CardContent>
