@@ -167,61 +167,21 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
             />
           </div>
 
-          {/* Enhanced Column Visibility Controls */}
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-sm font-medium text-gray-600">Payment Dates:</span>
+          {/* Column Visibility Controls - Shows all payment dates */}
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm font-medium text-gray-600">Show Payment Dates:</span>
+            {paymentDateColumns.map((column) => (
               <Button
+                key={column}
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  const allVisible = paymentDateColumns.every(col => visibleColumns[col]);
-                  const newState: { [key: string]: boolean } = {};
-                  paymentDateColumns.forEach(col => {
-                    newState[col] = !allVisible;
-                  });
-                  setVisibleColumns(newState);
-                }}
-                className="h-7 text-xs"
+                onClick={() => toggleColumnVisibility(column)}
+                className={`h-8 ${visibleColumns[column] ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}
               >
-                {paymentDateColumns.every(col => visibleColumns[col]) ? 'Hide All' : 'Show All'}
+                {visibleColumns[column] ? <Eye className="mr-1 h-3 w-3" /> : <EyeOff className="mr-1 h-3 w-3" />}
+                {getDateLabel(column)}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  // Show only dates with payments
-                  const newState: { [key: string]: boolean } = {};
-                  paymentDateColumns.forEach(col => {
-                    const hasPayments = smartLoanData.some(loan => {
-                      const amount = (loan as any)[col];
-                      return amount !== null && amount !== undefined && amount !== '<nil>' && 
-                             amount !== 'null' && amount !== 'NULL' && amount !== '' && 
-                             !isNaN(amount) && amount > 0;
-                    });
-                    newState[col] = hasPayments;
-                  });
-                  setVisibleColumns(newState);
-                }}
-                className="h-7 text-xs"
-              >
-                Show Only Active Dates
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-              {paymentDateColumns.map((column) => (
-                <Button
-                  key={column}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleColumnVisibility(column)}
-                  className={`h-7 text-xs ${visibleColumns[column] ? 'bg-blue-50 text-blue-700 border-blue-300' : 'text-gray-500 hover:bg-gray-50'}`}
-                >
-                  {visibleColumns[column] ? <Eye className="mr-1 h-3 w-3" /> : <EyeOff className="mr-1 h-3 w-3" />}
-                  {getDateLabel(column)}
-                </Button>
-              ))}
-            </div>
+            ))}
           </div>
 
           {/* Risk Column Toggles */}
@@ -272,48 +232,28 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
           </div>
         </div>
 
-        {/* Enhanced Dynamic Table with Sticky Columns */}
+        {/* Dynamic Table */}
         <div className="rounded-md border overflow-x-auto">
-          <Table className="min-w-full"
-            style={{
-              /* Enable horizontal scrolling for date columns while keeping core columns visible */
-              tableLayout: 'fixed'
-            }}
-          >
+          <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-8 border-r border-border/50 sticky left-0 bg-white z-20"></TableHead>
-                <TableHead className="border-r border-border/50 sticky left-8 bg-white z-20 min-w-32">Client Name</TableHead>
-                <TableHead className="border-r-2 border-blue-200 bg-blue-50/30 sticky left-40 z-10 min-w-32">Amount Returnable</TableHead>
-                {activePaymentColumns.map((column, index) => {
-                  // Check if this date has any payments across all loans
-                  const dateHasPayments = smartLoanData.some(loan => {
-                    const amount = (loan as any)[column];
-                    return amount !== null && amount !== undefined && amount !== '<nil>' && 
-                           amount !== 'null' && amount !== 'NULL' && amount !== '' && 
-                           !isNaN(amount) && amount > 0;
-                  });
-                  
-                  return (
-                    <TableHead 
-                      key={column} 
-                      className={`text-center transition-colors min-w-24 ${
-                        dateHasPayments ? 'bg-green-50/40 hover:bg-green-100/60' : 'bg-gray-50/20 hover:bg-gray-100/40'
-                      } ${
-                        index === 0 ? 'border-l-2 border-green-300' : 'border-l border-green-200'
-                      } ${
-                        index === activePaymentColumns.length - 1 ? 'border-r-2 border-green-300' : 'border-r border-green-200'
-                      }`}
-                    >
-                      <div className={`text-xs font-semibold ${dateHasPayments ? 'text-green-800' : 'text-gray-500'}`}>
-                        {getDateLabel(column)}
-                      </div>
-                      <div className={`text-xs mt-1 ${dateHasPayments ? 'text-green-600' : 'text-gray-400'}`}>
-                        {dateHasPayments ? '✓ Active' : '○ Empty'}
-                      </div>
-                    </TableHead>
-                  );
-                })}
+                <TableHead className="w-8 border-r border-border/50"></TableHead>
+                <TableHead className="border-r border-border/50">Client Name</TableHead>
+                <TableHead className="border-r-2 border-blue-200 bg-blue-50/30">Amount Returnable</TableHead>
+                {activePaymentColumns.map((column, index) => (
+                  <TableHead 
+                    key={column} 
+                    className={`text-center bg-green-50/40 hover:bg-green-100/60 transition-colors ${
+                      index === 0 ? 'border-l-2 border-green-300' : 'border-l border-green-200'
+                    } ${
+                      index === activePaymentColumns.length - 1 ? 'border-r-2 border-green-300' : 'border-r border-green-200'
+                    }`}
+                  >
+                    <div className="text-xs font-semibold text-green-800">
+                      {getDateLabel(column)}
+                    </div>
+                  </TableHead>
+                ))}
                 <TableHead className="border-l-2 border-purple-200 bg-purple-50/30">Smart Balance</TableHead>
                 <TableHead className="border-l border-border/50 bg-purple-50/30">Progress</TableHead>
                 <TableHead className="border-l border-border/50 bg-purple-50/30">Pattern</TableHead>
@@ -338,76 +278,59 @@ const DynamicLoanBookTable: React.FC<DynamicLoanBookTableProps> = ({
                         className={`hover:bg-gray-50 transition-colors ${
                           loan.recentlyUpdated ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
                         }`}
-                         >
-                          <TableCell className="border-r border-border/50 sticky left-0 bg-white z-20">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleRowExpansion(loan.id)}
-                              className="h-6 w-6 p-0"
-                            >
-                              {expandedRows.has(loan.id) ? (
-                                <ChevronDown className="h-4 w-4" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </TableCell>
-                          <TableCell className="font-medium border-r border-border/50 sticky left-8 bg-white z-20">
-                            <div className="flex flex-col">
-                              <span className="font-medium">{loan.client_name}</span>
-                              {loan.recentlyUpdated && (
-                                <Badge variant="outline" className="mt-1 text-xs bg-blue-100 text-blue-800 w-fit">
-                                  Updated
-                                </Badge>
-                              )}
-                              <span className="text-xs text-gray-500 mt-1">
-                                {loan.paymentCompleteness.toFixed(0)}% complete
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-blue-600 font-semibold border-r-2 border-blue-200 bg-blue-50/10 sticky left-40 z-10">
-                            {formatCurrency(loan.amount_returnable)}
-                          </TableCell>
-                          {activePaymentColumns.map((column, index) => {
-                            const paymentAmount = (loan as any)[column];
-                            // Enhanced null handling for all possible representations
-                            const processPaymentValue = (value: any): number => {
-                              if (value === null || value === undefined || value === '<nil>' || 
-                                  value === 'null' || value === 'NULL' || value === '' || isNaN(value)) {
-                                return 0;
-                              }
-                              return typeof value === 'number' ? value : parseFloat(value) || 0;
-                            };
-                            
-                            const processedAmount = processPaymentValue(paymentAmount);
-                            const hasPayment = processedAmount > 0;
-                            
-                            console.log(`Payment display for ${loan.client_name} on ${column}:`, 
-                              `raw: ${paymentAmount}, processed: ${processedAmount}, hasPayment: ${hasPayment}`);
-                            
-                            return (
-                              <TableCell 
-                                key={column} 
-                                className={`text-center transition-colors ${
-                                  hasPayment ? 'bg-green-50/40 hover:bg-green-100/60' : 'bg-gray-50/20 hover:bg-gray-100/40'
-                                } ${
-                                  index === 0 ? 'border-l-2 border-green-300' : 'border-l border-green-200'
-                                } ${
-                                  index === activePaymentColumns.length - 1 ? 'border-r-2 border-green-300' : 'border-r border-green-200'
-                                }`}
-                              >
-                                <div className="flex flex-col items-center">
-                                  <span className={`text-sm ${hasPayment ? 'text-green-700 font-semibold' : 'text-gray-400'}`}>
-                                    {hasPayment ? formatCurrency(processedAmount) : '—'}
-                                  </span>
-                                  {!hasPayment && processedAmount === 0 && (
-                                    <span className="text-xs text-gray-300">No payment</span>
-                                  )}
-                                </div>
-                              </TableCell>
-                            );
-                          })}
+                       >
+                         <TableCell className="border-r border-border/50">
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={() => toggleRowExpansion(loan.id)}
+                             className="h-6 w-6 p-0"
+                           >
+                             {expandedRows.has(loan.id) ? (
+                               <ChevronDown className="h-4 w-4" />
+                             ) : (
+                               <ChevronRight className="h-4 w-4" />
+                             )}
+                           </Button>
+                         </TableCell>
+                         <TableCell className="font-medium border-r border-border/50">
+                           {loan.client_name}
+                           {loan.recentlyUpdated && (
+                             <Badge variant="outline" className="ml-2 text-xs bg-blue-100 text-blue-800">
+                               Updated
+                             </Badge>
+                           )}
+                         </TableCell>
+                         <TableCell className="text-blue-600 font-semibold border-r-2 border-blue-200 bg-blue-50/10">
+                           {formatCurrency(loan.amount_returnable)}
+                         </TableCell>
+                         {activePaymentColumns.map((column, index) => {
+                           const paymentAmount = (loan as any)[column];
+                           // Handle both null and <nil> string representations from Supabase
+                           const isValidPayment = paymentAmount !== null && 
+                                                paymentAmount !== undefined && 
+                                                paymentAmount !== '<nil>' &&
+                                                paymentAmount !== 'null' &&
+                                                typeof paymentAmount === 'number' && 
+                                                paymentAmount > 0;
+                           
+                           console.log(`Payment display for ${loan.client_name} on ${column}:`, paymentAmount, 'isValid:', isValidPayment);
+                           
+                           return (
+                             <TableCell 
+                               key={column} 
+                               className={`text-center bg-green-50/20 hover:bg-green-100/30 transition-colors ${
+                                 index === 0 ? 'border-l-2 border-green-300' : 'border-l border-green-200'
+                               } ${
+                                 index === activePaymentColumns.length - 1 ? 'border-r-2 border-green-300' : 'border-r border-green-200'
+                               }`}
+                             >
+                               <span className={`${isValidPayment ? 'text-green-700 font-semibold' : 'text-gray-400'}`}>
+                                 {isValidPayment ? formatCurrency(paymentAmount) : '-'}
+                               </span>
+                             </TableCell>
+                           );
+                         })}
                          <TableCell className="font-semibold border-l-2 border-purple-200 bg-purple-50/10">
                            <div className="flex items-center gap-2">
                              <span className="text-red-600">{formatCurrency(loan.calculated_remaining_balance)}</span>

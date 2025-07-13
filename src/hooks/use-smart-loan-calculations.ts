@@ -44,12 +44,10 @@ export interface SmartLoanData extends LoanBookLiveRecord {
   data_quality_score: number;
   has_calculation_errors: boolean;
   payment_pattern: 'regular' | 'irregular' | 'declining' | 'accelerating';
-  activePayments: Array<{date: string, amount: number, label: string, hasPayment: boolean}>; // Enhanced with hasPayment flag
-  allPaymentDates: Array<{date: string, amount: number, label: string, hasPayment: boolean}>; // All dates including empty ones
+  activePayments: Array<{date: string, amount: number, label: string}>; // Updated to show actual dates
   estimated_completion_date: string | null;
   confidence_level: 'high' | 'medium' | 'low' | 'critical'; // Updated to match risk_level type
   discrepancies: string[];
-  paymentCompleteness: number; // Percentage of expected payments made
 }
 
 export interface PortfolioMetrics {
@@ -92,19 +90,15 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
     const smartLoans: SmartLoanData[] = rawLoanData.map((loan) => {
       console.log('Processing loan in calculations:', loan.client_name, loan);
 
-      // Calculate total paid using ONLY valid payment values (enhanced null handling)
+      // Calculate total paid using ONLY valid payment values (excluding null and zero)
       const totalPaid = paymentDateColumns.reduce((sum, dateCol) => {
         const paymentAmount = (loan as any)[dateCol];
-        // Enhanced null handling for all possible null representations
+        // Handle both null and <nil> string representations from Supabase
         const isValidPayment = paymentAmount !== null && 
                               paymentAmount !== undefined && 
                               paymentAmount !== '<nil>' &&
                               paymentAmount !== 'null' &&
-                              paymentAmount !== 'NULL' &&
-                              paymentAmount !== '' &&
-                              paymentAmount !== 0 &&
                               typeof paymentAmount === 'number' && 
-                              !isNaN(paymentAmount) &&
                               paymentAmount > 0;
         
         if (isValidPayment) {
@@ -116,28 +110,20 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
 
       console.log(`Total paid for ${loan.client_name}: ${totalPaid}`);
 
-      // Map first 12 date-based payments to legacy numbered format with null value processing
-      const processPaymentValue = (value: any): number => {
-        if (value === null || value === undefined || value === '<nil>' || 
-            value === 'null' || value === 'NULL' || value === '' || isNaN(value)) {
-          return 0;
-        }
-        return typeof value === 'number' ? value : parseFloat(value) || 0;
-      };
-
+      // Map first 12 date-based payments to legacy numbered format - use actual values
       const legacyPayments = {
-        amount_paid_1: processPaymentValue((loan as any)[paymentDateColumns[0]]),
-        amount_paid_2: processPaymentValue((loan as any)[paymentDateColumns[1]]),
-        amount_paid_3: processPaymentValue((loan as any)[paymentDateColumns[2]]),
-        amount_paid_4: processPaymentValue((loan as any)[paymentDateColumns[3]]),
-        amount_paid_5: processPaymentValue((loan as any)[paymentDateColumns[4]]),
-        Amount_paid_6: processPaymentValue((loan as any)[paymentDateColumns[5]]),
-        Amount_paid_7: processPaymentValue((loan as any)[paymentDateColumns[6]]),
-        Amount_Paid_8: processPaymentValue((loan as any)[paymentDateColumns[7]]),
-        Amount_Paid_9: processPaymentValue((loan as any)[paymentDateColumns[8]]),
-        Amount_Paid_10: processPaymentValue((loan as any)[paymentDateColumns[9]]),
-        Amount_Paid_11: processPaymentValue((loan as any)[paymentDateColumns[10]]),
-        Amount_Paid_12: processPaymentValue((loan as any)[paymentDateColumns[11]]),
+        amount_paid_1: (loan as any)[paymentDateColumns[0]] ?? 0,
+        amount_paid_2: (loan as any)[paymentDateColumns[1]] ?? 0,
+        amount_paid_3: (loan as any)[paymentDateColumns[2]] ?? 0,
+        amount_paid_4: (loan as any)[paymentDateColumns[3]] ?? 0,
+        amount_paid_5: (loan as any)[paymentDateColumns[4]] ?? 0,
+        Amount_paid_6: (loan as any)[paymentDateColumns[5]] ?? 0,
+        Amount_paid_7: (loan as any)[paymentDateColumns[6]] ?? 0,
+        Amount_Paid_8: (loan as any)[paymentDateColumns[7]] ?? 0,
+        Amount_Paid_9: (loan as any)[paymentDateColumns[8]] ?? 0,
+        Amount_Paid_10: (loan as any)[paymentDateColumns[9]] ?? 0,
+        Amount_Paid_11: (loan as any)[paymentDateColumns[10]] ?? 0,
+        Amount_Paid_12: (loan as any)[paymentDateColumns[11]] ?? 0,
       };
 
       const collectionEfficiency = loan.amount_returnable > 0 ? (totalPaid / loan.amount_returnable) * 100 : 0;
@@ -147,39 +133,39 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       const daysSinceLoan = Math.floor((new Date().getTime() - loanDate.getTime()) / (1000 * 60 * 60 * 24));
       const recentlyUpdated = Math.floor((new Date().getTime() - new Date(loan.updated_at).getTime()) / (1000 * 60 * 60 * 24)) <= 1;
       
-      // Create activePayments array with ALL payment dates and proper null handling
+      // Create activePayments array with ONLY actual payments (positive amounts)
       const activePayments = paymentDateColumns
         .map(dateCol => {
           const paymentAmount = (loan as any)[dateCol];
-          const processedAmount = processPaymentValue(paymentAmount);
+          // Handle both null and <nil> string representations from Supabase
+          const isValidPayment = paymentAmount !== null && 
+                                paymentAmount !== undefined && 
+                                paymentAmount !== '<nil>' &&
+                                paymentAmount !== 'null' &&
+                                typeof paymentAmount === 'number' && 
+                                paymentAmount > 0 && 
+                                isValidDateColumn(dateCol);
           
-          // Include ALL valid date columns with their processed values
-          if (isValidDateColumn(dateCol)) {
+          if (isValidPayment) {
             return {
               date: dateCol,
-              amount: processedAmount,
-              label: getDateLabel(dateCol),
-              hasPayment: processedAmount > 0
+              amount: paymentAmount,
+              label: getDateLabel(dateCol)
             };
           }
           return null;
         })
-        .filter((payment): payment is { date: string; amount: number; label: string; hasPayment: boolean } => payment !== null);
+        .filter((payment): payment is { date: string; amount: number; label: string } => payment !== null);
       
-      console.log(`All payment dates for ${loan.client_name}:`, activePayments);
+      console.log(`Active payments for ${loan.client_name}:`, activePayments);
 
-      // Calculate payment completeness and actual payment count
-      const actualPaymentCount = activePayments.filter(p => p.hasPayment).length;
-      const paymentCompleteness = paymentDateColumns.length > 0 ? 
-        (actualPaymentCount / paymentDateColumns.length) * 100 : 0;
+      const paymentCount = activePayments.length;
       const hasDataQualityIssues = loan.amount_returnable <= 0 || totalPaid < 0;
       
-      const paymentFrequency = daysSinceLoan > 0 ? (actualPaymentCount / Math.max(daysSinceLoan / 30, 1)) : 0;
-      const averagePaymentAmount = actualPaymentCount > 0 ? totalPaid / actualPaymentCount : 0;
+      const paymentFrequency = daysSinceLoan > 0 ? (paymentCount / Math.max(daysSinceLoan / 30, 1)) : 0;
+      const averagePaymentAmount = paymentCount > 0 ? totalPaid / paymentCount : 0;
       
-      // Find the last actual payment date
-      const lastPaymentDate = activePayments.filter(p => p.hasPayment).length > 0 ? 
-        activePayments.filter(p => p.hasPayment).slice(-1)[0].date : null;
+      const lastPaymentDate = activePayments.length > 0 ? activePayments[activePayments.length - 1].date : null;
       const daysOverdue = loan.status === 'overdue' ? daysSinceLoan : 0;
       
       let riskTrend: 'improving' | 'stable' | 'deteriorating' = 'stable';
@@ -189,14 +175,14 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       // Calculate additional fields for DynamicLoanBookTable
       const calculatedRemainingBalance = Math.max(0, loan.amount_returnable - totalPaid);
       const calculatedProgress = loan.amount_returnable > 0 ? (totalPaid / loan.amount_returnable) * 100 : 0;
-      const dataQualityScore = hasDataQualityIssues ? 0 : (actualPaymentCount > 0 ? 100 : 75);
+      const dataQualityScore = hasDataQualityIssues ? 0 : (paymentCount > 0 ? 100 : 75);
       
       // Determine payment pattern with correct type
       let paymentPattern: 'regular' | 'irregular' | 'declining' | 'accelerating' = 'irregular';
-      if (actualPaymentCount > 3) {
+      if (paymentCount > 3) {
         if (collectionEfficiency > 80) paymentPattern = 'accelerating';
         else paymentPattern = 'regular';
-      } else if (actualPaymentCount > 0) {
+      } else if (paymentCount > 0) {
         if (collectionEfficiency < 30) paymentPattern = 'declining';
         else paymentPattern = 'irregular';
       }
@@ -212,9 +198,9 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       
       // Determine confidence level - updated to match risk_level type
       let confidenceLevel: 'high' | 'medium' | 'low' | 'critical' = 'low';
-      if (actualPaymentCount > 5 && collectionEfficiency > 60) confidenceLevel = 'high';
-      else if (actualPaymentCount > 2 && collectionEfficiency > 30) confidenceLevel = 'medium';
-      else if (collectionEfficiency < 10 || actualPaymentCount === 0) confidenceLevel = 'critical';
+      if (paymentCount > 5 && collectionEfficiency > 60) confidenceLevel = 'high';
+      else if (paymentCount > 2 && collectionEfficiency > 30) confidenceLevel = 'medium';
+      else if (collectionEfficiency < 10 || paymentCount === 0) confidenceLevel = 'critical';
       
       // Calculate discrepancies
       const discrepancies: string[] = [];
@@ -224,11 +210,8 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
       if (totalPaid > loan.amount_returnable) {
         discrepancies.push('Overpayment detected');
       }
-      if (actualPaymentCount === 0 && loan.amount_returnable > 0) {
+      if (paymentCount === 0 && loan.amount_returnable > 0) {
         discrepancies.push('No payments recorded');
-      }
-      if (paymentCompleteness < 50 && loan.amount_returnable > 0) {
-        discrepancies.push('Low payment frequency');
       }
 
       const smartLoan = {
@@ -251,19 +234,15 @@ export const useSmartLoanCalculations = (rawLoanData: LoanBookLiveRecord[]): Sma
         data_quality_score: dataQualityScore,
         has_calculation_errors: hasDataQualityIssues,
         payment_pattern: paymentPattern,
-        activePayments: activePayments.filter(p => p.hasPayment), // Only actual payments
-        allPaymentDates: activePayments, // All dates including empty ones
+        activePayments, // Now contains only actual payments with proper dates
         estimated_completion_date: estimatedCompletionDate,
         confidence_level: confidenceLevel,
         discrepancies,
-        paymentCompleteness,
       };
 
       console.log(`Smart loan processed for ${loan.client_name}:`, {
         totalPaid: smartLoan.totalPaid,
-        actualPayments: smartLoan.activePayments.length,
-        allPaymentDates: smartLoan.allPaymentDates.length,
-        paymentCompleteness: smartLoan.paymentCompleteness,
+        activePayments: smartLoan.activePayments.length,
         collectionEfficiency: smartLoan.collectionEfficiency
       });
 
