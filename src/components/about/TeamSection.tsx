@@ -13,7 +13,7 @@ const TeamSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
           <div className="text-center">
             <div className="mb-4 relative">
               <Avatar className="w-40 h-40 mx-auto">
@@ -42,33 +42,6 @@ const TeamSection = () => {
             </p>
           </div>
 
-          <div className="text-center">
-            <div className="mb-4">
-              <Avatar className="w-40 h-40 mx-auto">
-                <AvatarImage src="/lovable-uploads/854b9bda-1aea-4e1c-89bf-f6defcfa2dc3.png" alt="Paul Mubiru" className="object-cover" />
-                <AvatarFallback className="bg-purple-100 text-purple-700 text-4xl">PM</AvatarFallback>
-              </Avatar>
-            </div>
-            <h3 className="text-xl font-bold">Paul Mubiru</h3>
-            <p className="text-purple-700 font-medium mb-2">Chief Financial Officer</p>
-            <p className="text-gray-600 max-w-xs mx-auto">
-              Paul brings his financial expertise to help our clients make sound investment decisions.
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="mb-4">
-              <Avatar className="w-40 h-40 mx-auto">
-                <AvatarImage src="/lovable-uploads/c656d13a-aa85-490b-90d0-99af1b33c945.png" alt="Ronald Mutebi" className="object-cover" />
-                <AvatarFallback className="bg-purple-100 text-purple-700 text-4xl">RM</AvatarFallback>
-              </Avatar>
-            </div>
-            <h3 className="text-xl font-bold">Ronald Mutebi</h3>
-            <p className="text-purple-700 font-medium mb-2">Chairman of the Board</p>
-            <p className="text-gray-600 max-w-xs mx-auto">
-              Ronald provides strategic leadership and governance oversight, bringing decades of business expertise to guide our long-term vision.
-            </p>
-          </div>
         </div>
       </div>
     </section>
