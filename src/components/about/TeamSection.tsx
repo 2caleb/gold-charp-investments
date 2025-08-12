@@ -36,7 +36,7 @@ const TeamSection = () => {
               </Avatar>
             </div>
             <h3 className="text-xl font-bold">Geofrey Mubiru</h3>
-            <p className="text-purple-700 font-medium mb-2">Chief Operations Officer</p>
+            <p className="text-purple-700 font-medium mb-2">Real Estate Director</p>
             <p className="text-gray-600 max-w-xs mx-auto">
               Geofrey oversees our day-to-day operations, ensuring excellent service delivery and operational efficiency.
             </p>
