@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1790,18 +1790,18 @@ export type Database = {
     Functions: {
       calculate_repayment_schedule: {
         Args: {
-          p_principal: number
           p_interest_rate: number
-          p_term_months: number
+          p_principal: number
           p_start_date: string
+          p_term_months: number
         }
         Returns: {
-          payment_number: number
-          payment_date: string
-          principal_payment: number
           interest_payment: number
-          total_payment: number
+          payment_date: string
+          payment_number: number
+          principal_payment: number
           remaining_balance: number
+          total_payment: number
         }[]
       }
       check_loan_application: {
@@ -1823,20 +1823,20 @@ export type Database = {
       get_loan_workflow: {
         Args: { application_id: string }
         Returns: {
-          id: string
-          loan_application_id: string
-          current_stage: string
-          field_officer_approved: boolean
-          manager_approved: boolean
-          director_approved: boolean
           ceo_approved: boolean
-          chairperson_approved: boolean
-          field_officer_notes: string
-          manager_notes: string
-          director_notes: string
           ceo_notes: string
+          chairperson_approved: boolean
           chairperson_notes: string
           created_at: string
+          current_stage: string
+          director_approved: boolean
+          director_notes: string
+          field_officer_approved: boolean
+          field_officer_notes: string
+          id: string
+          loan_application_id: string
+          manager_approved: boolean
+          manager_notes: string
           updated_at: string
         }[]
       }
@@ -1847,9 +1847,9 @@ export type Database = {
       get_week_boundaries: {
         Args: { input_date: string }
         Returns: {
-          week_start: string
           week_end: string
           week_number: number
+          week_start: string
           year: number
         }[]
       }
