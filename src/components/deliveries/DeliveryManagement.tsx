@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import EnhancedSecurityGuard from '@/components/security/EnhancedSecurityGuard';
 import { useEggDeliveries } from '@/hooks/use-egg-deliveries';
 import DeliveryDashboard from './DeliveryDashboard';
 import DeliveryTable from './DeliveryTable';
@@ -97,10 +98,19 @@ const DeliveryManagement: React.FC = () => {
             Track deliveries, suppliers, and payment status
           </p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)} className="shrink-0">
-          <Plus className="mr-2 h-4 w-4" />
-          New Delivery
-        </Button>
+        <EnhancedSecurityGuard 
+          action="canUploadExcel"
+          fallback={
+            <div className="text-sm text-muted-foreground bg-muted/50 px-4 py-3 rounded-lg border">
+              Only Director Caleb can create new delivery records
+            </div>
+          }
+        >
+          <Button onClick={() => setIsFormOpen(true)} className="shrink-0">
+            <Plus className="mr-2 h-4 w-4" />
+            New Delivery
+          </Button>
+        </EnhancedSecurityGuard>
       </div>
 
       {/* Dashboard */}
