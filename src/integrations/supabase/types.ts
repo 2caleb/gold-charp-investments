@@ -1820,6 +1820,10 @@ export type Database = {
         Args: { target_week_start?: string }
         Returns: undefined
       }
+      create_egg_delivery: {
+        Args: { delivery: Json; user_id_override?: string }
+        Returns: Json
+      }
       get_loan_workflow: {
         Args: { application_id: string }
         Returns: {
