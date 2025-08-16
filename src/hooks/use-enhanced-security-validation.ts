@@ -13,6 +13,7 @@ interface SecurityValidationContext {
   canModifyLoanApplications: boolean;
   canModifyRoles: boolean;
   canViewAuditLogs: boolean;
+  canCreateDeliveries: boolean;
 }
 
 export const useEnhancedSecurityValidation = () => {
@@ -27,6 +28,7 @@ export const useEnhancedSecurityValidation = () => {
     canModifyLoanApplications: false,
     canModifyRoles: false,
     canViewAuditLogs: false,
+    canCreateDeliveries: false,
   });
 
   // Enhanced audit logging function using direct database insert
@@ -58,6 +60,7 @@ export const useEnhancedSecurityValidation = () => {
         canModifyLoanApplications: false,
         canModifyRoles: false,
         canViewAuditLogs: false,
+        canCreateDeliveries: false,
       });
       return;
     }
@@ -75,6 +78,7 @@ export const useEnhancedSecurityValidation = () => {
       canModifyLoanApplications: isStaff,
       canModifyRoles: isCEOOrChairperson,
       canViewAuditLogs: isExecutive,
+      canCreateDeliveries: isDirectorCaleb,
     };
 
     setSecurityContext(newSecurityContext);
@@ -91,7 +95,7 @@ export const useEnhancedSecurityValidation = () => {
     const hasPermission = securityContext[action];
     
     // Log permission checks for sensitive actions
-    if (['canModifyRoles', 'canViewFinancials', 'canUploadExcel'].includes(action)) {
+    if (['canModifyRoles', 'canViewFinancials', 'canUploadExcel', 'canCreateDeliveries'].includes(action)) {
       logSecurityEventLocal('permission_check', {
         action,
         user_id: user?.id,
@@ -112,6 +116,7 @@ export const useEnhancedSecurityValidation = () => {
       canModifyLoanApplications: 'Loan modification requires staff privileges.',
       canModifyRoles: 'Role management is restricted to CEO and Chairperson only.',
       canViewAuditLogs: 'Audit log access requires executive privileges.',
+      canCreateDeliveries: 'Delivery creation is restricted to Director Caleb only for data integrity.',
     };
     return messages[action];
   };

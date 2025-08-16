@@ -5,7 +5,7 @@ import { Shield, Lock, AlertTriangle, Eye } from 'lucide-react';
 import { useEnhancedSecurityValidation } from '@/hooks/use-enhanced-security-validation';
 
 interface EnhancedSecurityGuardProps {
-  action: 'canUploadExcel' | 'canViewFinancials' | 'canModifyExpenses' | 'canViewLoanApplications' | 'canModifyLoanApplications' | 'canModifyRoles' | 'canViewAuditLogs';
+  action: 'canUploadExcel' | 'canViewFinancials' | 'canModifyExpenses' | 'canViewLoanApplications' | 'canModifyLoanApplications' | 'canModifyRoles' | 'canViewAuditLogs' | 'canCreateDeliveries';
   children: React.ReactNode;
   fallback?: React.ReactNode;
   showMessage?: boolean;

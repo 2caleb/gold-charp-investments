@@ -99,7 +99,7 @@ const DeliveryManagement: React.FC = () => {
           </p>
         </div>
         <EnhancedSecurityGuard 
-          action="canUploadExcel"
+          action="canCreateDeliveries"
           fallback={
             <div className="text-sm text-muted-foreground bg-muted/50 px-4 py-3 rounded-lg border">
               Only Director Caleb can create new delivery records

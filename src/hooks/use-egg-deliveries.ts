@@ -82,11 +82,22 @@ export const useEggDeliveries = (filters?: DeliveryFilters) => {
         description: 'Delivery record created successfully.',
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error creating delivery:', error);
+      
+      let errorMessage = 'Failed to create delivery record.';
+      
+      if (error?.message?.includes('row-level security')) {
+        errorMessage = 'Access denied: Only Director Caleb can create delivery records.';
+      } else if (error?.message?.includes('authentication')) {
+        errorMessage = 'Authentication required to create delivery records.';
+      } else if (error?.message) {
+        errorMessage = `Database error: ${error.message}`;
+      }
+      
       toast({
         title: 'Error',
-        description: 'Failed to create delivery record.',
+        description: errorMessage,
         variant: 'destructive',
       });
     },
