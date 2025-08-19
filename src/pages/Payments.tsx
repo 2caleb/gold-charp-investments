@@ -5,7 +5,7 @@ import PremiumWelcomeSection from '@/components/dashboard/PremiumWelcomeSection'
 import PremiumFinancialOverview from '@/components/dashboard/PremiumFinancialOverview';
 import TransactionEditor from '@/components/transactions/TransactionEditor';
 import FinancialSummaryCards from '@/components/payments/FinancialSummaryCards';
-import ExpensesTable from '@/components/payments/ExpensesTable';
+
 import SummaryTab from '@/components/payments/SummaryTab';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,7 +14,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { 
   CreditCard, 
-  TrendingDown, 
   DollarSign, 
   Plus,
   BarChart3,
@@ -30,13 +29,9 @@ import { formatCurrency } from '@/utils/currencyUtils';
 import { LoanBookLiveRecord } from '@/types/loan-book-live-record';
 
 const Payments = () => {
-  const [expenseSearchTerm, setExpenseSearchTerm] = useState('');
-  
   const {
     handleExportLoanBook,
-    handleExportExpenses,
     isExportingLoanBook,
-    isExportingExpenses,
   } = usePaymentHandlers();
 
   // Use simplified financial summary query
@@ -60,36 +55,13 @@ const Payments = () => {
     },
   });
 
-  // Fetch expenses live data
-  const { data: expensesData, isLoading: expensesLoading, refetch: refetchExpenses } = useQuery({
-    queryKey: ['expenses-live'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('expenses_live')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching expenses live:', error);
-        return [];
-      }
-      return data || [];
-    },
-  });
 
-  // Set up real-time subscriptions for loan book and expenses only
+  // Set up real-time subscriptions for loan book only
   useEffect(() => {
     const loanBookChannel = supabase
       .channel('loan_book_live_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'loan_book_live' }, () => {
         refetchLoanBook();
-      })
-      .subscribe();
-
-    const expensesChannel = supabase
-      .channel('expenses_live_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses_live' }, () => {
-        refetchExpenses();
       })
       .subscribe();
 
@@ -102,10 +74,9 @@ const Payments = () => {
 
     return () => {
       supabase.removeChannel(loanBookChannel);
-      supabase.removeChannel(expensesChannel);
       supabase.removeChannel(summaryChannel);
     };
-  }, [refetchLoanBook, refetchExpenses, refetchSummary]);
+  }, [refetchLoanBook, refetchSummary]);
 
   // Convert raw loan book data to proper LoanBookLiveRecord format with proper null handling
   const loanBookData = rawLoanBookData?.map(loan => {
@@ -187,12 +158,7 @@ const Payments = () => {
     return loanRecord;
   }) || [];
 
-  const filteredExpenses = expensesData?.filter(expense => 
-    expense.Account?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) ||
-    expense.particulars?.toLowerCase().includes(expenseSearchTerm.toLowerCase()) || ''
-  ) || [];
-
-  const isLoading = summaryLoading || loanBookLoading || expensesLoading;
+  const isLoading = summaryLoading || loanBookLoading;
 
   if (isLoading) {
     return (
@@ -264,7 +230,7 @@ const Payments = () => {
           transition={{ delay: 0.5 }}
         >
           <Tabs defaultValue="transactions" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 h-12">
+            <TabsList className="grid w-full grid-cols-4 h-12">
               <TabsTrigger value="transactions" className="text-sm">
                 <CreditCard className="mr-2 h-4 w-4" />
                 Transaction Editor
@@ -276,10 +242,6 @@ const Payments = () => {
               <TabsTrigger value="deliveries" className="text-sm">
                 <Package className="mr-2 h-4 w-4" />
                 Egg Deliveries
-              </TabsTrigger>
-              <TabsTrigger value="expenses" className="text-sm">
-                <TrendingDown className="mr-2 h-4 w-4" />
-                Live Expenses
               </TabsTrigger>
               <TabsTrigger value="summary" className="text-sm">
                 <BarChart3 className="mr-2 h-4 w-4" />
@@ -319,20 +281,6 @@ const Payments = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value="expenses" className="space-y-4 mt-4">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <ExpensesTable
-                    filteredExpenses={filteredExpenses}
-                    expenseSearchTerm={expenseSearchTerm}
-                    setExpenseSearchTerm={setExpenseSearchTerm}
-                    onExport={() => handleExportExpenses(filteredExpenses)}
-                    isExporting={isExportingExpenses}
-                  />
-                </div>
-                <StickyNotes recordType="expense" recordId="expenses" className="ml-4" />
-              </div>
-            </TabsContent>
 
             <TabsContent value="summary" className="space-y-6 mt-6">
               <div className="flex justify-between items-start">
